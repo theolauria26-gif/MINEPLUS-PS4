@@ -45,11 +45,26 @@ cd "$STAGE"
 "$PKG_TOOL" sfo_setentry sce_sys/param.sfo TITLE_ID --type Utf8 --maxsize 12 --value "$TITLE_ID"
 "$PKG_TOOL" sfo_setentry sce_sys/param.sfo VERSION --type Utf8 --maxsize 8 --value "$VERSION"
 
-FILES="eboot.bin sce_sys/param.sfo sce_sys/icon0.png"
+# OpenOrbis homebrew packages may need these compatibility modules.
+# Copy the toolchain-provided stubs when present and include them in the GP4.
+mkdir -p sce_module
+MODULE_DIR="${TOOLCHAIN}/bin/data/modules"
+MODULES=()
+for module in libc.prx libSceFios2.prx; do
+  if [[ -f "${MODULE_DIR}/${module}" ]]; then
+    cp -f "${MODULE_DIR}/${module}" "sce_module/${module}"
+  fi
+  if [[ -f "sce_module/${module}" ]]; then
+    MODULES+=("sce_module/${module}")
+  fi
+done
+
+FILES=(eboot.bin sce_sys/param.sfo sce_sys/icon0.png)
 if [[ -f "sce_sys/about/right.sprx" ]]; then
-  FILES="$FILES sce_sys/about/right.sprx"
+  FILES+=("sce_sys/about/right.sprx")
 fi
-"$GP4_TOOL" -out pkg.gp4 --content-id="$CONTENT_ID" --files "$FILES"
+FILES+=("${MODULES[@]}")
+"$GP4_TOOL" -out pkg.gp4 --content-id="$CONTENT_ID" --files "${FILES[*]}"
 "$PKG_TOOL" pkg_build pkg.gp4 "$OUT"
 [[ -s "${OUT}/${PKG_NAME}" ]] || {
   # LibOrbisPkg may choose a name from the GP4 metadata; report the actual output.
