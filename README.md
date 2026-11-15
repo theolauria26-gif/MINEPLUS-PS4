@@ -8,13 +8,16 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Cena 3D jogável com terreno em blocos, iluminação e céu.
 - Personagem em primeira pessoa com colisão, gravidade e pulo.
 - Interação por raycast: quebrar e colocar blocos.
-- Cinco materiais básicos para construção.
+- Seis materiais básicos para construção, incluindo tijolo fabricável.
 - HUD com mira, instruções e indicação do bloco selecionado.
 - Controles de teclado/mouse e botões virtuais de movimento para telas touch.
-- Barra de seleção de cinco blocos com botões touch e teclas 1–5.
+- Barra de seleção de seis blocos com botões touch e teclas 1–6.
 - Inventário inicial por pilhas: colocar consome blocos e quebrar recupera o material.
-- Bancada de fabricação com receita funcional: 2 Terras + 1 Pedra produzem 2 Tijolos reforçados.
+- Bancada de fabricação com receitas: 2 Terras + 1 Pedra produzem 2 Tijolos; 3 Pedras + 2 Tijolos fabricam uma picareta com 40 usos.
 - Sexto material (Tijolo) selecionável por toque e pela tecla 6.
+- Inventário visual acessível pelo botão INVENTÁRIO ou tecla E, com contagem dos materiais e durabilidade da picareta.
+- Picareta com durabilidade: minerar Pedra e Tijolo consome um uso; a ferramenta e sua durabilidade são salvas.
+- Configurações de FOV e sensibilidade da câmera, ajustáveis no lobby e persistidas em `user://mineplus_settings.cfg`.
 - Salvamento local do mundo em `user://mineplus_world.json`, com botão SALVAR MUNDO e salvamento ao fechar.
 - Renderizador Compatibility para favorecer dispositivos móveis e hardware limitado.
 
@@ -27,7 +30,8 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 | Olhar | Mouse | Arrastar no lado direito |
 | Quebrar bloco | Clique esquerdo | Botão QUEBRAR ou toque na área de jogo |
 | Colocar bloco | Clique direito | Botão COLOCAR |
-| Selecionar material | Teclas 1–5 | Botões da barra inferior |
+| Selecionar material | Teclas 1–6 | Botões da barra inferior |
+| Abrir inventário | E | Botão INVENTÁRIO |
 | Liberar mouse | Esc | — |
 
 ## Abrir o projeto
@@ -45,8 +49,8 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 
 ## Próximas etapas
 
-- Mais receitas, ferramentas com durabilidade e interface completa de inventário.
+- Mais receitas, categorias de itens e slots de equipamento no inventário.
 - Testar e refinar controles touch, salvamento e carregamento em dispositivo real.
 - Geração de terreno e árvores básicas já implementadas; recursos e biomas ainda pendentes.
-- Animações, áudio, opções gráficas e otimização.
+- Skins, animações, áudio, opções gráficas adicionais e otimização.
 - Pipeline de exportação Android e validação em dispositivo.
