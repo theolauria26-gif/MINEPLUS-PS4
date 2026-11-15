@@ -579,6 +579,7 @@ func _craft_pickaxe() -> void:
 		pickaxe_visual.visible = true
 	_update_hotbar()
 	_refresh_inventory()
+	_save_world(true)
 	status_label.text = "Picareta fabricada: 40 usos."
 
 func _craft_bricks() -> void:
@@ -590,6 +591,7 @@ func _craft_bricks() -> void:
 	block_counts[5] += 2
 	_update_hotbar()
 	_refresh_inventory()
+	_save_world(true)
 	status_label.text = "Fabricação concluída: +2 Tijolos."
 
 func _process(delta: float) -> void:
