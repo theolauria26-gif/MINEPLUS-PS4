@@ -192,8 +192,8 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 func _add_hotbar_buttons(hud: CanvasLayer) -> void:
 	var bar := HBoxContainer.new()
 	bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	bar.position = Vector2(-185, -126)
-	bar.size = Vector2(370, 42)
+	bar.position = Vector2(-220, -126)
+	bar.size = Vector2(440, 42)
 	bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	bar.add_theme_constant_override("separation", 5)
 	hud.add_child(bar)
