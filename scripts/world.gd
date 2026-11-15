@@ -18,6 +18,7 @@ var pitch := 0.0
 var touch_look_active := false
 var inventory_panel: PanelContainer
 var inventory_grid: GridContainer
+var inventory_tool_label: Label
 var look_sensitivity := 0.0025
 var configured_fov := 78.0
 var pickaxe_durability := 0
@@ -254,10 +255,10 @@ func _create_inventory_panel(hud: CanvasLayer) -> void:
 	hint.text = "Materiais coletados, ferramentas e recursos disponíveis"
 	hint.add_theme_font_size_override("font_size", 12)
 	stack.add_child(hint)
-	var tool_label := Label.new()
-	tool_label.text = "PICARETA  •  Durabilidade: %d / 40" % pickaxe_durability
-	tool_label.add_theme_color_override("font_color", Color("#e9d28b"))
-	stack.add_child(tool_label)
+	inventory_tool_label = Label.new()
+	inventory_tool_label.text = "PICARETA  •  Durabilidade: %d / 40" % pickaxe_durability
+	inventory_tool_label.add_theme_color_override("font_color", Color("#e9d28b"))
+	stack.add_child(inventory_tool_label)
 	inventory_grid = GridContainer.new()
 	inventory_grid.columns = 2
 	inventory_grid.add_theme_constant_override("h_separation", 10)
@@ -283,6 +284,8 @@ func _toggle_inventory() -> void:
 func _refresh_inventory() -> void:
 	if inventory_grid == null:
 		return
+	if inventory_tool_label:
+		inventory_tool_label.text = "PICARETA  •  Durabilidade: %d / 40" % pickaxe_durability
 	for child in inventory_grid.get_children():
 		child.queue_free()
 	for i in range(BLOCK_NAMES.size()):
@@ -361,6 +364,7 @@ func _craft_bricks() -> void:
 	block_counts[2] -= 1
 	block_counts[5] += 2
 	_update_hotbar()
+	_refresh_inventory()
 	status_label.text = "Fabricação concluída: +2 Tijolos."
 
 func _save_world() -> void:
