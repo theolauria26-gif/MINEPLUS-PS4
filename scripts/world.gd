@@ -271,7 +271,7 @@ func _load_world() -> void:
 	for body in blocks.values():
 		body.queue_free()
 	blocks.clear()
-	if parsed.has("inventory") and parsed["inventory"] is Array and parsed["inventory"].size() == BLOCK_NAMES.size():
+	if parsed.has("inventory") and parsed["inventory"] is Array and parsed["inventory"].size() > 0:
 		for i in range(mini(BLOCK_NAMES.size(), parsed["inventory"].size())):
 			block_counts[i] = maxi(0, int(parsed["inventory"][i]))
 	for entry in parsed["blocks"]:
