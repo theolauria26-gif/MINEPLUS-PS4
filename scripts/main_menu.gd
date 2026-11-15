@@ -104,14 +104,21 @@ func _on_hud_pressed() -> void:
 func _on_settings_pressed() -> void:
 	var config := ConfigFile.new()
 	config.load("user://mineplus_settings.cfg")
-	var dialog := ConfirmationDialog.new()
+	var viewport_size := get_viewport().get_visible_rect().size
+	var dialog := Window.new()
 	dialog.title = "CONFIGURAÇÕES"
-	dialog.ok_button_text = "SALVAR"
-	dialog.dialog_text = "Ajuste a experiência de jogo:"
+	dialog.size = Vector2i(int(minf(420.0, viewport_size.x - 24.0)), int(minf(540.0, viewport_size.y - 24.0)))
+	dialog.close_requested.connect(dialog.hide)
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_bottom", 18)
+	dialog.add_child(margin)
 	var stack := VBoxContainer.new()
-	var settings_width := minf(380.0, get_viewport().get_visible_rect().size.x - 48.0)
-	stack.custom_minimum_size = Vector2(settings_width, 330)
-	dialog.add_child(stack)
+	stack.add_theme_constant_override("separation", 9)
+	margin.add_child(stack)
 	var fov_label := Label.new()
 	fov_label.text = "Campo de visão (FOV)"
 	stack.add_child(fov_label)
@@ -120,7 +127,7 @@ func _on_settings_pressed() -> void:
 	fov.max_value = 100
 	fov.step = 1
 	fov.value = float(config.get_value("graphics", "fov", 78.0))
-	fov.custom_minimum_size.x = settings_width - 20.0
+	fov.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(fov)
 	var sensitivity_label := Label.new()
 	sensitivity_label.text = "Sensibilidade da câmera"
@@ -130,7 +137,7 @@ func _on_settings_pressed() -> void:
 	sensitivity.max_value = 0.008
 	sensitivity.step = 0.0002
 	sensitivity.value = float(config.get_value("controls", "sensitivity", 0.0025))
-	sensitivity.custom_minimum_size.x = settings_width - 20.0
+	sensitivity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(sensitivity)
 	var skin_label := Label.new()
 	skin_label.text = "Aparência do personagem"
@@ -141,7 +148,7 @@ func _on_settings_pressed() -> void:
 	skin.add_item("Clara")
 	skin.add_item("Lavanda")
 	skin.select(clampi(int(config.get_value("appearance", "skin", 0)), 0, 3))
-	skin.custom_minimum_size.x = settings_width - 20.0
+	skin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(skin)
 	var world_label := Label.new()
 	world_label.text = "Slot de mundo"
@@ -151,7 +158,7 @@ func _on_settings_pressed() -> void:
 	world_choice.add_item("Mundo 2")
 	world_choice.add_item("Mundo 3")
 	world_choice.select(clampi(int(config.get_value("world", "slot", 1)) - 1, 0, 2))
-	world_choice.custom_minimum_size.x = settings_width - 20.0
+	world_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(world_choice)
 	var quality_label := Label.new()
 	quality_label.text = "Qualidade gráfica"
@@ -161,9 +168,12 @@ func _on_settings_pressed() -> void:
 	quality.add_item("Equilibrada")
 	quality.add_item("Alta  •  sombras")
 	quality.select(clampi(int(config.get_value("graphics", "quality", 1)), 0, 2))
-	quality.custom_minimum_size.x = settings_width - 20.0
+	quality.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(quality)
-	dialog.confirmed.connect(func():
+	var save_button := Button.new()
+	save_button.text = "SALVAR CONFIGURAÇÕES"
+	save_button.custom_minimum_size.y = 44
+	save_button.pressed.connect(func():
 		var saved := ConfigFile.new()
 		saved.set_value("graphics", "fov", fov.value)
 		saved.set_value("graphics", "quality", quality.selected)
@@ -171,11 +181,17 @@ func _on_settings_pressed() -> void:
 		saved.set_value("appearance", "skin", skin.selected)
 		saved.set_value("world", "slot", world_choice.selected + 1)
 		var result := saved.save("user://mineplus_settings.cfg")
+		dialog.hide()
 		if result == OK:
 			_show_notice("Configurações salvas. Elas serão aplicadas ao iniciar uma partida.")
 		else:
 			_show_notice("Não foi possível salvar as configurações.")
 	)
+	stack.add_child(save_button)
+	var close_button := Button.new()
+	close_button.text = "FECHAR"
+	close_button.pressed.connect(dialog.hide)
+	stack.add_child(close_button)
 	add_child(dialog)
 	dialog.popup_centered()
 
