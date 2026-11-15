@@ -20,6 +20,7 @@ var inventory_panel: PanelContainer
 var inventory_grid: GridContainer
 var look_sensitivity := 0.0025
 var configured_fov := 78.0
+var pickaxe_durability := 0
 
 func _ready() -> void:
 	_load_settings()
@@ -250,9 +251,13 @@ func _create_inventory_panel(hud: CanvasLayer) -> void:
 	heading.add_theme_color_override("font_color", Color("#8ee3b1"))
 	stack.add_child(heading)
 	var hint := Label.new()
-	hint.text = "Materiais coletados e disponíveis para construção"
+	hint.text = "Materiais coletados, ferramentas e recursos disponíveis"
 	hint.add_theme_font_size_override("font_size", 12)
 	stack.add_child(hint)
+	var tool_label := Label.new()
+	tool_label.text = "PICARETA  •  Durabilidade: %d / 40" % pickaxe_durability
+	tool_label.add_theme_color_override("font_color", Color("#e9d28b"))
+	stack.add_child(tool_label)
 	inventory_grid = GridContainer.new()
 	inventory_grid.columns = 2
 	inventory_grid.add_theme_constant_override("h_separation", 10)
@@ -321,11 +326,32 @@ func _add_craft_button(hud: CanvasLayer) -> void:
 func _show_crafting() -> void:
 	var dialog := ConfirmationDialog.new()
 	dialog.title = "BANCADA DE FABRICAÇÃO"
-	dialog.dialog_text = "Receita: 2 Terra + 1 Pedra = 2 Tijolos reforçados."
-	dialog.ok_button_text = "FABRICAR 2"
+	dialog.dialog_text = "Escolha uma receita para fabricar."
+	dialog.ok_button_text = "2 TIJOLOS"
 	dialog.confirmed.connect(_craft_bricks)
+	var pickaxe_button := Button.new()
+	pickaxe_button.text = "PICARETA (3 Pedra + 2 Tijolos)"
+	pickaxe_button.pressed.connect(func():
+		dialog.hide()
+		_craft_pickaxe()
+	)
+	dialog.add_child(pickaxe_button)
 	add_child(dialog)
 	dialog.popup_centered()
+
+func _craft_pickaxe() -> void:
+	if pickaxe_durability > 0:
+		status_label.text = "Você já possui uma picareta com %d de durabilidade." % pickaxe_durability
+		return
+	if block_counts[2] < 3 or block_counts[5] < 2:
+		status_label.text = "Picareta: faltam 3 Pedras e 2 Tijolos."
+		return
+	block_counts[2] -= 3
+	block_counts[5] -= 2
+	pickaxe_durability = 40
+	_update_hotbar()
+	_refresh_inventory()
+	status_label.text = "Picareta fabricada: 40 usos."
 
 func _craft_bricks() -> void:
 	if block_counts[1] < 2 or block_counts[2] < 1:
@@ -341,7 +367,7 @@ func _save_world() -> void:
 	var saved_blocks: Array = []
 	for cell in blocks.keys():
 		saved_blocks.append([cell.x, cell.y, cell.z, int(blocks[cell].get_meta("block_type"))])
-	var payload := {"version": 1, "blocks": saved_blocks, "inventory": block_counts}
+	var payload := {"version": 2, "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability}
 	var file := FileAccess.open("user://mineplus_world.json", FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(payload))
@@ -361,6 +387,8 @@ func _load_world() -> void:
 	for body in blocks.values():
 		body.queue_free()
 	blocks.clear()
+	if parsed.has("pickaxe_durability"):
+		pickaxe_durability = maxi(0, int(parsed["pickaxe_durability"]))
 	if parsed.has("inventory") and parsed["inventory"] is Array and parsed["inventory"].size() > 0:
 		for i in range(mini(BLOCK_NAMES.size(), parsed["inventory"].size())):
 			block_counts[i] = maxi(0, int(parsed["inventory"][i]))
@@ -454,10 +482,17 @@ func _interact(place: bool) -> void:
 	else:
 		if cell.y >= 0:
 			var block_type := int(body.get_meta("block_type"))
+			if block_type == 2 or block_type == 5:
+				if pickaxe_durability <= 0:
+					status_label.text = "Precisa de uma picareta para minerar este bloco."
+					return
+				pickaxe_durability -= 1
 			block_counts[block_type] += 1
 			_remove_block(cell)
 			_update_hotbar()
 			_refresh_inventory()
+			if pickaxe_durability == 0:
+				status_label.text = "Sua picareta quebrou. Fabrique outra na bancada."
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
