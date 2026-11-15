@@ -25,6 +25,8 @@ var pickaxe_durability := 0
 var block_textures: Array[Texture2D] = []
 var walk_animation_time := 0.0
 var camera_base_height := 1.55
+var selected_skin := 0
+const SKIN_COLORS := [Color("#d9a47c"), Color("#8b5a3c"), Color("#e7c7a5"), Color("#c8b0e8")]
 
 func _ready() -> void:
 	_load_settings()
@@ -154,7 +156,22 @@ func _create_player() -> void:
 	camera.current = true
 	camera.fov = configured_fov
 	player.add_child(camera)
+	_create_first_person_arms()
 	add_child(player)
+
+func _create_first_person_arms() -> void:
+	var arm_material := StandardMaterial3D.new()
+	arm_material.albedo_color = SKIN_COLORS[selected_skin]
+	arm_material.roughness = 0.85
+	for side in [-1.0, 1.0]:
+		var arm := MeshInstance3D.new()
+		var arm_mesh := BoxMesh.new()
+		arm_mesh.size = Vector3(0.16, 0.42, 0.16)
+		arm.mesh = arm_mesh
+		arm.material_override = arm_material
+		arm.position = Vector3(side * 0.34, -0.43, -0.52)
+		arm.rotation_degrees.z = side * -12.0
+		camera.add_child(arm)
 
 func _create_hud() -> void:
 	var hud := CanvasLayer.new()
@@ -335,6 +352,7 @@ func _load_settings() -> void:
 	if config.load("user://mineplus_settings.cfg") == OK:
 		look_sensitivity = clampf(float(config.get_value("controls", "sensitivity", 0.0025)), 0.0008, 0.008)
 		configured_fov = clampf(float(config.get_value("graphics", "fov", 78.0)), 60.0, 100.0)
+		selected_skin = clampi(int(config.get_value("appearance", "skin", 0)), 0, SKIN_COLORS.size() - 1)
 
 func _add_save_button(hud: CanvasLayer) -> void:
 	var save_button := Button.new()
