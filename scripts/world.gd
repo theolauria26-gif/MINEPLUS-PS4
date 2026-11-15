@@ -21,6 +21,7 @@ var touch_look_active := false
 var inventory_panel: PanelContainer
 var inventory_grid: GridContainer
 var inventory_panel_width := 460.0
+var pause_layer: CanvasLayer
 var inventory_tool_label: Label
 var look_sensitivity := 0.0025
 var configured_fov := 78.0
@@ -36,6 +37,7 @@ var selected_skin := 0
 const SKIN_COLORS := [Color("#d9a47c"), Color("#8b5a3c"), Color("#e7c7a5"), Color("#c8b0e8")]
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_load_settings()
 	_setup_environment()
 	_setup_block_textures()
@@ -254,6 +256,7 @@ func _create_hud() -> void:
 	_add_craft_button(hud)
 	_add_inventory_button(hud)
 	_create_inventory_panel(hud)
+	_create_pause_menu(hud)
 
 func _add_touch_controls(hud: CanvasLayer) -> void:
 	var ui_scale := clampf(get_viewport().get_visible_rect().size.x / 720.0, 0.65, 1.0)
@@ -410,6 +413,86 @@ func _load_settings() -> void:
 		selected_skin = clampi(int(config.get_value("appearance", "skin", 0)), 0, SKIN_COLORS.size() - 1)
 		world_slot = clampi(int(config.get_value("world", "slot", 1)), 1, 3)
 
+func _create_pause_menu(hud: CanvasLayer) -> void:
+	var pause_button := Button.new()
+	pause_button.text = "PAUSAR"
+	pause_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	pause_button.position = Vector2(-156, 68)
+	pause_button.custom_minimum_size = Vector2(138, 42)
+	pause_button.pressed.connect(_toggle_pause)
+	hud.add_child(pause_button)
+	pause_layer = CanvasLayer.new()
+	pause_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	pause_layer.visible = false
+	pause_layer.layer = 10
+	add_child(pause_layer)
+	var shade := ColorRect.new()
+	shade.color = Color(0.015, 0.02, 0.03, 0.88)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	pause_layer.add_child(shade)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	pause_layer.add_child(center)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(320, 270)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color("#101720")
+	panel_style.border_color = Color("#8ee3b1")
+	panel_style.set_border_width_all(1)
+	panel_style.set_corner_radius_all(18)
+	panel_style.content_margin_left = 24
+	panel_style.content_margin_right = 24
+	panel_style.content_margin_top = 22
+	panel_style.content_margin_bottom = 22
+	panel.add_theme_stylebox_override("panel", panel_style)
+	center.add_child(panel)
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 12)
+	panel.add_child(stack)
+	var title := Label.new()
+	title.text = "JOGO PAUSADO"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color("#8ee3b1"))
+	stack.add_child(title)
+	var resume := Button.new()
+	resume.text = "CONTINUAR"
+	resume.custom_minimum_size.y = 46
+	resume.pressed.connect(_resume_game)
+	stack.add_child(resume)
+	var save := Button.new()
+	save.text = "SALVAR E CONTINUAR"
+	save.custom_minimum_size.y = 46
+	save.pressed.connect(func():
+		_save_world()
+		_resume_game()
+	)
+	stack.add_child(save)
+	var lobby := Button.new()
+	lobby.text = "SALVAR E VOLTAR AO LOBBY"
+	lobby.custom_minimum_size.y = 46
+	lobby.pressed.connect(func():
+		_save_world()
+		get_tree().paused = false
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	)
+	stack.add_child(lobby)
+
+func _toggle_pause() -> void:
+	if get_tree().paused:
+		_resume_game()
+	else:
+		pause_layer.visible = true
+		get_tree().paused = true
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+func _resume_game() -> void:
+	get_tree().paused = false
+	if pause_layer:
+		pause_layer.visible = false
+	if not OS.has_feature("mobile"):
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
 func _add_save_button(hud: CanvasLayer) -> void:
 	var save_button := Button.new()
 	save_button.text = "SALVAR MUNDO"
@@ -559,7 +642,7 @@ func _update_hotbar() -> void:
 	_refresh_inventory()
 
 func _physics_process(delta: float) -> void:
-	if player == null:
+	if player == null or get_tree().paused:
 		return
 	var input_dir := Vector2.ZERO
 	input_dir.x = Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
@@ -597,7 +680,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_interact(true)
 	elif event is InputEventKey and event.pressed:
 		if event.keycode == KEY_ESCAPE:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			_toggle_pause()
 		elif event.keycode == KEY_E:
 			_toggle_inventory()
 		elif event.keycode >= KEY_1 and event.keycode <= KEY_6:
