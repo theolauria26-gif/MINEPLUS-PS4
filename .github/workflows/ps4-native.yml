@@ -25,7 +25,7 @@ jobs:
           tar -xzf "$RUNNER_TEMP/openorbis.tar.gz" -C "$RUNNER_TEMP/openorbis"
       - name: Build native EBOOT and PKG
         env:
-          OO_PS4_TOOLCHAIN: \${{ runner.temp }}/openorbis
+          OO_PS4_TOOLCHAIN: ${{ runner.temp }}/openorbis
         run: |
           chmod +x ps4/build-native.sh
           DOTNET_ROLL_FORWARD=Major ps4/build-native.sh
