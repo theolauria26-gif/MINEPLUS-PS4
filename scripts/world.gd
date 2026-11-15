@@ -14,6 +14,7 @@ var player: CharacterBody3D
 var camera: Camera3D
 var pickaxe_visual: Node3D
 var hotbar_label: Label
+var hotbar_buttons: Array[Button] = []
 var status_label: Label
 var pitch := 0.0
 var touch_look_active := false
@@ -297,11 +298,13 @@ func _add_hotbar_buttons(hud: CanvasLayer) -> void:
 	hud.add_child(bar)
 	for i in range(BLOCK_NAMES.size()):
 		var slot := Button.new()
-		slot.text = str(i + 1) + " " + BLOCK_NAMES[i]
+		slot.text = str(i + 1) + " " + BLOCK_NAMES[i].substr(0, 3).to_upper()
 		slot.custom_minimum_size = Vector2((bar_width - 25.0) / 6.0, 38)
 		slot.add_theme_font_size_override("font_size", 9)
 		slot.pressed.connect(_select_block.bind(i))
 		bar.add_child(slot)
+		hotbar_buttons.append(slot)
+	_update_hotbar()
 
 func _select_block(index: int) -> void:
 	selected_block = clampi(index, 0, BLOCK_NAMES.size() - 1)
@@ -541,7 +544,9 @@ func _add_hold_button(parent: HBoxContainer, caption: String, action: String) ->
 
 func _update_hotbar() -> void:
 	if hotbar_label:
-		hotbar_label.text = "  1 GRAMA  2 TERRA  3 PEDRA  4 AREIA  5 MUSGO  6 TIJOLO  |  " + BLOCK_NAMES[selected_block].to_upper() + " x" + str(block_counts[selected_block])
+		hotbar_label.text = BLOCK_NAMES[selected_block].to_upper() + "  ×  " + str(block_counts[selected_block])
+	for i in range(hotbar_buttons.size()):
+		hotbar_buttons[i].modulate = Color("#8ee3b1") if i == selected_block else Color("#ffffff")
 	_refresh_inventory()
 
 func _physics_process(delta: float) -> void:
