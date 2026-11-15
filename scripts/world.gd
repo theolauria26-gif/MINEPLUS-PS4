@@ -1,0 +1,244 @@
+extends Node3D
+
+const WORLD_RADIUS := 9
+const BLOCK_SIZE := 1.0
+const BLOCK_COLORS := [
+	Color("#79b85a"), Color("#8b6548"), Color("#858b96"), Color("#c6ad72"), Color("#4e9d83")
+]
+const BLOCK_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo"]
+
+var blocks: Dictionary = {}
+var selected_block := 0
+var player: CharacterBody3D
+var camera: Camera3D
+var hotbar_label: Label
+var status_label: Label
+var pitch := 0.0
+var touch_look_active := false
+
+func _ready() -> void:
+	_setup_environment()
+	_generate_world()
+	_create_player()
+	_create_hud()
+	if not OS.has_feature("mobile"):
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func _setup_environment() -> void:
+	var world_env := WorldEnvironment.new()
+	var env := Environment.new()
+	env.background_mode = Environment.BG_SKY
+	env.sky = Sky.new()
+	var sky_mat := ProceduralSkyMaterial.new()
+	sky_mat.sky_top_color = Color("#263a55")
+	sky_mat.sky_horizon_color = Color("#9ab6bd")
+	sky_mat.ground_bottom_color = Color("#202b2b")
+	sky_mat.ground_horizon_color = Color("#647b76")
+	env.sky.sky_material = sky_mat
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color("#b9cbd0")
+	env.ambient_light_energy = 0.75
+	world_env.environment = env
+	add_child(world_env)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-52, -28, 0)
+	sun.light_energy = 1.15
+	add_child(sun)
+
+func _generate_world() -> void:
+	for x in range(-WORLD_RADIUS, WORLD_RADIUS + 1):
+		for z in range(-WORLD_RADIUS, WORLD_RADIUS + 1):
+			_add_block(Vector3i(x, 0, z), 0)
+			if (x * 17 + z * 31) % 23 == 0:
+				_add_block(Vector3i(x, -1, z), 1)
+	for x in range(-2, 3):
+		for z in range(-2, 3):
+			if abs(x) == 2 or abs(z) == 2:
+				_add_block(Vector3i(x, 1, z), 1)
+
+func _add_block(cell: Vector3i, block_type: int) -> void:
+	if blocks.has(cell):
+		return
+	var body := StaticBody3D.new()
+	body.position = Vector3(cell) * BLOCK_SIZE
+	body.set_meta("cell", cell)
+	body.set_meta("block_type", block_type)
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3.ONE * BLOCK_SIZE
+	var visual := MeshInstance3D.new()
+	visual.mesh = mesh
+	var material := StandardMaterial3D.new()
+	material.albedo_color = BLOCK_COLORS[block_type]
+	material.roughness = 0.92
+	visual.material_override = material
+	body.add_child(visual)
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3.ONE * BLOCK_SIZE
+	collision.shape = shape
+	body.add_child(collision)
+	add_child(body)
+	blocks[cell] = body
+
+func _remove_block(cell: Vector3i) -> void:
+	if not blocks.has(cell):
+		return
+	var body: StaticBody3D = blocks[cell]
+	blocks.erase(cell)
+	body.queue_free()
+
+func _create_player() -> void:
+	player = CharacterBody3D.new()
+	player.position = Vector3(0, 2.4, 5)
+	player.name = "Player"
+	var capsule := CollisionShape3D.new()
+	var shape := CapsuleShape3D.new()
+	shape.radius = 0.32
+	shape.height = 1.8
+	capsule.shape = shape
+	capsule.position.y = 0.9
+	player.add_child(capsule)
+	camera = Camera3D.new()
+	camera.position.y = 1.55
+	camera.current = true
+	camera.fov = 78
+	player.add_child(camera)
+	add_child(player)
+
+func _create_hud() -> void:
+	var hud := CanvasLayer.new()
+	add_child(hud)
+	var top := Label.new()
+	top.text = "MINEPLUS  /  SURVIVAL PROTOTYPE"
+	top.position = Vector2(22, 18)
+	top.add_theme_color_override("font_color", Color("#e9f2f2"))
+	top.add_theme_font_size_override("font_size", 15)
+	hud.add_child(top)
+	status_label = Label.new()
+	status_label.text = "WASD mover  •  Mouse olhar  •  Clique quebrar/colocar"
+	status_label.position = Vector2(22, 44)
+	status_label.add_theme_color_override("font_color", Color("#c2d0d0"))
+	status_label.add_theme_font_size_override("font_size", 12)
+	hud.add_child(status_label)
+	var crosshair := Label.new()
+	crosshair.text = "+"
+	crosshair.set_anchors_preset(Control.PRESET_CENTER)
+	crosshair.position = Vector2(-7, -15)
+	crosshair.add_theme_font_size_override("font_size", 26)
+	crosshair.add_theme_color_override("font_color", Color("#ffffff"))
+	hud.add_child(crosshair)
+	hotbar_label = Label.new()
+	hotbar_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	hotbar_label.position = Vector2(-250, -74)
+	hotbar_label.size = Vector2(500, 44)
+	hotbar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hotbar_label.add_theme_font_size_override("font_size", 17)
+	hotbar_label.add_theme_color_override("font_color", Color("#f1f5f2"))
+	hud.add_child(hotbar_label)
+	_update_hotbar()
+	_add_touch_controls(hud)
+
+func _add_touch_controls(hud: CanvasLayer) -> void:
+	var move_box := HBoxContainer.new()
+	move_box.position = Vector2(22, -112)
+	move_box.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	move_box.add_theme_constant_override("separation", 7)
+	hud.add_child(move_box)
+	_add_hold_button(move_box, "◀", "move_left")
+	_add_hold_button(move_box, "▲", "move_forward")
+	_add_hold_button(move_box, "▼", "move_back")
+	_add_hold_button(move_box, "▶", "move_right")
+	var jump := Button.new()
+	jump.text = "PULAR"
+	jump.position = Vector2(-112, -112)
+	jump.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	jump.custom_minimum_size = Vector2(88, 54)
+	jump.button_down.connect(func(): Input.action_press("jump"))
+	jump.button_up.connect(func(): Input.action_release("jump"))
+	hud.add_child(jump)
+
+func _add_hold_button(parent: HBoxContainer, caption: String, action: String) -> void:
+	var button := Button.new()
+	button.text = caption
+	button.custom_minimum_size = Vector2(54, 54)
+	button.button_down.connect(func(): Input.action_press(action))
+	button.button_up.connect(func(): Input.action_release(action))
+	parent.add_child(button)
+
+func _update_hotbar() -> void:
+	if hotbar_label:
+		hotbar_label.text = "  1 GRAMA     2 TERRA     3 PEDRA     4 AREIA     5 MUSGO   |   SELECIONADO: " + BLOCK_NAMES[selected_block].to_upper()
+
+func _physics_process(delta: float) -> void:
+	if player == null:
+		return
+	var input_dir := Vector2.ZERO
+	input_dir.x = Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
+	input_dir.y = Input.get_action_strength("move_back") - Input.get_action_strength("move_forward")
+	if Input.is_key_pressed(KEY_D): input_dir.x += 1.0
+	if Input.is_key_pressed(KEY_A): input_dir.x -= 1.0
+	if Input.is_key_pressed(KEY_S): input_dir.y += 1.0
+	if Input.is_key_pressed(KEY_W): input_dir.y -= 1.0
+	input_dir = input_dir.normalized()
+	var direction := (player.transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	var speed := 5.2
+	player.velocity.x = direction.x * speed
+	player.velocity.z = direction.z * speed
+	if not player.is_on_floor():
+		player.velocity.y -= 22.0 * delta
+	elif Input.is_action_just_pressed("jump") or Input.is_key_pressed(KEY_SPACE):
+		player.velocity.y = 7.0
+	player.move_and_slide()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		_rotate_view(event.relative)
+	elif event is InputEventScreenDrag:
+		if event.position.x > get_viewport().get_visible_rect().size.x * 0.32:
+			_rotate_view(event.relative)
+	elif event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			_interact(false)
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			_interact(true)
+	elif event is InputEventKey and event.pressed:
+		if event.keycode == KEY_ESCAPE:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
+			selected_block = event.keycode - KEY_1
+			_update_hotbar()
+		elif event.keycode == KEY_SPACE:
+			Input.action_press("jump")
+	elif event is InputEventScreenTouch and event.pressed:
+		if event.position.x > get_viewport().get_visible_rect().size.x * 0.48 and event.position.y < get_viewport().get_visible_rect().size.y * 0.78:
+			_interact(false)
+
+func _rotate_view(relative: Vector2) -> void:
+	player.rotate_y(-relative.x * 0.0025)
+	pitch = clampf(pitch - relative.y * 0.0025, -1.45, 1.45)
+	camera.rotation.x = pitch
+
+func _interact(place: bool) -> void:
+	var origin := camera.global_position
+	var end := origin + (-camera.global_transform.basis.z * 6.0)
+	var query := PhysicsRayQueryParameters3D.create(origin, end)
+	query.exclude = [player]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return
+	var body = hit.collider
+	if not body.has_meta("cell"):
+		return
+	var cell: Vector3i = body.get_meta("cell")
+	if place:
+		var normal: Vector3 = hit.normal
+		var target := cell + Vector3i(roundi(normal.x), roundi(normal.y), roundi(normal.z))
+		if target.y >= 1 and not blocks.has(target):
+			_add_block(target, selected_block)
+	else:
+		if cell.y >= 0:
+			_remove_block(cell)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
