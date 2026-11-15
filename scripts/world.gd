@@ -23,6 +23,8 @@ var look_sensitivity := 0.0025
 var configured_fov := 78.0
 var pickaxe_durability := 0
 var block_textures: Array[Texture2D] = []
+var walk_animation_time := 0.0
+var camera_base_height := 1.55
 
 func _ready() -> void:
 	_load_settings()
@@ -148,7 +150,7 @@ func _create_player() -> void:
 	capsule.position.y = 0.9
 	player.add_child(capsule)
 	camera = Camera3D.new()
-	camera.position.y = 1.55
+	camera.position.y = camera_base_height
 	camera.current = true
 	camera.fov = configured_fov
 	player.add_child(camera)
@@ -484,6 +486,11 @@ func _physics_process(delta: float) -> void:
 	elif Input.is_action_just_pressed("jump") or Input.is_key_pressed(KEY_SPACE):
 		player.velocity.y = 7.0
 	player.move_and_slide()
+	if player.is_on_floor() and Vector2(player.velocity.x, player.velocity.z).length() > 0.15:
+		walk_animation_time += delta * 10.0
+		camera.position.y = camera_base_height + sin(walk_animation_time) * 0.035
+	else:
+		camera.position.y = lerpf(camera.position.y, camera_base_height, minf(delta * 8.0, 1.0))
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
