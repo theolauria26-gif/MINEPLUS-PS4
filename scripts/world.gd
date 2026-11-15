@@ -322,8 +322,11 @@ func _add_inventory_button(hud: CanvasLayer) -> void:
 func _create_inventory_panel(hud: CanvasLayer) -> void:
 	inventory_panel = PanelContainer.new()
 	inventory_panel.set_anchors_preset(Control.PRESET_CENTER)
-	inventory_panel.position = Vector2(-230, -190)
-	inventory_panel.size = Vector2(460, 380)
+	var viewport_size := get_viewport().get_visible_rect().size
+	var panel_width := minf(460.0, viewport_size.x - 20.0)
+	var panel_height := minf(380.0, viewport_size.y - 40.0)
+	inventory_panel.position = Vector2(-panel_width * 0.5, -panel_height * 0.5)
+	inventory_panel.size = Vector2(panel_width, panel_height)
 	inventory_panel.visible = false
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.035, 0.045, 0.06, 0.96)
@@ -352,7 +355,7 @@ func _create_inventory_panel(hud: CanvasLayer) -> void:
 	inventory_tool_label.add_theme_color_override("font_color", Color("#e9d28b"))
 	stack.add_child(inventory_tool_label)
 	inventory_grid = GridContainer.new()
-	inventory_grid.columns = 2
+	inventory_grid.columns = 2 if panel_width >= 420.0 else 1
 	inventory_grid.add_theme_constant_override("h_separation", 10)
 	inventory_grid.add_theme_constant_override("v_separation", 8)
 	stack.add_child(inventory_grid)
@@ -388,7 +391,8 @@ func _refresh_inventory() -> void:
 		item.add_theme_stylebox_override("panel", item_style)
 		var label := Label.new()
 		label.text = "  %s\n  Quantidade: %d" % [BLOCK_NAMES[i], block_counts[i]]
-		label.custom_minimum_size = Vector2(185, 48)
+		var item_width := (panel_width - 55.0) / float(inventory_grid.columns)
+		label.custom_minimum_size = Vector2(item_width, 48)
 		label.add_theme_color_override("font_color", BLOCK_COLORS[i])
 		item.add_child(label)
 		inventory_grid.add_child(item)
