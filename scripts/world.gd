@@ -197,8 +197,9 @@ func _create_hud() -> void:
 	hud.add_child(crosshair)
 	hotbar_label = Label.new()
 	hotbar_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	hotbar_label.position = Vector2(-250, -74)
-	hotbar_label.size = Vector2(500, 44)
+	var hud_width := minf(500.0, get_viewport().get_visible_rect().size.x - 20.0)
+	hotbar_label.position = Vector2(-hud_width * 0.5, -74)
+	hotbar_label.size = Vector2(hud_width, 44)
 	hotbar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hotbar_label.add_theme_font_size_override("font_size", 17)
 	hotbar_label.add_theme_color_override("font_color", Color("#f1f5f2"))
@@ -212,8 +213,9 @@ func _create_hud() -> void:
 	_create_inventory_panel(hud)
 
 func _add_touch_controls(hud: CanvasLayer) -> void:
+	var ui_scale := clampf(get_viewport().get_visible_rect().size.x / 720.0, 0.65, 1.0)
 	var move_box := HBoxContainer.new()
-	move_box.position = Vector2(22, -112)
+	move_box.position = Vector2(14, -112 * ui_scale)
 	move_box.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	move_box.add_theme_constant_override("separation", 7)
 	hud.add_child(move_box)
@@ -221,7 +223,6 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 	_add_hold_button(move_box, "▲", "move_forward")
 	_add_hold_button(move_box, "▼", "move_back")
 	_add_hold_button(move_box, "▶", "move_right")
-	var ui_scale := clampf(get_viewport().get_visible_rect().size.x / 720.0, 0.65, 1.0)
 	var break_button := Button.new()
 	break_button.text = "QUEBRAR"
 	break_button.position = Vector2(-218 * ui_scale, -112 * ui_scale)
