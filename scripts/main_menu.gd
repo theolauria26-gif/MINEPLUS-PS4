@@ -24,7 +24,8 @@ func _build_ui() -> void:
 	add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(520, 460)
+	var viewport_size := get_viewport().get_visible_rect().size
+	panel.custom_minimum_size = Vector2(minf(520.0, viewport_size.x - 28.0), minf(460.0, viewport_size.y - 28.0))
 	center.add_child(panel)
 	var style := StyleBoxFlat.new()
 	style.bg_color = PANEL
@@ -108,7 +109,8 @@ func _on_settings_pressed() -> void:
 	dialog.ok_button_text = "SALVAR"
 	dialog.dialog_text = "Ajuste a experiência de jogo:"
 	var stack := VBoxContainer.new()
-	stack.custom_minimum_size = Vector2(380, 280)
+	var settings_width := minf(380.0, get_viewport().get_visible_rect().size.x - 48.0)
+	stack.custom_minimum_size = Vector2(settings_width, 280)
 	dialog.add_child(stack)
 	var fov_label := Label.new()
 	fov_label.text = "Campo de visão (FOV)"
@@ -118,7 +120,7 @@ func _on_settings_pressed() -> void:
 	fov.max_value = 100
 	fov.step = 1
 	fov.value = float(config.get_value("graphics", "fov", 78.0))
-	fov.custom_minimum_size.x = 340
+	fov.custom_minimum_size.x = settings_width - 20.0
 	stack.add_child(fov)
 	var sensitivity_label := Label.new()
 	sensitivity_label.text = "Sensibilidade da câmera"
@@ -128,7 +130,7 @@ func _on_settings_pressed() -> void:
 	sensitivity.max_value = 0.008
 	sensitivity.step = 0.0002
 	sensitivity.value = float(config.get_value("controls", "sensitivity", 0.0025))
-	sensitivity.custom_minimum_size.x = 340
+	sensitivity.custom_minimum_size.x = settings_width - 20.0
 	stack.add_child(sensitivity)
 	var skin_label := Label.new()
 	skin_label.text = "Aparência do personagem"
@@ -139,7 +141,7 @@ func _on_settings_pressed() -> void:
 	skin.add_item("Clara")
 	skin.add_item("Lavanda")
 	skin.select(clampi(int(config.get_value("appearance", "skin", 0)), 0, 3))
-	skin.custom_minimum_size.x = 340
+	skin.custom_minimum_size.x = settings_width - 20.0
 	stack.add_child(skin)
 	var world_label := Label.new()
 	world_label.text = "Slot de mundo"
@@ -149,7 +151,7 @@ func _on_settings_pressed() -> void:
 	world_choice.add_item("Mundo 2")
 	world_choice.add_item("Mundo 3")
 	world_choice.select(clampi(int(config.get_value("world", "slot", 1)) - 1, 0, 2))
-	world_choice.custom_minimum_size.x = 340
+	world_choice.custom_minimum_size.x = settings_width - 20.0
 	stack.add_child(world_choice)
 	dialog.confirmed.connect(func():
 		var saved := ConfigFile.new()
