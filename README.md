@@ -55,7 +55,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 
 - **Android:** requer templates de exportação da mesma versão do Godot e configuração do Android SDK/JDK.
 - **Windows/Linux:** pode ser exportado pelo editor Godot após instalar os templates.
-- **PS4:** não existe exportação oficial do Godot para PS4. Um PKG real depende de toolchain/homebrew compatível, SDK e ambiente de compilação específico. O projeto ainda não foi compilado nem testado em hardware PS4.
+- **PS4:** pipeline inicial de empacotamento OpenOrbis preparado em `ps4/package.sh` e documentado em `ps4/README.md`. Ainda falta um runtime/port nativo PS4 que gere `eboot.bin`; o projeto Godot/GDScript não é diretamente empacotável como PKG.
 
 ## Próximas etapas
 
