@@ -6,6 +6,15 @@ O repositório contém um jogo feito em **Godot 4.2/GDScript**. O Godot não ofe
 
 Para PS4 desbloqueado, a rota homebrew aberta é o **OpenOrbis PS4 Toolchain**. Ele compila aplicações nativas para PS4 e fornece ferramentas para criar EBOOT/SELF, GP4 e PKG. Isso ainda exige um executável nativo PS4 real. O código GDScript atual não é esse executável e não pode ser renomeado para `eboot.bin`.
 
+## Port nativo inicial em andamento
+
+- `native/main.cpp`: cliente SDL2 independente do runtime Godot, com menu inicial, mundo em blocos 2D, hotbar, inventário visual e controles de teclado/controle.
+- `native/Makefile`: compilação do EBOOT com OpenOrbis.
+- `build-native.sh`: gera o EBOOT, ícone RGB, metadados e PKG.
+- `.github/workflows/ps4-native.yml`: tenta compilar e publica o PKG como artefato do GitHub Actions.
+
+**Importante:** este é o início de um port nativo separado, não uma exportação do jogo Godot nem uma versão 3D completa. O primeiro build precisa passar na toolchain e ser testado no PS4 antes de ser considerado funcional.
+
 ## O que já está preparado neste repositório
 
 - `package.sh`: valida as ferramentas OpenOrbis, o EBOOT e o ícone; cria `param.sfo`, `pkg.gp4` e tenta gerar o PKG.
