@@ -29,7 +29,8 @@ mkdir -p "${STAGE}/sce_sys" "$OUT"
 command -v file >/dev/null 2>&1 || fail "Instale o utilitário 'file' para validar o ícone."
 ICON_INFO="$(file "${STAGE}/sce_sys/icon0.png")"
 echo "$ICON_INFO" | grep -q '512 x 512' || fail "icon0.png precisa ter 512x512 pixels."
-echo "$ICON_INFO" | grep -Eqi 'RGB|24-bit' || fail "icon0.png precisa ser PNG RGB de 24 bits, sem alpha."
+echo "$ICON_INFO" | grep -Eqi 'RGB[, ]|24-bit' || fail "icon0.png precisa ser PNG RGB de 24 bits, sem alpha."
+echo "$ICON_INFO" | grep -qi 'RGBA' && fail "icon0.png não pode ter canal alpha." || true
 
 cd "$STAGE"
 "$PKG_TOOL" sfo_new sce_sys/param.sfo
