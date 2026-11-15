@@ -34,6 +34,10 @@ var world_slot := 1
 var autosave_elapsed := 0.0
 const AUTOSAVE_INTERVAL := 45.0
 var selected_skin := 0
+var saved_player_position := Vector3(0, 2.4, 5)
+var saved_player_rotation_y := 0.0
+var saved_camera_pitch := 0.0
+var saved_selected_block := 0
 const SKIN_COLORS := [Color("#d9a47c"), Color("#8b5a3c"), Color("#e7c7a5"), Color("#c8b0e8")]
 
 func _ready() -> void:
@@ -152,7 +156,8 @@ func _remove_block(cell: Vector3i) -> void:
 
 func _create_player() -> void:
 	player = CharacterBody3D.new()
-	player.position = Vector3(0, 2.4, 5)
+	player.position = saved_player_position
+	player.rotation.y = saved_player_rotation_y
 	player.name = "Player"
 	var capsule := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
@@ -165,10 +170,13 @@ func _create_player() -> void:
 	camera.position.y = camera_base_height
 	camera.current = true
 	camera.fov = configured_fov
+	camera.rotation.x = saved_camera_pitch
+	pitch = saved_camera_pitch
 	player.add_child(camera)
 	_create_first_person_arms()
 	_create_pickaxe_visual()
 	add_child(player)
+	selected_block = clampi(saved_selected_block, 0, BLOCK_NAMES.size() - 1)
 
 func _create_first_person_arms() -> void:
 	var arm_material := StandardMaterial3D.new()
@@ -595,7 +603,14 @@ func _save_world(silent: bool = false) -> void:
 	var saved_blocks: Array = []
 	for cell in blocks.keys():
 		saved_blocks.append([cell.x, cell.y, cell.z, int(blocks[cell].get_meta("block_type"))])
-	var payload := {"version": 2, "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability}
+	var player_position := [0.0, 2.4, 5.0]
+	var player_rotation_y := 0.0
+	var camera_pitch := 0.0
+	if player != null and camera != null:
+		player_position = [player.position.x, player.position.y, player.position.z]
+		player_rotation_y = player.rotation.y
+		camera_pitch = camera.rotation.x
+	var payload := {"version": 3, "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "selected_block": selected_block}
 	var file := FileAccess.open(_world_save_path(), FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(payload))
@@ -617,7 +632,16 @@ func _load_world() -> void:
 		body.queue_free()
 	blocks.clear()
 	if parsed.has("pickaxe_durability"):
-		pickaxe_durability = maxi(0, int(parsed["pickaxe_durability"]))
+		pickaxe_durability = clampi(int(parsed["pickaxe_durability"]), 0, 40)
+	if parsed.has("player_position") and parsed["player_position"] is Array and parsed["player_position"].size() == 3:
+		var saved_position: Array = parsed["player_position"]
+		saved_player_position = Vector3(float(saved_position[0]), float(saved_position[1]), float(saved_position[2]))
+	if parsed.has("player_rotation_y"):
+		saved_player_rotation_y = float(parsed["player_rotation_y"])
+	if parsed.has("camera_pitch"):
+		saved_camera_pitch = clampf(float(parsed["camera_pitch"]), -1.45, 1.45)
+	if parsed.has("selected_block"):
+		saved_selected_block = clampi(int(parsed["selected_block"]), 0, BLOCK_NAMES.size() - 1)
 	if parsed.has("inventory") and parsed["inventory"] is Array and parsed["inventory"].size() > 0:
 		for i in range(mini(BLOCK_NAMES.size(), parsed["inventory"].size())):
 			block_counts[i] = maxi(0, int(parsed["inventory"][i]))
