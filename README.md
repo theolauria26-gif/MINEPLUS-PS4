@@ -13,6 +13,8 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Controles de teclado/mouse e botões virtuais de movimento para telas touch.
 - Barra de seleção de cinco blocos com botões touch e teclas 1–5.
 - Inventário inicial por pilhas: colocar consome blocos e quebrar recupera o material.
+- Bancada de fabricação com receita funcional: 2 Terras + 1 Pedra produzem 2 Tijolos reforçados.
+- Sexto material (Tijolo) selecionável por toque e pela tecla 6.
 - Salvamento local do mundo em `user://mineplus_world.json`, com botão SALVAR MUNDO e salvamento ao fechar.
 - Renderizador Compatibility para favorecer dispositivos móveis e hardware limitado.
 
@@ -43,7 +45,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 
 ## Próximas etapas
 
-- Receitas de fabricação, ferramentas e interface completa de inventário.
+- Mais receitas, ferramentas com durabilidade e interface completa de inventário.
 - Testar e refinar controles touch, salvamento e carregamento em dispositivo real.
 - Geração de terreno e árvores básicas já implementadas; recursos e biomas ainda pendentes.
 - Animações, áudio, opções gráficas e otimização.
