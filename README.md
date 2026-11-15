@@ -16,6 +16,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Bancada de fabricação com receitas: 2 Terras + 1 Pedra produzem 2 Tijolos; 3 Pedras + 2 Tijolos fabricam uma picareta com 40 usos.
 - Sexto material (Tijolo) selecionável por toque e pela tecla 6.
 - Inventário visual acessível pelo botão INVENTÁRIO ou tecla E, com contagem dos materiais e durabilidade da picareta.
+- Menu de pausa por ESC ou botão PAUSAR, com continuar, salvar e continuar, e salvar e voltar ao lobby.
 - Picareta visível em primeira pessoa, com animação de golpe e durabilidade: minerar Pedra e Tijolo consome um uso; a ferramenta e sua durabilidade são salvas.
 - Configurações de FOV, sensibilidade da câmera e qualidade gráfica (baixa/equilibrada/alta), ajustáveis no lobby e persistidas em `user://mineplus_settings.cfg`.
 - Perfil baixo desativa sombras dinâmicas; o perfil alto ativa sombras para dispositivos compatíveis.
