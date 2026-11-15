@@ -26,6 +26,7 @@ var pause_layer: CanvasLayer
 var inventory_tool_label: Label
 var look_sensitivity := 0.0025
 var configured_fov := 78.0
+var hud_opacity := 1.0
 var graphics_quality := 1
 var pickaxe_durability := 0
 var block_textures: Array[Texture2D] = []
@@ -229,6 +230,7 @@ func _animate_pickaxe_swing() -> void:
 
 func _create_hud() -> void:
 	var hud := CanvasLayer.new()
+	hud.modulate.a = hud_opacity
 	add_child(hud)
 	var top := Label.new()
 	top.text = "MINEPLUS  /  SURVIVAL PROTOTYPE"
@@ -419,6 +421,7 @@ func _load_settings() -> void:
 		look_sensitivity = clampf(float(config.get_value("controls", "sensitivity", 0.0025)), 0.0008, 0.008)
 		configured_fov = clampf(float(config.get_value("graphics", "fov", 78.0)), 60.0, 100.0)
 		graphics_quality = clampi(int(config.get_value("graphics", "quality", 1)), 0, 2)
+		hud_opacity = clampf(float(config.get_value("hud", "opacity", 1.0)), 0.45, 1.0)
 		selected_skin = clampi(int(config.get_value("appearance", "skin", 0)), 0, SKIN_COLORS.size() - 1)
 		world_slot = clampi(int(config.get_value("world", "slot", 1)), 1, 3)
 
