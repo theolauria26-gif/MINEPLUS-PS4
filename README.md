@@ -1,19 +1,47 @@
 # MINEPLUS
 
-Projeto Godot multiplataforma em desenvolvimento, com foco inicial em Android e preparação de uma camada de compatibilidade para PS4.
+Remake/protótipo independente em Godot 4, com identidade visual própria. Não inclui código, marcas, assets ou conteúdo proprietário de Minecraft.
 
-## Estado
+## O que já está no repositório
 
-- Estrutura inicial do projeto: em preparação.
-- Interface: lobby escuro/translúcido, HUD arredondada e controles configuráveis.
-- Android: alvo de exportação planejado.
-- PS4: exige toolchain e SDK/homebrew compatíveis; um PKG instalável só poderá ser gerado e validado nesse ambiente.
+- Lobby inicial escuro, translúcido e com botões arredondados.
+- Cena 3D jogável com terreno em blocos, iluminação e céu.
+- Personagem em primeira pessoa com colisão, gravidade e pulo.
+- Interação por raycast: quebrar e colocar blocos.
+- Cinco materiais básicos para construção.
+- HUD com mira, instruções e indicação do bloco selecionado.
+- Controles de teclado/mouse e botões virtuais de movimento para telas touch.
+- Renderizador Compatibility para favorecer dispositivos móveis e hardware limitado.
 
-## Requisitos
+## Controles atuais
 
-- Godot 4.x
-- Export templates correspondentes à versão do Godot
+| Ação | Teclado / PC | Touch |
+|---|---|---|
+| Andar | WASD | Botões direcionais na tela |
+| Pular | Espaço | Botão PULAR |
+| Olhar | Mouse | Arrastar no lado direito |
+| Quebrar bloco | Clique esquerdo | Toque na área de jogo |
+| Colocar bloco | Clique direito | Em desenvolvimento |
+| Selecionar material | Teclas 1–5 | Em desenvolvimento |
+| Liberar mouse | Esc | — |
 
-## Como abrir
+## Abrir o projeto
 
-Importe a pasta raiz no Godot usando o arquivo `project.godot`.
+1. Instale Godot 4.x.
+2. Baixe/clique em **Code → Download ZIP** neste repositório.
+3. Extraia a pasta.
+4. No Godot, importe o arquivo `project.godot`.
+
+## Exportação
+
+- **Android:** requer templates de exportação da mesma versão do Godot e configuração do Android SDK/JDK.
+- **Windows/Linux:** pode ser exportado pelo editor Godot após instalar os templates.
+- **PS4:** não existe exportação oficial do Godot para PS4. Um PKG real depende de toolchain/homebrew compatível, SDK e ambiente de compilação específico. O projeto ainda não foi compilado nem testado em hardware PS4.
+
+## Próximas etapas
+
+- Melhorar controles touch e interação de colocação.
+- Inventário funcional, salvamento e carregamento de mundos.
+- Geração de terreno, árvores e recursos.
+- Animações, áudio, opções gráficas e otimização.
+- Pipeline de exportação Android e validação em dispositivo.
