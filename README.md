@@ -55,7 +55,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 
 - **Android:** requer templates de exportação da mesma versão do Godot e configuração do Android SDK/JDK.
 - **Windows/Linux:** pode ser exportado pelo editor Godot após instalar os templates.
-- **PS4:** pipeline inicial de empacotamento OpenOrbis preparado em `ps4/package.sh` e documentado em `ps4/README.md`. Ainda falta um runtime/port nativo PS4 que gere `eboot.bin`; o projeto Godot/GDScript não é diretamente empacotável como PKG.
+- **PS4:** iniciado um cliente nativo separado em C++/SDL2 em `ps4/native/`, com Makefile OpenOrbis e workflow `.github/workflows/ps4-native.yml` para compilar EBOOT e publicar o PKG como artefato do GitHub Actions. Este primeiro port é um protótipo 2D de controles e mundo em blocos; ainda não reproduz o cliente 3D Godot. O build precisa passar na toolchain e ser testado no console.
 
 ## Próximas etapas
 
