@@ -16,9 +16,11 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Bancada de fabricação com receitas: 2 Terras + 1 Pedra produzem 2 Tijolos; 3 Pedras + 2 Tijolos fabricam uma picareta com 40 usos.
 - Sexto material (Tijolo) selecionável por toque e pela tecla 6.
 - Inventário visual acessível pelo botão INVENTÁRIO ou tecla E, com contagem dos materiais e durabilidade da picareta.
-- Picareta com durabilidade: minerar Pedra e Tijolo consome um uso; a ferramenta e sua durabilidade são salvas.
+- Picareta visível em primeira pessoa, com animação de golpe e durabilidade: minerar Pedra e Tijolo consome um uso; a ferramenta e sua durabilidade são salvas.
 - Configurações de FOV e sensibilidade da câmera, ajustáveis no lobby e persistidas em `user://mineplus_settings.cfg`.
 - Quatro opções de aparência de personagem, com braços visíveis em primeira pessoa e escolha salva nas configurações.
+- Três slots independentes de mundo, selecionáveis nas configurações; o primeiro mantém compatibilidade com o save antigo.
+- Salvamento automático a cada 45 segundos e ao pausar o aplicativo, além do botão manual.
 - Salvamento local do mundo em `user://mineplus_world.json`, com botão SALVAR MUNDO e salvamento ao fechar.
 - Renderizador Compatibility para favorecer dispositivos móveis e hardware limitado.
 
@@ -51,7 +53,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 ## Próximas etapas
 
 - Mais receitas, categorias de itens e slots de equipamento no inventário.
-- Testar e refinar controles touch, salvamento e carregamento em dispositivo real.
+- Testar e refinar controles touch, salvamento e carregamento em dispositivo real; validar os três slots.
 - Geração de terreno e árvores básicas já implementadas; recursos e biomas ainda pendentes.
-- Skins, animações, áudio, opções gráficas adicionais e otimização.
+- Modelos completos de personagem, animações de movimento adicionais, áudio, opções gráficas adicionais e otimização por chunks.
 - Pipeline de exportação Android e validação em dispositivo.
