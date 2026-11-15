@@ -6,7 +6,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 
 - Lobby inicial escuro, translúcido e com botões arredondados.
 - Cena 3D jogável com terreno em blocos, iluminação e céu.
-- Personagem em primeira pessoa com colisão, gravidade e pulo.
+- Personagem em primeira pessoa com colisão, gravidade, pulo e animação procedural suave de caminhada.
 - Interação por raycast: quebrar e colocar blocos.
 - Seis materiais básicos para construção, incluindo tijolo fabricável, com texturas pixeladas procedurais geradas em runtime.
 - HUD com mira, instruções e indicação do bloco selecionado.
