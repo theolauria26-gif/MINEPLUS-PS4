@@ -98,10 +98,50 @@ func _on_play_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/world.tscn")
 
 func _on_hud_pressed() -> void:
-	_show_notice("A HUD pode ser ajustada durante a partida. Mais opções serão adicionadas.")
+	_show_notice("Durante a partida, use os botões da HUD. O inventário abre pela tecla E ou pelo botão INVENTÁRIO.")
 
 func _on_settings_pressed() -> void:
-	_show_notice("Controles: WASD ou analógico para andar, mouse ou toque para olhar, clique/toque para quebrar e colocar blocos.")
+	var config := ConfigFile.new()
+	config.load("user://mineplus_settings.cfg")
+	var dialog := ConfirmationDialog.new()
+	dialog.title = "CONFIGURAÇÕES"
+	dialog.ok_button_text = "SALVAR"
+	dialog.dialog_text = "Ajuste a experiência de jogo:"
+	var stack := VBoxContainer.new()
+	stack.custom_minimum_size = Vector2(360, 130)
+	dialog.add_child(stack)
+	var fov_label := Label.new()
+	fov_label.text = "Campo de visão (FOV)"
+	stack.add_child(fov_label)
+	var fov := HSlider.new()
+	fov.min_value = 60
+	fov.max_value = 100
+	fov.step = 1
+	fov.value = float(config.get_value("graphics", "fov", 78.0))
+	fov.custom_minimum_size.x = 340
+	stack.add_child(fov)
+	var sensitivity_label := Label.new()
+	sensitivity_label.text = "Sensibilidade da câmera"
+	stack.add_child(sensitivity_label)
+	var sensitivity := HSlider.new()
+	sensitivity.min_value = 0.0008
+	sensitivity.max_value = 0.008
+	sensitivity.step = 0.0002
+	sensitivity.value = float(config.get_value("controls", "sensitivity", 0.0025))
+	sensitivity.custom_minimum_size.x = 340
+	stack.add_child(sensitivity)
+	dialog.confirmed.connect(func():
+		var saved := ConfigFile.new()
+		saved.set_value("graphics", "fov", fov.value)
+		saved.set_value("controls", "sensitivity", sensitivity.value)
+		var result := saved.save("user://mineplus_settings.cfg")
+		if result == OK:
+			_show_notice("Configurações salvas. Elas serão aplicadas ao iniciar uma partida.")
+		else:
+			_show_notice("Não foi possível salvar as configurações.")
+	)
+	add_child(dialog)
+	dialog.popup_centered()
 
 func _show_notice(message: String) -> void:
 	var dialog := AcceptDialog.new()
