@@ -19,6 +19,7 @@ var touch_look_active := false
 func _ready() -> void:
 	_setup_environment()
 	_generate_world()
+	_load_world()
 	_create_player()
 	_create_hud()
 	if not OS.has_feature("mobile"):
@@ -150,6 +151,8 @@ func _create_hud() -> void:
 	hud.add_child(hotbar_label)
 	_update_hotbar()
 	_add_touch_controls(hud)
+	_add_hotbar_buttons(hud)
+	_add_save_button(hud)
 
 func _add_touch_controls(hud: CanvasLayer) -> void:
 	var move_box := HBoxContainer.new()
@@ -183,6 +186,65 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 	jump.button_down.connect(func(): Input.action_press("jump"))
 	jump.button_up.connect(func(): Input.action_release("jump"))
 	hud.add_child(jump)
+
+func _add_hotbar_buttons(hud: CanvasLayer) -> void:
+	var bar := HBoxContainer.new()
+	bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	bar.position = Vector2(-210, -126)
+	bar.size = Vector2(420, 42)
+	bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	bar.add_theme_constant_override("separation", 5)
+	hud.add_child(bar)
+	for i in range(BLOCK_NAMES.size()):
+		var slot := Button.new()
+		slot.text = str(i + 1) + " " + BLOCK_NAMES[i]
+		slot.custom_minimum_size = Vector2(78, 38)
+		slot.add_theme_font_size_override("font_size", 11)
+		slot.pressed.connect(_select_block.bind(i))
+		bar.add_child(slot)
+
+func _select_block(index: int) -> void:
+	selected_block = clampi(index, 0, BLOCK_NAMES.size() - 1)
+	_update_hotbar()
+
+func _add_save_button(hud: CanvasLayer) -> void:
+	var save_button := Button.new()
+	save_button.text = "SALVAR MUNDO"
+	save_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	save_button.position = Vector2(-156, 18)
+	save_button.custom_minimum_size = Vector2(138, 42)
+	save_button.pressed.connect(_save_world)
+	hud.add_child(save_button)
+
+func _save_world() -> void:
+	var saved_blocks: Array = []
+	for cell in blocks.keys():
+		saved_blocks.append([cell.x, cell.y, cell.z, int(blocks[cell].get_meta("block_type"))])
+	var payload := {"version": 1, "blocks": saved_blocks}
+	var file := FileAccess.open("user://mineplus_world.json", FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(payload))
+		status_label.text = "Mundo salvo neste dispositivo."
+	else:
+		status_label.text = "Não foi possível salvar o mundo."
+
+func _load_world() -> void:
+	if not FileAccess.file_exists("user://mineplus_world.json"):
+		return
+	var file := FileAccess.open("user://mineplus_world.json", FileAccess.READ)
+	if file == null:
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY or not parsed.has("blocks"):
+		return
+	for body in blocks.values():
+		body.queue_free()
+	blocks.clear()
+	for entry in parsed["blocks"]:
+		if entry is Array and entry.size() == 4:
+			_add_block(Vector3i(int(entry[0]), int(entry[1]), int(entry[2])), clampi(int(entry[3]), 0, BLOCK_COLORS.size() - 1))
+	if status_label:
+		status_label.text = "Mundo salvo carregado."
 
 func _add_hold_button(parent: HBoxContainer, caption: String, action: String) -> void:
 	var button := Button.new()
@@ -232,8 +294,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
-			selected_block = event.keycode - KEY_1
-			_update_hotbar()
+			_select_block(event.keycode - KEY_1)
 		elif event.keycode == KEY_SPACE:
 			Input.action_press("jump")
 	elif event is InputEventScreenTouch and event.pressed:
@@ -268,4 +329,5 @@ func _interact(place: bool) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_save_world()
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
