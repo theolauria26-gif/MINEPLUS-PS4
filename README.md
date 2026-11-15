@@ -18,6 +18,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Inventário visual acessível pelo botão INVENTÁRIO ou tecla E, com contagem dos materiais e durabilidade da picareta.
 - Picareta com durabilidade: minerar Pedra e Tijolo consome um uso; a ferramenta e sua durabilidade são salvas.
 - Configurações de FOV e sensibilidade da câmera, ajustáveis no lobby e persistidas em `user://mineplus_settings.cfg`.
+- Quatro opções de aparência de personagem, com braços visíveis em primeira pessoa e escolha salva nas configurações.
 - Salvamento local do mundo em `user://mineplus_world.json`, com botão SALVAR MUNDO e salvamento ao fechar.
 - Renderizador Compatibility para favorecer dispositivos móveis e hardware limitado.
 
