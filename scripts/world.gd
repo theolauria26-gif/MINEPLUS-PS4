@@ -327,18 +327,40 @@ func _add_craft_button(hud: CanvasLayer) -> void:
 	hud.add_child(craft_button)
 
 func _show_crafting() -> void:
-	var dialog := ConfirmationDialog.new()
+	var dialog := Window.new()
 	dialog.title = "BANCADA DE FABRICAÇÃO"
-	dialog.dialog_text = "Escolha uma receita para fabricar."
-	dialog.ok_button_text = "2 TIJOLOS"
-	dialog.confirmed.connect(_craft_bricks)
+	dialog.size = Vector2i(420, 250)
+	dialog.close_requested.connect(dialog.hide)
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 12)
+	stack.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	stack.add_theme_constant_override("margin_left", 18)
+	stack.add_theme_constant_override("margin_right", 18)
+	stack.add_theme_constant_override("margin_top", 18)
+	stack.add_theme_constant_override("margin_bottom", 18)
+	dialog.add_child(stack)
+	var description := Label.new()
+	description.text = "Escolha uma receita. Os materiais são descontados do inventário."
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stack.add_child(description)
+	var bricks_button := Button.new()
+	bricks_button.text = "2 Terra + 1 Pedra  →  2 Tijolos"
+	bricks_button.pressed.connect(func():
+		dialog.hide()
+		_craft_bricks()
+	)
+	stack.add_child(bricks_button)
 	var pickaxe_button := Button.new()
-	pickaxe_button.text = "PICARETA (3 Pedra + 2 Tijolos)"
+	pickaxe_button.text = "3 Pedras + 2 Tijolos  →  Picareta (40 usos)"
 	pickaxe_button.pressed.connect(func():
 		dialog.hide()
 		_craft_pickaxe()
 	)
-	dialog.add_child(pickaxe_button)
+	stack.add_child(pickaxe_button)
+	var close_button := Button.new()
+	close_button.text = "FECHAR"
+	close_button.pressed.connect(dialog.hide)
+	stack.add_child(close_button)
 	add_child(dialog)
 	dialog.popup_centered()
 
