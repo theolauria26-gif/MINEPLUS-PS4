@@ -413,6 +413,7 @@ func _add_hold_button(parent: HBoxContainer, caption: String, action: String) ->
 func _update_hotbar() -> void:
 	if hotbar_label:
 		hotbar_label.text = "  1 GRAMA  2 TERRA  3 PEDRA  4 AREIA  5 MUSGO  6 TIJOLO  |  " + BLOCK_NAMES[selected_block].to_upper() + " x" + str(block_counts[selected_block])
+	_refresh_inventory()
 
 func _physics_process(delta: float) -> void:
 	if player == null:
