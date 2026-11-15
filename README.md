@@ -10,8 +10,8 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Interação por raycast: quebrar e colocar blocos.
 - Seis materiais básicos para construção, incluindo tijolo fabricável, com texturas pixeladas procedurais geradas em runtime.
 - HUD com mira, instruções e indicação do bloco selecionado.
-- Controles de teclado/mouse e botões virtuais de movimento para telas touch.
-- Barra de seleção de seis blocos com botões touch e teclas 1–6.
+- Controles de teclado/mouse e botões virtuais de movimento para telas touch, com dimensionamento responsivo em telas estreitas.
+- Barra de seleção de seis blocos com botões touch e teclas 1–6, incluindo destaque visual do slot ativo.
 - Inventário inicial por pilhas: colocar consome blocos e quebrar recupera o material.
 - Bancada de fabricação com receitas: 2 Terras + 1 Pedra produzem 2 Tijolos; 3 Pedras + 2 Tijolos fabricam uma picareta com 40 usos.
 - Sexto material (Tijolo) selecionável por toque e pela tecla 6.
