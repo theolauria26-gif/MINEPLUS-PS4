@@ -295,7 +295,7 @@ func _refresh_inventory() -> void:
 		item_style.set_corner_radius_all(9)
 		item.add_theme_stylebox_override("panel", item_style)
 		var label := Label.new()
-		label.text = "  %s\\n  Quantidade: %d" % [BLOCK_NAMES[i], block_counts[i]]
+		label.text = "  %s\n  Quantidade: %d" % [BLOCK_NAMES[i], block_counts[i]]
 		label.custom_minimum_size = Vector2(185, 48)
 		label.add_theme_color_override("font_color", BLOCK_COLORS[i])
 		item.add_child(label)
