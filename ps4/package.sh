@@ -63,7 +63,9 @@ FILES=(eboot.bin sce_sys/param.sfo sce_sys/icon0.png)
 if [[ -f "sce_sys/about/right.sprx" ]]; then
   FILES+=("sce_sys/about/right.sprx")
 fi
-FILES+=("${MODULES[@]}")
+if (( ${#MODULES[@]} > 0 )); then
+  FILES+=("${MODULES[@]}")
+fi
 "$GP4_TOOL" -out pkg.gp4 --content-id="$CONTENT_ID" --files "${FILES[*]}"
 "$PKG_TOOL" pkg_build pkg.gp4 "$OUT"
 [[ -s "${OUT}/${PKG_NAME}" ]] || {
