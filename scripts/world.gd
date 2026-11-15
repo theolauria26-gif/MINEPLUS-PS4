@@ -22,10 +22,12 @@ var inventory_tool_label: Label
 var look_sensitivity := 0.0025
 var configured_fov := 78.0
 var pickaxe_durability := 0
+var block_textures: Array[Texture2D] = []
 
 func _ready() -> void:
 	_load_settings()
 	_setup_environment()
+	_setup_block_textures()
 	_generate_world()
 	_load_world()
 	_create_player()
@@ -78,6 +80,30 @@ func _add_tree(base: Vector3i) -> void:
 				if abs(x) + abs(z) < 4:
 					_add_block(base + Vector3i(x, y, z), 4)
 
+func _setup_block_textures() -> void:
+	block_textures.clear()
+	for block_type in range(BLOCK_COLORS.size()):
+		var image := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+		var base: Color = BLOCK_COLORS[block_type]
+		for y in range(16):
+			for x in range(16):
+				var variation := ((x * 13 + y * 7 + block_type * 11) % 9) - 4
+				var shade := 1.0 + float(variation) * 0.035
+				var pixel := Color(
+					clampf(base.r * shade, 0.0, 1.0),
+					clampf(base.g * shade, 0.0, 1.0),
+					clampf(base.b * shade, 0.0, 1.0),
+					1.0
+				)
+				if block_type == 0 and y < 4:
+					pixel = Color("#8bc96b") if (x + y) % 3 != 0 else Color("#6da84e")
+				elif block_type == 4 and (x * 3 + y * 5) % 11 == 0:
+					pixel = Color("#367c68")
+				elif block_type == 5 and (x % 8 == 0 or y % 8 == 0):
+					pixel = Color("#8f514b")
+				image.set_pixel(x, y, pixel)
+		block_textures.append(ImageTexture.create_from_image(image))
+
 func _add_block(cell: Vector3i, block_type: int) -> void:
 	if blocks.has(cell):
 		return
@@ -90,7 +116,8 @@ func _add_block(cell: Vector3i, block_type: int) -> void:
 	var visual := MeshInstance3D.new()
 	visual.mesh = mesh
 	var material := StandardMaterial3D.new()
-	material.albedo_color = BLOCK_COLORS[block_type]
+	material.albedo_color = Color.WHITE
+	material.albedo_texture = block_textures[block_type]
 	material.roughness = 0.92
 	visual.material_override = material
 	body.add_child(visual)
