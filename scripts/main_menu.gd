@@ -1,7 +1,7 @@
 extends Control
 
 const BG := Color("#090b10")
-const PANEL := Color(0.055, 0.065, 0.085, 0.88)
+const PANEL := Color(0.055, 0.065, 0.085, 0.92)
 const ACCENT := Color("#8ee3b1")
 const MUTED := Color("#a7afbd")
 
@@ -16,7 +16,6 @@ func _build_ui() -> void:
 
 	var glow := ColorRect.new()
 	glow.color = Color(0.10, 0.24, 0.20, 0.18)
-	glow.position = Vector2(0, 0)
 	glow.size = Vector2(1280, 260)
 	add_child(glow)
 
@@ -25,7 +24,7 @@ func _build_ui() -> void:
 	add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(520, 430)
+	panel.custom_minimum_size = Vector2(520, 460)
 	center.add_child(panel)
 	var style := StyleBoxFlat.new()
 	style.bg_color = PANEL
@@ -39,21 +38,21 @@ func _build_ui() -> void:
 	panel.add_theme_stylebox_override("panel", style)
 
 	var stack := VBoxContainer.new()
-	stack.add_theme_constant_override("separation", 16)
+	stack.add_theme_constant_override("separation", 14)
 	panel.add_child(stack)
 
 	var eyebrow := Label.new()
-	eyebrow.text = "MINEPLUS  /  COMMUNITY EDITION"
+	eyebrow.text = "COMMUNITY EDITION  /  EARLY BUILD"
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	eyebrow.add_theme_color_override("font_color", ACCENT)
-	eyebrow.add_theme_font_size_override("font_size", 13)
+	eyebrow.add_theme_font_size_override("font_size", 12)
 	stack.add_child(eyebrow)
 
 	var title := Label.new()
 	title.text = "MINEPLUS"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", Color("#f4f7fb"))
-	title.add_theme_font_size_override("font_size", 42)
+	title.add_theme_font_size_override("font_size", 44)
 	stack.add_child(title)
 
 	var subtitle := Label.new()
@@ -63,18 +62,17 @@ func _build_ui() -> void:
 	stack.add_child(subtitle)
 
 	var spacer := Control.new()
-	spacer.custom_minimum_size.y = 14
+	spacer.custom_minimum_size.y = 10
 	stack.add_child(spacer)
-
 	_add_menu_button(stack, "JOGAR", true, _on_play_pressed)
 	_add_menu_button(stack, "PERSONALIZAR HUD", false, _on_hud_pressed)
 	_add_menu_button(stack, "CONFIGURAÇÕES", false, _on_settings_pressed)
 
 	var footer := Label.new()
-	footer.text = "PROTÓTIPO INICIAL  •  GODOT"
+	footer.text = "ANDROID  •  PC  •  PORTABILIDADE EM DESENVOLVIMENTO"
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.add_theme_color_override("font_color", Color("#687180"))
-	footer.add_theme_font_size_override("font_size", 11)
+	footer.add_theme_font_size_override("font_size", 10)
 	stack.add_child(footer)
 
 func _add_menu_button(parent: VBoxContainer, caption: String, primary: bool, callback: Callable) -> void:
@@ -85,11 +83,9 @@ func _add_menu_button(parent: VBoxContainer, caption: String, primary: bool, cal
 	button.add_theme_font_size_override("font_size", 15)
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = ACCENT if primary else Color(1, 1, 1, 0.045)
-	normal.border_color = Color(ACCENT, 0.45) if not primary else ACCENT
+	normal.border_color = ACCENT if primary else Color(ACCENT, 0.35)
 	normal.set_border_width_all(1)
 	normal.set_corner_radius_all(13)
-	normal.content_margin_left = 18
-	normal.content_margin_right = 18
 	button.add_theme_stylebox_override("normal", normal)
 	var hover := normal.duplicate() as StyleBoxFlat
 	hover.bg_color = Color("#b5f2cf") if primary else Color(1, 1, 1, 0.10)
@@ -99,13 +95,13 @@ func _add_menu_button(parent: VBoxContainer, caption: String, primary: bool, cal
 	parent.add_child(button)
 
 func _on_play_pressed() -> void:
-	_show_notice("A cena de jogo será conectada na próxima etapa.")
+	get_tree().change_scene_to_file("res://scenes/world.tscn")
 
 func _on_hud_pressed() -> void:
-	_show_notice("Editor de HUD: próxima etapa do protótipo.")
+	_show_notice("A HUD pode ser ajustada durante a partida. Mais opções serão adicionadas.")
 
 func _on_settings_pressed() -> void:
-	_show_notice("Configurações: próxima etapa do protótipo.")
+	_show_notice("Controles: WASD ou analógico para andar, mouse ou toque para olhar, clique/toque para quebrar e colocar blocos.")
 
 func _show_notice(message: String) -> void:
 	var dialog := AcceptDialog.new()
