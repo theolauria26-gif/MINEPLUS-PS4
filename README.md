@@ -13,6 +13,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Controles de teclado/mouse e botões virtuais de movimento para telas touch, com dimensionamento responsivo em telas estreitas.
 - Barra de seleção de seis blocos com botões touch e teclas 1–6, incluindo destaque visual do slot ativo.
 - Inventário inicial por pilhas: colocar consome blocos e quebrar recupera o material.
+- Pilhas limitadas a 999 unidades por material, proteção contra colocar blocos dentro do jogador e bloqueio de mineração quando a pilha está cheia.
 - Bancada de fabricação com receitas: 2 Terras + 1 Pedra produzem 2 Tijolos; 3 Pedras + 2 Tijolos fabricam uma picareta com 40 usos.
 - Sexto material (Tijolo) selecionável por toque e pela tecla 6.
 - Inventário visual acessível pelo botão INVENTÁRIO ou tecla E, com contagem dos materiais e durabilidade da picareta.
