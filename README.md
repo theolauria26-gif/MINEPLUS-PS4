@@ -15,6 +15,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Inventário inicial por pilhas: colocar consome blocos e quebrar recupera o material.
 - Pilhas limitadas a 999 unidades por material, proteção contra colocar blocos dentro do jogador e bloqueio de mineração quando a pilha está cheia.
 - Recuperação automática: ao cair abaixo do mapa, o jogador retorna ao ponto inicial com velocidade e câmera reiniciadas.
+- Receitas fabricadas são gravadas imediatamente no arquivo do mundo para reduzir perda de progresso.
 - Personalização da HUD: ajuste de opacidade entre 45% e 100%, salvo nas configurações e aplicado ao entrar no mundo.
 - Bancada de fabricação com receitas: 2 Terras + 1 Pedra produzem 2 Tijolos; 3 Pedras + 2 Tijolos fabricam uma picareta com 40 usos.
 - Sexto material (Tijolo) selecionável por toque e pela tecla 6.
