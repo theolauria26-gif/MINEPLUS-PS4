@@ -1,3 +1,4 @@
+#include <time.h>
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include <array>
