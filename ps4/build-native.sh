@@ -5,7 +5,7 @@ PS4_DIR="$ROOT/ps4"
 NATIVE="$PS4_DIR/native"
 STAGE="$PS4_DIR/staging"
 OUT="$PS4_DIR/out"
-TOOLCHAIN="\${OO_PS4_TOOLCHAIN:-}"
+TOOLCHAIN="${OO_PS4_TOOLCHAIN:-}"
 fail(){ echo "ERRO: $*" >&2; exit 1; }
 [[ -n "$TOOLCHAIN" && -d "$TOOLCHAIN" ]] || fail "Defina OO_PS4_TOOLCHAIN para OpenOrbis v0.5.4."
 for tool in clang++ ld.lld make python3; do command -v "$tool" >/dev/null || fail "Ferramenta ausente: $tool"; done
@@ -49,7 +49,7 @@ cd "$STAGE"
 "$PKG" sfo_setentry sce_sys/param.sfo VERSION --type Utf8 --maxsize 8 --value 1.00
 FILES=(eboot.bin sce_sys/param.sfo sce_sys/icon0.png)
 for f in sce_module/*; do [[ ! -f "$f" ]] || FILES+=("$f"); done
-"$TOOLCHAIN/bin/linux/create-gp4" -out pkg.gp4 --content-id=IV0000-MNPX00001_00-MINEPLUS00000001 --files "\${FILES[*]}"
+"$TOOLCHAIN/bin/linux/create-gp4" -out pkg.gp4 --content-id=IV0000-MNPX00001_00-MINEPLUS00000001 --files "${FILES[*]}"
 "$PKG" pkg_build pkg.gp4 "$OUT"
 find "$OUT" -maxdepth 1 -type f -name '*.pkg' -print -quit | grep -q . || fail "Nenhum PKG foi gerado."
 echo "PKG criado em $OUT"
