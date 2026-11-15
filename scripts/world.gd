@@ -2,6 +2,7 @@ extends Node3D
 
 const WORLD_RADIUS := 9
 const BLOCK_SIZE := 1.0
+const MAX_STACK_SIZE := 999
 const BLOCK_COLORS := [
 	Color("#79b85a"), Color("#8b6548"), Color("#858b96"), Color("#c6ad72"), Color("#4e9d83"), Color("#b86f62")
 ]
@@ -578,7 +579,7 @@ func _craft_pickaxe() -> void:
 	status_label.text = "Picareta fabricada: 40 usos."
 
 func _craft_bricks() -> void:
-	if block_counts[1] < 2 or block_counts[2] < 1:
+	if block_counts[1] < 2 or block_counts[2] < 1 or block_counts[5] > MAX_STACK_SIZE - 2:
 		status_label.text = "Faltam materiais: 2 Terra e 1 Pedra."
 		return
 	block_counts[1] -= 2
@@ -644,7 +645,7 @@ func _load_world() -> void:
 		saved_selected_block = clampi(int(parsed["selected_block"]), 0, BLOCK_NAMES.size() - 1)
 	if parsed.has("inventory") and parsed["inventory"] is Array and parsed["inventory"].size() > 0:
 		for i in range(mini(BLOCK_NAMES.size(), parsed["inventory"].size())):
-			block_counts[i] = maxi(0, int(parsed["inventory"][i]))
+			block_counts[i] = clampi(int(parsed["inventory"][i]), 0, MAX_STACK_SIZE)
 	for entry in parsed["blocks"]:
 		if entry is Array and entry.size() == 4:
 			_add_block(Vector3i(int(entry[0]), int(entry[1]), int(entry[2])), clampi(int(entry[3]), 0, BLOCK_COLORS.size() - 1))
@@ -736,16 +737,29 @@ func _interact(place: bool) -> void:
 	if place:
 		var normal: Vector3 = hit.normal
 		var target := cell + Vector3i(roundi(normal.x), roundi(normal.y), roundi(normal.z))
-		if target.y >= 1 and not blocks.has(target) and block_counts[selected_block] > 0:
-			_add_block(target, selected_block)
-			block_counts[selected_block] -= 1
-			_update_hotbar()
+		if target.y < 1 or blocks.has(target) or block_counts[selected_block] <= 0:
+			return
+		var target_center := Vector3(target) * BLOCK_SIZE
+		var player_center := player.global_position + Vector3.UP * 0.9
+		if absf(target_center.x - player_center.x) < 0.68 and absf(target_center.z - player_center.z) < 0.68 and absf(target_center.y - player_center.y) < 1.35:
+			if status_label:
+				status_label.text = "Não é possível colocar um bloco dentro do jogador."
+			return
+		_add_block(target, selected_block)
+		block_counts[selected_block] -= 1
+		_update_hotbar()
 	else:
 		if cell.y >= 0:
 			var block_type := int(body.get_meta("block_type"))
-			if block_type == 2 or block_type == 5:
+			if block_counts[block_type] >= MAX_STACK_SIZE:
+				if status_label:
+					status_label.text = "Pilha cheia: máximo de %d por material." % MAX_STACK_SIZE
+				return
+			var used_pickaxe := block_type == 2 or block_type == 5
+			if used_pickaxe:
 				if pickaxe_durability <= 0:
-					status_label.text = "Precisa de uma picareta para minerar este bloco."
+					if status_label:
+						status_label.text = "Precisa de uma picareta para minerar este bloco."
 					return
 				pickaxe_durability -= 1
 				_animate_pickaxe_swing()
@@ -755,7 +769,7 @@ func _interact(place: bool) -> void:
 			_remove_block(cell)
 			_update_hotbar()
 			_refresh_inventory()
-			if pickaxe_durability == 0:
+			if used_pickaxe and pickaxe_durability == 0 and status_label:
 				status_label.text = "Sua picareta quebrou. Fabrique outra na bancada."
 
 func _notification(what: int) -> void:
