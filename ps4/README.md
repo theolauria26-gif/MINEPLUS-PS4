@@ -23,21 +23,20 @@ Para PS4 desbloqueado, a rota homebrew aberta é o **OpenOrbis PS4 Toolchain**. 
 
 ## Requisitos para empacotar
 
-1. Instalar o OpenOrbis PS4 Toolchain no computador de compilação e configurar `OO_PS4_TOOLCHAIN`.
-2. Ter um port nativo PS4 do MINEPLUS que gere `ps4/staging/eboot.bin`.
-3. Colocar `ps4/staging/sce_sys/icon0.png` (PNG RGB 512×512, sem alpha).
-4. Executar no Linux:
+1. Instalar o OpenOrbis PS4 Toolchain v0.5.4 e configurar `OO_PS4_TOOLCHAIN` para a pasta extraída.
+2. Instalar `clang++`, `ld.lld`, `make`, Python 3 e o runtime .NET necessário ao `PkgTool.Core`.
+3. Executar no Linux:
 
 ```bash
 export OO_PS4_TOOLCHAIN="/caminho/para/OpenOrbis-PS4-Toolchain"
-bash ps4/package.sh
+bash ps4/build-native.sh
 ```
 
-O script cria o SFO e o GP4 e chama o empacotador do OpenOrbis. O identificador de conteúdo e o Title ID podem ser substituídos pelas variáveis `PKG_CONTENT_ID` e `PKG_TITLE_ID`; os valores padrão são identificadores de homebrew de desenvolvimento e devem ser conferidos antes de distribuir.
+O script compila o cliente nativo, cria `eboot.bin`, gera o ícone RGB 512×512, cria SFO/GP4 e empacota o PKG em `ps4/out/`. O workflow `.github/workflows/ps4-native.yml` também tenta fazer esse build automaticamente e publica o PKG como artefato do GitHub Actions.
 
 ## Bloqueio técnico que ainda falta
 
-O passo principal é portar o runtime do jogo. O OpenOrbis não executa projetos Godot/GDScript por si só. É necessário um runtime/port de Godot compatível com PS4 ou reimplementar o cliente usando APIs nativas/SDL2 para PS4, incluindo renderização, input, áudio, arquivos e ciclo de vida. Sem esse EBOOT legítimo, qualquer PKG produzido seria apenas um pacote inválido/incompleto; este repositório não fabrica um falso PKG.
+O cliente nativo inicial já foi iniciado em SDL2, mas ainda é um protótipo 2D simplificado e não uma conversão do jogo Godot 3D. O próximo trabalho é expandir o port (mundo 3D, inventário/crafting, saves, áudio e controles) e testar o PKG em hardware real. O Godot/GDScript original não é executado pelo EBOOT nativo.
 
 Referências:
 - OpenOrbis Toolchain: https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain
