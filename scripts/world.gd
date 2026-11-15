@@ -515,7 +515,8 @@ func _add_craft_button(hud: CanvasLayer) -> void:
 func _show_crafting() -> void:
 	var dialog := Window.new()
 	dialog.title = "BANCADA DE FABRICAÇÃO"
-	dialog.size = Vector2i(420, 250)
+	var viewport_size := get_viewport().get_visible_rect().size
+	dialog.size = Vector2i(int(minf(420.0, viewport_size.x - 24.0)), int(minf(270.0, viewport_size.y - 40.0)))
 	dialog.close_requested.connect(dialog.hide)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
