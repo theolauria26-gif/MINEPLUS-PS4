@@ -20,6 +20,7 @@ var pitch := 0.0
 var touch_look_active := false
 var inventory_panel: PanelContainer
 var inventory_grid: GridContainer
+var inventory_panel_width := 460.0
 var inventory_tool_label: Label
 var look_sensitivity := 0.0025
 var configured_fov := 78.0
@@ -326,6 +327,7 @@ func _create_inventory_panel(hud: CanvasLayer) -> void:
 	inventory_panel.set_anchors_preset(Control.PRESET_CENTER)
 	var viewport_size := get_viewport().get_visible_rect().size
 	var panel_width := minf(460.0, viewport_size.x - 20.0)
+	inventory_panel_width = panel_width
 	var panel_height := minf(380.0, viewport_size.y - 40.0)
 	inventory_panel.position = Vector2(-panel_width * 0.5, -panel_height * 0.5)
 	inventory_panel.size = Vector2(panel_width, panel_height)
@@ -393,7 +395,7 @@ func _refresh_inventory() -> void:
 		item.add_theme_stylebox_override("panel", item_style)
 		var label := Label.new()
 		label.text = "  %s\n  Quantidade: %d" % [BLOCK_NAMES[i], block_counts[i]]
-		var item_width := (panel_width - 55.0) / float(inventory_grid.columns)
+		var item_width := (inventory_panel_width - 55.0) / float(inventory_grid.columns)
 		label.custom_minimum_size = Vector2(item_width, 48)
 		label.add_theme_color_override("font_color", BLOCK_COLORS[i])
 		item.add_child(label)
