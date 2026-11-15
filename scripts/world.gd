@@ -9,6 +9,7 @@ const BLOCK_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo"]
 
 var blocks: Dictionary = {}
 var selected_block := 0
+var block_counts: Array[int] = [64, 64, 32, 32, 16]
 var player: CharacterBody3D
 var camera: Camera3D
 var hotbar_label: Label
@@ -220,7 +221,7 @@ func _save_world() -> void:
 	var saved_blocks: Array = []
 	for cell in blocks.keys():
 		saved_blocks.append([cell.x, cell.y, cell.z, int(blocks[cell].get_meta("block_type"))])
-	var payload := {"version": 1, "blocks": saved_blocks}
+	var payload := {"version": 1, "blocks": saved_blocks, "inventory": block_counts}
 	var file := FileAccess.open("user://mineplus_world.json", FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(payload))
@@ -240,6 +241,9 @@ func _load_world() -> void:
 	for body in blocks.values():
 		body.queue_free()
 	blocks.clear()
+	if parsed.has("inventory") and parsed["inventory"] is Array and parsed["inventory"].size() == BLOCK_NAMES.size():
+		for i in range(BLOCK_NAMES.size()):
+			block_counts[i] = maxi(0, int(parsed["inventory"][i]))
 	for entry in parsed["blocks"]:
 		if entry is Array and entry.size() == 4:
 			_add_block(Vector3i(int(entry[0]), int(entry[1]), int(entry[2])), clampi(int(entry[3]), 0, BLOCK_COLORS.size() - 1))
@@ -256,7 +260,7 @@ func _add_hold_button(parent: HBoxContainer, caption: String, action: String) ->
 
 func _update_hotbar() -> void:
 	if hotbar_label:
-		hotbar_label.text = "  1 GRAMA     2 TERRA     3 PEDRA     4 AREIA     5 MUSGO   |   SELECIONADO: " + BLOCK_NAMES[selected_block].to_upper()
+		hotbar_label.text = "  1 GRAMA     2 TERRA     3 PEDRA     4 AREIA     5 MUSGO   |   " + BLOCK_NAMES[selected_block].to_upper() + " x" + str(block_counts[selected_block])
 
 func _physics_process(delta: float) -> void:
 	if player == null:
@@ -321,11 +325,16 @@ func _interact(place: bool) -> void:
 	if place:
 		var normal: Vector3 = hit.normal
 		var target := cell + Vector3i(roundi(normal.x), roundi(normal.y), roundi(normal.z))
-		if target.y >= 1 and not blocks.has(target):
+		if target.y >= 1 and not blocks.has(target) and block_counts[selected_block] > 0:
 			_add_block(target, selected_block)
+			block_counts[selected_block] -= 1
+			_update_hotbar()
 	else:
 		if cell.y >= 0:
+			var block_type := int(body.get_meta("block_type"))
+			block_counts[block_type] += 1
 			_remove_block(cell)
+			_update_hotbar()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
