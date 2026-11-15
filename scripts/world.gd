@@ -55,6 +55,19 @@ func _generate_world() -> void:
 		for z in range(-2, 3):
 			if abs(x) == 2 or abs(z) == 2:
 				_add_block(Vector3i(x, 1, z), 1)
+	_add_tree(Vector3i(-5, 1, -4))
+	_add_tree(Vector3i(5, 1, -5))
+	_add_tree(Vector3i(-6, 1, 5))
+	_add_tree(Vector3i(6, 1, 4))
+
+func _add_tree(base: Vector3i) -> void:
+	for y in range(3):
+		_add_block(base + Vector3i(0, y, 0), 1)
+	for x in range(-2, 3):
+		for z in range(-2, 3):
+			for y in range(2, 4):
+				if abs(x) + abs(z) < 4:
+					_add_block(base + Vector3i(x, y, z), 4)
 
 func _add_block(cell: Vector3i, block_type: int) -> void:
 	if blocks.has(cell):
@@ -148,6 +161,20 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 	_add_hold_button(move_box, "▲", "move_forward")
 	_add_hold_button(move_box, "▼", "move_back")
 	_add_hold_button(move_box, "▶", "move_right")
+	var break_button := Button.new()
+	break_button.text = "QUEBRAR"
+	break_button.position = Vector2(-218, -112)
+	break_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	break_button.custom_minimum_size = Vector2(96, 54)
+	break_button.pressed.connect(func(): _interact(false))
+	hud.add_child(break_button)
+	var place_button := Button.new()
+	place_button.text = "COLOCAR"
+	place_button.position = Vector2(-322, -112)
+	place_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	place_button.custom_minimum_size = Vector2(96, 54)
+	place_button.pressed.connect(func(): _interact(true))
+	hud.add_child(place_button)
 	var jump := Button.new()
 	jump.text = "PULAR"
 	jump.position = Vector2(-112, -112)
