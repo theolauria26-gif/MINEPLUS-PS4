@@ -11,6 +11,8 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Cinco materiais básicos para construção.
 - HUD com mira, instruções e indicação do bloco selecionado.
 - Controles de teclado/mouse e botões virtuais de movimento para telas touch.
+- Barra de seleção de cinco blocos com botões touch e teclas 1–5.
+- Salvamento local do mundo em `user://mineplus_world.json`, com botão SALVAR MUNDO e salvamento ao fechar.
 - Renderizador Compatibility para favorecer dispositivos móveis e hardware limitado.
 
 ## Controles atuais
@@ -22,7 +24,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 | Olhar | Mouse | Arrastar no lado direito |
 | Quebrar bloco | Clique esquerdo | Botão QUEBRAR ou toque na área de jogo |
 | Colocar bloco | Clique direito | Botão COLOCAR |
-| Selecionar material | Teclas 1–5 | Em desenvolvimento |
+| Selecionar material | Teclas 1–5 | Botões da barra inferior |
 | Liberar mouse | Esc | — |
 
 ## Abrir o projeto
@@ -40,8 +42,8 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 
 ## Próximas etapas
 
-- Melhorar controles touch e interação de colocação.
-- Inventário funcional, salvamento e carregamento de mundos.
+- Inventário com quantidades, receitas e interface de gerenciamento.
+- Testar e refinar controles touch, salvamento e carregamento em dispositivo real.
 - Geração de terreno e árvores básicas já implementadas; recursos e biomas ainda pendentes.
 - Animações, áudio, opções gráficas e otimização.
 - Pipeline de exportação Android e validação em dispositivo.
