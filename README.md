@@ -17,7 +17,8 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Sexto material (Tijolo) selecionável por toque e pela tecla 6.
 - Inventário visual acessível pelo botão INVENTÁRIO ou tecla E, com contagem dos materiais e durabilidade da picareta.
 - Picareta visível em primeira pessoa, com animação de golpe e durabilidade: minerar Pedra e Tijolo consome um uso; a ferramenta e sua durabilidade são salvas.
-- Configurações de FOV e sensibilidade da câmera, ajustáveis no lobby e persistidas em `user://mineplus_settings.cfg`.
+- Configurações de FOV, sensibilidade da câmera e qualidade gráfica (baixa/equilibrada/alta), ajustáveis no lobby e persistidas em `user://mineplus_settings.cfg`.
+- Perfil baixo desativa sombras dinâmicas; o perfil alto ativa sombras para dispositivos compatíveis.
 - Quatro opções de aparência de personagem, com braços visíveis em primeira pessoa e escolha salva nas configurações.
 - Três slots independentes de mundo, selecionáveis nas configurações; o primeiro mantém compatibilidade com o save antigo.
 - Salvamento automático a cada 45 segundos e ao pausar o aplicativo, além do botão manual.
@@ -55,5 +56,5 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Mais receitas, categorias de itens e slots de equipamento no inventário.
 - Testar e refinar controles touch, salvamento e carregamento em dispositivo real; validar os três slots.
 - Geração de terreno e árvores básicas já implementadas; recursos e biomas ainda pendentes.
-- Modelos completos de personagem, animações de movimento adicionais, áudio, opções gráficas adicionais e otimização por chunks.
+- Modelo completo de personagem, animações de movimento adicionais, áudio e otimização avançada por chunks.
 - Pipeline de exportação Android e validação em dispositivo.
