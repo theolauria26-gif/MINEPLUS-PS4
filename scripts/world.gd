@@ -26,6 +26,7 @@ var pickaxe_durability := 0
 var block_textures: Array[Texture2D] = []
 var walk_animation_time := 0.0
 var camera_base_height := 1.55
+var world_slot := 1
 var autosave_elapsed := 0.0
 const AUTOSAVE_INTERVAL := 45.0
 var selected_skin := 0
@@ -395,6 +396,7 @@ func _load_settings() -> void:
 		look_sensitivity = clampf(float(config.get_value("controls", "sensitivity", 0.0025)), 0.0008, 0.008)
 		configured_fov = clampf(float(config.get_value("graphics", "fov", 78.0)), 60.0, 100.0)
 		selected_skin = clampi(int(config.get_value("appearance", "skin", 0)), 0, SKIN_COLORS.size() - 1)
+		world_slot = clampi(int(config.get_value("world", "slot", 1)), 1, 3)
 
 func _add_save_button(hud: CanvasLayer) -> void:
 	var save_button := Button.new()
@@ -488,12 +490,17 @@ func _process(delta: float) -> void:
 		autosave_elapsed = 0.0
 		_save_world(true)
 
+func _world_save_path() -> String:
+	if world_slot == 1:
+		return "user://mineplus_world.json"
+	return "user://mineplus_world_%d.json" % world_slot
+
 func _save_world(silent: bool = false) -> void:
 	var saved_blocks: Array = []
 	for cell in blocks.keys():
 		saved_blocks.append([cell.x, cell.y, cell.z, int(blocks[cell].get_meta("block_type"))])
 	var payload := {"version": 2, "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability}
-	var file := FileAccess.open("user://mineplus_world.json", FileAccess.WRITE)
+	var file := FileAccess.open(_world_save_path(), FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(payload))
 		if not silent and status_label:
@@ -502,9 +509,9 @@ func _save_world(silent: bool = false) -> void:
 		status_label.text = "Não foi possível salvar o mundo."
 
 func _load_world() -> void:
-	if not FileAccess.file_exists("user://mineplus_world.json"):
+	if not FileAccess.file_exists(_world_save_path()):
 		return
-	var file := FileAccess.open("user://mineplus_world.json", FileAccess.READ)
+	var file := FileAccess.open(_world_save_path(), FileAccess.READ)
 	if file == null:
 		return
 	var parsed = JSON.parse_string(file.get_as_text())
