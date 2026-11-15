@@ -16,7 +16,7 @@ jobs:
       - name: Install .NET runtime for LibOrbisPkg
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 3.1.x
+          dotnet-version: 6.0.x
       - name: Download OpenOrbis v0.5.4
         run: |
           mkdir -p "$RUNNER_TEMP/openorbis"
@@ -28,7 +28,7 @@ jobs:
           OO_PS4_TOOLCHAIN: \${{ runner.temp }}/openorbis
         run: |
           chmod +x ps4/build-native.sh
-          ps4/build-native.sh
+          DOTNET_ROLL_FORWARD=Major ps4/build-native.sh
       - name: Upload installable PKG
         uses: actions/upload-artifact@v4
         with:
