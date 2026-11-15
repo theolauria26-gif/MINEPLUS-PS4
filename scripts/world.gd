@@ -434,7 +434,7 @@ func _create_pause_menu(hud: CanvasLayer) -> void:
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	pause_layer.add_child(center)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(320, 270)
+	panel.custom_minimum_size = Vector2(minf(320.0, get_viewport().get_visible_rect().size.x - 32.0), 270)
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color("#101720")
 	panel_style.border_color = Color("#8ee3b1")
