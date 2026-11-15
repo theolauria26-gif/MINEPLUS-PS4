@@ -110,7 +110,7 @@ func _on_settings_pressed() -> void:
 	dialog.dialog_text = "Ajuste a experiência de jogo:"
 	var stack := VBoxContainer.new()
 	var settings_width := minf(380.0, get_viewport().get_visible_rect().size.x - 48.0)
-	stack.custom_minimum_size = Vector2(settings_width, 280)
+	stack.custom_minimum_size = Vector2(settings_width, 330)
 	dialog.add_child(stack)
 	var fov_label := Label.new()
 	fov_label.text = "Campo de visão (FOV)"
@@ -153,9 +153,20 @@ func _on_settings_pressed() -> void:
 	world_choice.select(clampi(int(config.get_value("world", "slot", 1)) - 1, 0, 2))
 	world_choice.custom_minimum_size.x = settings_width - 20.0
 	stack.add_child(world_choice)
+	var quality_label := Label.new()
+	quality_label.text = "Qualidade gráfica"
+	stack.add_child(quality_label)
+	var quality := OptionButton.new()
+	quality.add_item("Baixa  •  melhor desempenho")
+	quality.add_item("Equilibrada")
+	quality.add_item("Alta  •  sombras")
+	quality.select(clampi(int(config.get_value("graphics", "quality", 1)), 0, 2))
+	quality.custom_minimum_size.x = settings_width - 20.0
+	stack.add_child(quality)
 	dialog.confirmed.connect(func():
 		var saved := ConfigFile.new()
 		saved.set_value("graphics", "fov", fov.value)
+		saved.set_value("graphics", "quality", quality.selected)
 		saved.set_value("controls", "sensitivity", sensitivity.value)
 		saved.set_value("appearance", "skin", skin.selected)
 		saved.set_value("world", "slot", world_choice.selected + 1)
