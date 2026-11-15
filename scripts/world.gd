@@ -687,11 +687,28 @@ func _physics_process(delta: float) -> void:
 	elif Input.is_action_just_pressed("jump") or Input.is_key_pressed(KEY_SPACE):
 		player.velocity.y = 7.0
 	player.move_and_slide()
+	if player.global_position.y < -20.0:
+		_respawn_player()
+		return
 	if player.is_on_floor() and Vector2(player.velocity.x, player.velocity.z).length() > 0.15:
 		walk_animation_time += delta * 10.0
 		camera.position.y = camera_base_height + sin(walk_animation_time) * 0.035
 	else:
 		camera.position.y = lerpf(camera.position.y, camera_base_height, minf(delta * 8.0, 1.0))
+
+func _respawn_player() -> void:
+	if player == null:
+		return
+	player.global_position = Vector3(0, 2.4, 5)
+	player.velocity = Vector3.ZERO
+	player.rotation.y = 0.0
+	pitch = 0.0
+	if camera:
+		camera.rotation = Vector3.ZERO
+		camera.position.y = camera_base_height
+	if status_label:
+		status_label.text = "Você caiu do mundo e voltou ao ponto inicial."
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
