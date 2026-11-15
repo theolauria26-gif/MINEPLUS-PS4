@@ -17,7 +17,7 @@ Para PS4 desbloqueado, a rota homebrew aberta é o **OpenOrbis PS4 Toolchain**. 
 
 ## O que já está preparado neste repositório
 
-- `package.sh`: valida as ferramentas OpenOrbis, o EBOOT e o ícone; cria `param.sfo`, `pkg.gp4` e tenta gerar o PKG.
+- `package.sh`: atalho compatível que chama `build-native.sh` para compilar e empacotar o cliente nativo.
 - Pasta de entrada: `ps4/staging/`.
 - Saída: `ps4/out/`.
 
