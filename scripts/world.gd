@@ -16,8 +16,13 @@ var hotbar_label: Label
 var status_label: Label
 var pitch := 0.0
 var touch_look_active := false
+var inventory_panel: PanelContainer
+var inventory_grid: GridContainer
+var look_sensitivity := 0.0025
+var configured_fov := 78.0
 
 func _ready() -> void:
+	_load_settings()
 	_setup_environment()
 	_generate_world()
 	_load_world()
@@ -116,7 +121,7 @@ func _create_player() -> void:
 	camera = Camera3D.new()
 	camera.position.y = 1.55
 	camera.current = true
-	camera.fov = 78
+	camera.fov = configured_fov
 	player.add_child(camera)
 	add_child(player)
 
@@ -155,6 +160,8 @@ func _create_hud() -> void:
 	_add_hotbar_buttons(hud)
 	_add_save_button(hud)
 	_add_craft_button(hud)
+	_add_inventory_button(hud)
+	_create_inventory_panel(hud)
 
 func _add_touch_controls(hud: CanvasLayer) -> void:
 	var move_box := HBoxContainer.new()
@@ -208,6 +215,89 @@ func _add_hotbar_buttons(hud: CanvasLayer) -> void:
 func _select_block(index: int) -> void:
 	selected_block = clampi(index, 0, BLOCK_NAMES.size() - 1)
 	_update_hotbar()
+
+func _add_inventory_button(hud: CanvasLayer) -> void:
+	var button := Button.new()
+	button.text = "INVENTÁRIO"
+	button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	button.position = Vector2(166, 76)
+	button.custom_minimum_size = Vector2(132, 42)
+	button.pressed.connect(_toggle_inventory)
+	hud.add_child(button)
+
+func _create_inventory_panel(hud: CanvasLayer) -> void:
+	inventory_panel = PanelContainer.new()
+	inventory_panel.set_anchors_preset(Control.PRESET_CENTER)
+	inventory_panel.position = Vector2(-230, -190)
+	inventory_panel.size = Vector2(460, 380)
+	inventory_panel.visible = false
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.035, 0.045, 0.06, 0.96)
+	style.border_color = Color("#8ee3b1")
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(16)
+	style.content_margin_left = 18
+	style.content_margin_right = 18
+	style.content_margin_top = 16
+	style.content_margin_bottom = 16
+	inventory_panel.add_theme_stylebox_override("panel", style)
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 12)
+	inventory_panel.add_child(stack)
+	var heading := Label.new()
+	heading.text = "INVENTÁRIO"
+	heading.add_theme_font_size_override("font_size", 22)
+	heading.add_theme_color_override("font_color", Color("#8ee3b1"))
+	stack.add_child(heading)
+	var hint := Label.new()
+	hint.text = "Materiais coletados e disponíveis para construção"
+	hint.add_theme_font_size_override("font_size", 12)
+	stack.add_child(hint)
+	inventory_grid = GridContainer.new()
+	inventory_grid.columns = 2
+	inventory_grid.add_theme_constant_override("h_separation", 10)
+	inventory_grid.add_theme_constant_override("v_separation", 8)
+	stack.add_child(inventory_grid)
+	var close := Button.new()
+	close.text = "FECHAR  [E]"
+	close.pressed.connect(_toggle_inventory)
+	stack.add_child(close)
+	hud.add_child(inventory_panel)
+	_refresh_inventory()
+
+func _toggle_inventory() -> void:
+	if inventory_panel == null:
+		return
+	inventory_panel.visible = not inventory_panel.visible
+	if inventory_panel.visible:
+		_refresh_inventory()
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	elif not OS.has_feature("mobile"):
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func _refresh_inventory() -> void:
+	if inventory_grid == null:
+		return
+	for child in inventory_grid.get_children():
+		child.queue_free()
+	for i in range(BLOCK_NAMES.size()):
+		var item := PanelContainer.new()
+		var item_style := StyleBoxFlat.new()
+		item_style.bg_color = Color(1, 1, 1, 0.055)
+		item_style.set_corner_radius_all(9)
+		item.add_theme_stylebox_override("panel", item_style)
+		var label := Label.new()
+		label.text = "  %s\\n  Quantidade: %d" % [BLOCK_NAMES[i], block_counts[i]]
+		label.custom_minimum_size = Vector2(185, 48)
+		label.add_theme_color_override("font_color", BLOCK_COLORS[i])
+		item.add_child(label)
+		inventory_grid.add_child(item)
+
+func _load_settings() -> void:
+	var config := ConfigFile.new()
+	if config.load("user://mineplus_settings.cfg") == OK:
+		look_sensitivity = clampf(float(config.get_value("controls", "sensitivity", 0.0025)), 0.0008, 0.008)
+		configured_fov = clampf(float(config.get_value("graphics", "fov", 78.0)), 60.0, 100.0)
 
 func _add_save_button(hud: CanvasLayer) -> void:
 	var save_button := Button.new()
@@ -327,6 +417,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed:
 		if event.keycode == KEY_ESCAPE:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		elif event.keycode == KEY_E:
+			_toggle_inventory()
 		elif event.keycode >= KEY_1 and event.keycode <= KEY_6:
 			_select_block(event.keycode - KEY_1)
 		elif event.keycode == KEY_SPACE:
@@ -336,8 +428,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_interact(false)
 
 func _rotate_view(relative: Vector2) -> void:
-	player.rotate_y(-relative.x * 0.0025)
-	pitch = clampf(pitch - relative.y * 0.0025, -1.45, 1.45)
+	player.rotate_y(-relative.x * look_sensitivity)
+	pitch = clampf(pitch - relative.y * look_sensitivity, -1.45, 1.45)
 	camera.rotation.x = pitch
 
 func _interact(place: bool) -> void:
@@ -365,6 +457,7 @@ func _interact(place: bool) -> void:
 			block_counts[block_type] += 1
 			_remove_block(cell)
 			_update_hotbar()
+			_refresh_inventory()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
