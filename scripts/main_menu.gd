@@ -99,7 +99,53 @@ func _on_play_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/world.tscn")
 
 func _on_hud_pressed() -> void:
-	_show_notice("Durante a partida, use os botões da HUD. O inventário abre pela tecla E ou pelo botão INVENTÁRIO.")
+	var config := ConfigFile.new()
+	config.load("user://mineplus_settings.cfg")
+	var dialog := Window.new()
+	dialog.title = "PERSONALIZAR HUD"
+	dialog.size = Vector2i(380, 210)
+	dialog.close_requested.connect(dialog.hide)
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_bottom", 18)
+	dialog.add_child(margin)
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 12)
+	margin.add_child(stack)
+	var description := Label.new()
+	description.text = "Transparência dos elementos da interface"
+	stack.add_child(description)
+	var opacity := HSlider.new()
+	opacity.min_value = 0.45
+	opacity.max_value = 1.0
+	opacity.step = 0.05
+	opacity.value = clampf(float(config.get_value("hud", "opacity", 1.0)), 0.45, 1.0)
+	opacity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stack.add_child(opacity)
+	var value_label := Label.new()
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value_label.text = "%d%% de opacidade" % roundi(opacity.value * 100.0)
+	opacity.value_changed.connect(func(value: float):
+		value_label.text = "%d%% de opacidade" % roundi(value * 100.0)
+	)
+	stack.add_child(value_label)
+	var save_button := Button.new()
+	save_button.text = "SALVAR"
+	save_button.pressed.connect(func():
+		config.set_value("hud", "opacity", opacity.value)
+		var result := config.save("user://mineplus_settings.cfg")
+		dialog.hide()
+		if result == OK:
+			_show_notice("Opacidade salva. Entre novamente no mundo para aplicar.")
+		else:
+			_show_notice("Não foi possível salvar a opacidade da HUD.")
+	)
+	stack.add_child(save_button)
+	add_child(dialog)
+	dialog.popup_centered()
 
 func _on_settings_pressed() -> void:
 	var config := ConfigFile.new()
