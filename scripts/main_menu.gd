@@ -108,7 +108,7 @@ func _on_settings_pressed() -> void:
 	dialog.ok_button_text = "SALVAR"
 	dialog.dialog_text = "Ajuste a experiência de jogo:"
 	var stack := VBoxContainer.new()
-	stack.custom_minimum_size = Vector2(360, 130)
+	stack.custom_minimum_size = Vector2(380, 230)
 	dialog.add_child(stack)
 	var fov_label := Label.new()
 	fov_label.text = "Campo de visão (FOV)"
