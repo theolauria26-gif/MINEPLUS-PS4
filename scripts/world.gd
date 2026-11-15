@@ -12,6 +12,7 @@ var selected_block := 0
 var block_counts: Array[int] = [64, 64, 32, 32, 16, 0]
 var player: CharacterBody3D
 var camera: Camera3D
+var pickaxe_visual: Node3D
 var hotbar_label: Label
 var status_label: Label
 var pitch := 0.0
@@ -157,6 +158,7 @@ func _create_player() -> void:
 	camera.fov = configured_fov
 	player.add_child(camera)
 	_create_first_person_arms()
+	_create_pickaxe_visual()
 	add_child(player)
 
 func _create_first_person_arms() -> void:
@@ -172,6 +174,40 @@ func _create_first_person_arms() -> void:
 		arm.position = Vector3(side * 0.34, -0.43, -0.52)
 		arm.rotation_degrees.z = side * -12.0
 		camera.add_child(arm)
+
+func _create_pickaxe_visual() -> void:
+	pickaxe_visual = Node3D.new()
+	pickaxe_visual.position = Vector3(0.38, -0.36, -0.62)
+	pickaxe_visual.rotation_degrees = Vector3(-18, -24, -18)
+	pickaxe_visual.visible = pickaxe_durability > 0
+	camera.add_child(pickaxe_visual)
+	var handle := MeshInstance3D.new()
+	var handle_mesh := BoxMesh.new()
+	handle_mesh.size = Vector3(0.075, 0.48, 0.075)
+	handle.mesh = handle_mesh
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color("#815331")
+	handle.material_override = wood
+	handle.position.y = -0.06
+	pickaxe_visual.add_child(handle)
+	var head := MeshInstance3D.new()
+	var head_mesh := BoxMesh.new()
+	head_mesh.size = Vector3(0.34, 0.12, 0.12)
+	head.mesh = head_mesh
+	var metal := StandardMaterial3D.new()
+	metal.albedo_color = Color("#aeb9c4")
+	metal.metallic = 0.72
+	metal.roughness = 0.3
+	head.material_override = metal
+	head.position.y = 0.16
+	pickaxe_visual.add_child(head)
+
+func _animate_pickaxe_swing() -> void:
+	if pickaxe_visual == null or not pickaxe_visual.visible:
+		return
+	var tween := create_tween()
+	tween.tween_property(pickaxe_visual, "rotation_degrees", Vector3(-62, -4, -30), 0.08)
+	tween.tween_property(pickaxe_visual, "rotation_degrees", Vector3(-18, -24, -18), 0.12)
 
 func _create_hud() -> void:
 	var hud := CanvasLayer.new()
@@ -427,6 +463,8 @@ func _craft_pickaxe() -> void:
 	block_counts[2] -= 3
 	block_counts[5] -= 2
 	pickaxe_durability = 40
+	if pickaxe_visual:
+		pickaxe_visual.visible = true
 	_update_hotbar()
 	_refresh_inventory()
 	status_label.text = "Picareta fabricada: 40 usos."
@@ -572,6 +610,9 @@ func _interact(place: bool) -> void:
 					status_label.text = "Precisa de uma picareta para minerar este bloco."
 					return
 				pickaxe_durability -= 1
+				_animate_pickaxe_swing()
+				if pickaxe_durability == 0 and pickaxe_visual:
+					pickaxe_visual.visible = false
 			block_counts[block_type] += 1
 			_remove_block(cell)
 			_update_hotbar()
