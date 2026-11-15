@@ -24,6 +24,7 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Três slots independentes de mundo, selecionáveis nas configurações; o primeiro mantém compatibilidade com o save antigo.
 - Salvamento automático a cada 45 segundos e ao pausar o aplicativo, além do botão manual.
 - Salvamento local do mundo em `user://mineplus_world.json`, com botão SALVAR MUNDO e salvamento ao fechar.
+- Save versão 3: também preserva posição do jogador, direção da câmera, inclinação vertical e material selecionado; saves antigos continuam carregando com valores padrão.
 - Renderizador Compatibility para favorecer dispositivos móveis e hardware limitado.
 
 ## Controles atuais
