@@ -51,5 +51,17 @@ FILES=(eboot.bin sce_sys/param.sfo sce_sys/icon0.png)
 for f in sce_module/*; do [[ ! -f "$f" ]] || FILES+=("$f"); done
 "$TOOLCHAIN/bin/linux/create-gp4" -out pkg.gp4 --content-id=IV0000-MNPX00001_00-MINEPLUS00000001 --files "${FILES[*]}"
 "$PKG" pkg_build pkg.gp4 "$OUT"
-find "$OUT" -maxdepth 1 -type f -name '*.pkg' -print -quit | grep -q . || fail "Nenhum PKG foi gerado."
-echo "PKG criado em $OUT"
+PKG_FILE="$(find "$OUT" -maxdepth 1 -type f -name '*.pkg' -print -quit)"
+[[ -n "$PKG_FILE" && -s "$PKG_FILE" ]] || fail "Nenhum PKG válido foi gerado."
+python3 - "$PKG_FILE" <<'PY'
+import os,sys
+path=sys.argv[1]
+with open(path,"rb") as f: magic=f.read(4)
+if magic != bytes.fromhex("7f434e54"):
+    raise SystemExit("ERRO: o arquivo gerado não possui assinatura PKG PS4 (7f434e54).")
+size=os.path.getsize(path)
+if size < 4096:
+    raise SystemExit("ERRO: PKG muito pequeno; pacote provavelmente incompleto.")
+print(f"PKG PS4 validado: {path} ({size} bytes)")
+PY
+echo "PKG criado em $PKG_FILE"
