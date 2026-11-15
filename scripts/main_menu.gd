@@ -130,10 +130,22 @@ func _on_settings_pressed() -> void:
 	sensitivity.value = float(config.get_value("controls", "sensitivity", 0.0025))
 	sensitivity.custom_minimum_size.x = 340
 	stack.add_child(sensitivity)
+	var skin_label := Label.new()
+	skin_label.text = "Aparência do personagem"
+	stack.add_child(skin_label)
+	var skin := OptionButton.new()
+	skin.add_item("Clássica")
+	skin.add_item("Castanha")
+	skin.add_item("Clara")
+	skin.add_item("Lavanda")
+	skin.select(clampi(int(config.get_value("appearance", "skin", 0)), 0, 3))
+	skin.custom_minimum_size.x = 340
+	stack.add_child(skin)
 	dialog.confirmed.connect(func():
 		var saved := ConfigFile.new()
 		saved.set_value("graphics", "fov", fov.value)
 		saved.set_value("controls", "sensitivity", sensitivity.value)
+		saved.set_value("appearance", "skin", skin.selected)
 		var result := saved.save("user://mineplus_settings.cfg")
 		if result == OK:
 			_show_notice("Configurações salvas. Elas serão aplicadas ao iniciar uma partida.")
