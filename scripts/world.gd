@@ -26,6 +26,8 @@ var pickaxe_durability := 0
 var block_textures: Array[Texture2D] = []
 var walk_animation_time := 0.0
 var camera_base_height := 1.55
+var autosave_elapsed := 0.0
+const AUTOSAVE_INTERVAL := 45.0
 var selected_skin := 0
 const SKIN_COLORS := [Color("#d9a47c"), Color("#8b5a3c"), Color("#e7c7a5"), Color("#c8b0e8")]
 
@@ -480,7 +482,13 @@ func _craft_bricks() -> void:
 	_refresh_inventory()
 	status_label.text = "Fabricação concluída: +2 Tijolos."
 
-func _save_world() -> void:
+func _process(delta: float) -> void:
+	autosave_elapsed += delta
+	if autosave_elapsed >= AUTOSAVE_INTERVAL:
+		autosave_elapsed = 0.0
+		_save_world(true)
+
+func _save_world(silent: bool = false) -> void:
 	var saved_blocks: Array = []
 	for cell in blocks.keys():
 		saved_blocks.append([cell.x, cell.y, cell.z, int(blocks[cell].get_meta("block_type"))])
@@ -488,8 +496,9 @@ func _save_world() -> void:
 	var file := FileAccess.open("user://mineplus_world.json", FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(payload))
-		status_label.text = "Mundo salvo neste dispositivo."
-	else:
+		if not silent and status_label:
+			status_label.text = "Mundo salvo neste dispositivo."
+	elif not silent and status_label:
 		status_label.text = "Não foi possível salvar o mundo."
 
 func _load_world() -> void:
@@ -621,6 +630,6 @@ func _interact(place: bool) -> void:
 				status_label.text = "Sua picareta quebrou. Fabrique outra na bancada."
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED:
 		_save_world()
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
