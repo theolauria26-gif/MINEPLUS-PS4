@@ -20,8 +20,8 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 | Andar | WASD | Botões direcionais na tela |
 | Pular | Espaço | Botão PULAR |
 | Olhar | Mouse | Arrastar no lado direito |
-| Quebrar bloco | Clique esquerdo | Toque na área de jogo |
-| Colocar bloco | Clique direito | Em desenvolvimento |
+| Quebrar bloco | Clique esquerdo | Botão QUEBRAR ou toque na área de jogo |
+| Colocar bloco | Clique direito | Botão COLOCAR |
 | Selecionar material | Teclas 1–5 | Em desenvolvimento |
 | Liberar mouse | Esc | — |
 
@@ -42,6 +42,6 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 
 - Melhorar controles touch e interação de colocação.
 - Inventário funcional, salvamento e carregamento de mundos.
-- Geração de terreno, árvores e recursos.
+- Geração de terreno e árvores básicas já implementadas; recursos e biomas ainda pendentes.
 - Animações, áudio, opções gráficas e otimização.
 - Pipeline de exportação Android e validação em dispositivo.
