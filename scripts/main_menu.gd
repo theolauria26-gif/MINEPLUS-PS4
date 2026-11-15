@@ -108,7 +108,7 @@ func _on_settings_pressed() -> void:
 	dialog.ok_button_text = "SALVAR"
 	dialog.dialog_text = "Ajuste a experiência de jogo:"
 	var stack := VBoxContainer.new()
-	stack.custom_minimum_size = Vector2(380, 230)
+	stack.custom_minimum_size = Vector2(380, 280)
 	dialog.add_child(stack)
 	var fov_label := Label.new()
 	fov_label.text = "Campo de visão (FOV)"
@@ -141,11 +141,22 @@ func _on_settings_pressed() -> void:
 	skin.select(clampi(int(config.get_value("appearance", "skin", 0)), 0, 3))
 	skin.custom_minimum_size.x = 340
 	stack.add_child(skin)
+	var world_label := Label.new()
+	world_label.text = "Slot de mundo"
+	stack.add_child(world_label)
+	var world_choice := OptionButton.new()
+	world_choice.add_item("Mundo 1")
+	world_choice.add_item("Mundo 2")
+	world_choice.add_item("Mundo 3")
+	world_choice.select(clampi(int(config.get_value("world", "slot", 1)) - 1, 0, 2))
+	world_choice.custom_minimum_size.x = 340
+	stack.add_child(world_choice)
 	dialog.confirmed.connect(func():
 		var saved := ConfigFile.new()
 		saved.set_value("graphics", "fov", fov.value)
 		saved.set_value("controls", "sensitivity", sensitivity.value)
 		saved.set_value("appearance", "skin", skin.selected)
+		saved.set_value("world", "slot", world_choice.selected + 1)
 		var result := saved.save("user://mineplus_settings.cfg")
 		if result == OK:
 			_show_notice("Configurações salvas. Elas serão aplicadas ao iniciar uma partida.")
