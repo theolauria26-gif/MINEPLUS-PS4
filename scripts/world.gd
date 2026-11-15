@@ -23,6 +23,7 @@ var inventory_grid: GridContainer
 var inventory_tool_label: Label
 var look_sensitivity := 0.0025
 var configured_fov := 78.0
+var graphics_quality := 1
 var pickaxe_durability := 0
 var block_textures: Array[Texture2D] = []
 var walk_animation_time := 0.0
@@ -57,12 +58,13 @@ func _setup_environment() -> void:
 	env.sky.sky_material = sky_mat
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color("#b9cbd0")
-	env.ambient_light_energy = 0.75
+	env.ambient_light_energy = 0.7 + float(graphics_quality) * 0.1
 	world_env.environment = env
 	add_child(world_env)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-52, -28, 0)
-	sun.light_energy = 1.15
+	sun.light_energy = 1.0 + float(graphics_quality) * 0.1
+	sun.shadow_enabled = graphics_quality >= 2
 	add_child(sun)
 
 func _generate_world() -> void:
@@ -402,6 +404,7 @@ func _load_settings() -> void:
 	if config.load("user://mineplus_settings.cfg") == OK:
 		look_sensitivity = clampf(float(config.get_value("controls", "sensitivity", 0.0025)), 0.0008, 0.008)
 		configured_fov = clampf(float(config.get_value("graphics", "fov", 78.0)), 60.0, 100.0)
+		graphics_quality = clampi(int(config.get_value("graphics", "quality", 1)), 0, 2)
 		selected_skin = clampi(int(config.get_value("appearance", "skin", 0)), 0, SKIN_COLORS.size() - 1)
 		world_slot = clampi(int(config.get_value("world", "slot", 1)), 1, 3)
 
