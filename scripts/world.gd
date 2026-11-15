@@ -360,14 +360,16 @@ func _show_crafting() -> void:
 	dialog.title = "BANCADA DE FABRICAÇÃO"
 	dialog.size = Vector2i(420, 250)
 	dialog.close_requested.connect(dialog.hide)
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_bottom", 18)
+	dialog.add_child(margin)
 	var stack := VBoxContainer.new()
 	stack.add_theme_constant_override("separation", 12)
-	stack.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	stack.add_theme_constant_override("margin_left", 18)
-	stack.add_theme_constant_override("margin_right", 18)
-	stack.add_theme_constant_override("margin_top", 18)
-	stack.add_theme_constant_override("margin_bottom", 18)
-	dialog.add_child(stack)
+	margin.add_child(stack)
 	var description := Label.new()
 	description.text = "Escolha uma receita. Os materiais são descontados do inventário."
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
