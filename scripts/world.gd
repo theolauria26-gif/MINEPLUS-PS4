@@ -221,25 +221,26 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 	_add_hold_button(move_box, "▲", "move_forward")
 	_add_hold_button(move_box, "▼", "move_back")
 	_add_hold_button(move_box, "▶", "move_right")
+	var ui_scale := clampf(get_viewport().get_visible_rect().size.x / 720.0, 0.65, 1.0)
 	var break_button := Button.new()
 	break_button.text = "QUEBRAR"
-	break_button.position = Vector2(-218, -112)
+	break_button.position = Vector2(-218 * ui_scale, -112 * ui_scale)
 	break_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	break_button.custom_minimum_size = Vector2(96, 54)
+	break_button.custom_minimum_size = Vector2(96, 54) * ui_scale
 	break_button.pressed.connect(func(): _interact(false))
 	hud.add_child(break_button)
 	var place_button := Button.new()
 	place_button.text = "COLOCAR"
-	place_button.position = Vector2(-322, -112)
+	place_button.position = Vector2(-322 * ui_scale, -112 * ui_scale)
 	place_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	place_button.custom_minimum_size = Vector2(96, 54)
+	place_button.custom_minimum_size = Vector2(96, 54) * ui_scale
 	place_button.pressed.connect(func(): _interact(true))
 	hud.add_child(place_button)
 	var jump := Button.new()
 	jump.text = "PULAR"
-	jump.position = Vector2(-112, -112)
+	jump.position = Vector2(-112 * ui_scale, -112 * ui_scale)
 	jump.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	jump.custom_minimum_size = Vector2(88, 54)
+	jump.custom_minimum_size = Vector2(88, 54) * ui_scale
 	jump.button_down.connect(func(): Input.action_press("jump"))
 	jump.button_up.connect(func(): Input.action_release("jump"))
 	hud.add_child(jump)
@@ -247,16 +248,18 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 func _add_hotbar_buttons(hud: CanvasLayer) -> void:
 	var bar := HBoxContainer.new()
 	bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	bar.position = Vector2(-220, -126)
-	bar.size = Vector2(440, 42)
+	var viewport_width := get_viewport().get_visible_rect().size.x
+	var bar_width := minf(440.0, viewport_width - 16.0)
+	bar.position = Vector2(-bar_width * 0.5, -126)
+	bar.size = Vector2(bar_width, 42)
 	bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	bar.add_theme_constant_override("separation", 5)
 	hud.add_child(bar)
 	for i in range(BLOCK_NAMES.size()):
 		var slot := Button.new()
 		slot.text = str(i + 1) + " " + BLOCK_NAMES[i]
-		slot.custom_minimum_size = Vector2(68, 38)
-		slot.add_theme_font_size_override("font_size", 10)
+		slot.custom_minimum_size = Vector2((bar_width - 25.0) / 6.0, 38)
+		slot.add_theme_font_size_override("font_size", 9)
 		slot.pressed.connect(_select_block.bind(i))
 		bar.add_child(slot)
 
@@ -476,7 +479,7 @@ func _load_world() -> void:
 func _add_hold_button(parent: HBoxContainer, caption: String, action: String) -> void:
 	var button := Button.new()
 	button.text = caption
-	button.custom_minimum_size = Vector2(54, 54)
+	button.custom_minimum_size = Vector2(54, 54) * clampf(get_viewport().get_visible_rect().size.x / 720.0, 0.65, 1.0)
 	button.button_down.connect(func(): Input.action_press(action))
 	button.button_up.connect(func(): Input.action_release(action))
 	parent.add_child(button)
