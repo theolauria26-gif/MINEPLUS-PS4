@@ -87,7 +87,6 @@ bool ChunkCache::get(std::int32_t wx, std::int32_t wy, SurfaceSample& out) {
 
 bool ChunkCache::set_surface(std::int32_t wx, std::int32_t wy,
                              std::uint8_t tile) {
-    if (tile > MAX_TILE_ID) return false;
     const auto cx = ChunkGenerator::floor_div(wx, PcgWorld::CHUNK_SIZE);
     const auto cy = ChunkGenerator::floor_div(wy, PcgWorld::CHUNK_SIZE);
     auto* entry = acquire_chunk(cx, cy);
@@ -125,8 +124,6 @@ std::size_t ChunkCache::export_edits(Edit* output, std::size_t capacity) const {
 
 bool ChunkCache::import_edits(const Edit* edits, std::size_t count) {
     if ((count != 0 && !edits) || count > DELTA_CAPACITY) return false;
-    for (std::size_t i = 0; i < count; ++i)
-        if (edits[i].tile > MAX_TILE_ID) return false;
     // Validate the complete input before mutating the live journal.
     for (std::size_t i = 0; i < count; ++i) {
         for (std::size_t j = i + 1; j < count; ++j) {
