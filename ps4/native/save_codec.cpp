@@ -34,7 +34,6 @@ std::uint32_t checksum(const std::uint8_t* p, std::size_t n) {
 bool valid_edits(const std::vector<ChunkCache::Edit>& edits) {
     if(edits.size()>SaveCodec::MAX_EDITS) return false;
     for(std::size_t i=0;i<edits.size();++i) {
-        if(edits[i].tile>ChunkCache::MAX_TILE_ID) return false;
         for(std::size_t j=i+1;j<edits.size();++j)
             if(edits[i].x==edits[j].x && edits[i].y==edits[j].y) return false;
     }
