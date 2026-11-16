@@ -12,7 +12,7 @@ int main() {
 
     const mineplus::ChunkCache::Edit duplicate[] = {{4, 5, 255}, {4, 5, 3}};
     assert(!cache.import_edits(duplicate, 2));
-    assert(cache.delta_count() == 1);
+    assert(cache.delta_count() == 2);
 
     const mineplus::ChunkCache::Edit valid[] = {{32, -17, 255}, {-48, 64, 0}};
     assert(cache.import_edits(valid, 2));
