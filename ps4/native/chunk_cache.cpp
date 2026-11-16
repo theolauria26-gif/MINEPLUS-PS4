@@ -330,4 +330,10 @@ std::size_t ChunkCache::delta_count() const {
     return count;
 }
 
+std::size_t ChunkCache::voxel_delta_count() const {
+    std::size_t count = 0;
+    for (const auto& delta : voxel_deltas_) if (delta.valid) ++count;
+    return count;
+}
+
 } // namespace mineplus
