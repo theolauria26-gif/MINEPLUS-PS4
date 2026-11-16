@@ -86,6 +86,8 @@ func _structure_anchor(gx: int, gz: int) -> Dictionary:
 		return {"type": 1, "x": gx * STRUCTURE_CELL + 12 + (h % 39), "z": gz * STRUCTURE_CELL + 12 + ((_hash2(gz, gx, world_seed) % 39))}
 	if chance < 13:
 		return {"type": 2, "x": gx * STRUCTURE_CELL + 16 + (h % 31), "z": gz * STRUCTURE_CELL + 16 + ((_hash2(gz, gx, world_seed) % 31))}
+	if chance < 16:
+		return {"type": 3, "x": gx * STRUCTURE_CELL + 16 + (h % 31), "z": gz * STRUCTURE_CELL + 16 + ((_hash2(gz, gx, world_seed) % 31))}
 	return {}
 
 ## Retorna [altura da superfície, tipo de bloco, bioma].
@@ -133,4 +135,12 @@ func surface_at(x: int, z: int) -> Array:
 				elif dist_sq <= 2:
 					height += 1
 					block_type = Block.BRICK
+			elif anchor.type == 3:
+				# Entrada de masmorra: arco de pedra com vão central.
+				if abs(dx) == 3 and dz >= -1 and dz <= 3:
+					height += 5
+					block_type = Block.BRICK
+				elif dz == 3 and abs(dx) <= 3:
+					height += 2
+					block_type = Block.STONE
 	return [height, block_type, biome]
