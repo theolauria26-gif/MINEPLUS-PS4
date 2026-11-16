@@ -22,7 +22,7 @@ public:
              SurfaceSample& out);
     bool set_surface(std::int32_t world_x, std::int32_t world_y,
                      std::uint8_t tile);
-    std::size_t loaded_count() const;
+    // Compact edit journal transfer for durable save files.\n    struct Edit { std::int32_t x, y; std::uint8_t tile; };\n    std::size_t export_edits(Edit* output, std::size_t capacity) const;\n    bool import_edits(const Edit* edits, std::size_t count);\n\n    std::size_t loaded_count() const;
     std::size_t delta_count() const;
     std::uint64_t seed() const { return generator_seed_; }
 
