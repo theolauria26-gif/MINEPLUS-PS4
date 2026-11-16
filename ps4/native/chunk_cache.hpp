@@ -41,6 +41,7 @@ public:
 
     std::size_t loaded_count() const;
     std::size_t delta_count() const;
+    std::size_t voxel_delta_count() const;
     std::uint64_t seed() const { return generator_seed_; }
 
 private:
