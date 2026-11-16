@@ -72,7 +72,7 @@ int main() {
         assert(voxel.liquid == item.liquid);
         assert(voxel.solid == (item.expected != mineplus::VoxelMaterial::Air && !item.liquid));
     }
-    assert(runtime.saved_edits() == 3);
+    assert(runtime.saved_edits() == 4); // Three unique surface edits plus one 3D voxel edit.
 
     mineplus::WorldGridView* active = &streamed;
     assert(active->get(-17, 33, tile) && tile == 255);
