@@ -6,6 +6,8 @@ Cliente nativo de exploração e sobrevivência para PlayStation 4, escrito em C
 
 - Cliente SDL2 com loop de jogo, renderização pseudo-3D por raycasting/height-field, minimapa e interface própria.
 - Controles DualShock, teclado e mouse; movimentação, mineração, construção, combate e pausa.
+- Salvamento manual por F5 ou pelo botão X no menu de pausa, além de autosave periódico e ao sair; o HUD confirma sucesso ou falha do salvamento manual.
+- Ritmo de frames limitado a aproximadamente 60 FPS sem somar um segundo atraso quando o VSync já bloqueou a apresentação.
 - Inventário de recursos, nove receitas, coleta, criaturas e salvamento local com migração de formatos antigos.
 - PCG determinístico com seed, FBM multi-octave, relevo, temperatura, umidade, oito biomas, continente/oceano e âncoras de estruturas.
 - O cliente jogável ainda usa uma janela residente de 2048×2048 células. **O mundo jogável ainda não é infinito.**
