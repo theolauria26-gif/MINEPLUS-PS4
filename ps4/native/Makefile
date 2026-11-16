@@ -13,9 +13,11 @@ LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr -L$(TO
 all: eboot.bin
 $(INTDIR):
 	mkdir -p $(INTDIR)
-$(INTDIR)/main.o: main.cpp | $(INTDIR)
-	$(CXX) $(CXXFLAGS) -o $@ $<
-$(INTDIR)/mineplus.elf: $(INTDIR)/main.o
+$(INTDIR)/main.o: main.cpp pcg_world.hpp | $(INTDIR)
+	$(CXX) $(CXXFLAGS) -o $@ main.cpp
+$(INTDIR)/pcg_world.o: pcg_world.cpp pcg_world.hpp | $(INTDIR)
+	$(CXX) $(CXXFLAGS) -o $@ pcg_world.cpp
+$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 eboot.bin: $(INTDIR)/mineplus.elf
 	$(TOOLCHAIN)/bin/linux/create-fself -in=$< -out=$(INTDIR)/mineplus.oelf --eboot "$@" --paid 0x3800000000000011
