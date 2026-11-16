@@ -29,7 +29,7 @@ public:
 private:
     struct Entry {
         ChunkData data{};
-        std::uint32_t stamp = 0;
+        std::uint64_t stamp = 0;
         bool valid = false;
     };
     struct Delta {
@@ -42,7 +42,7 @@ private:
     std::uint64_t generator_seed_;
     std::array<Entry, CAPACITY> entries_{};
     std::array<Delta, DELTA_CAPACITY> deltas_{};
-    std::uint32_t clock_ = 1;
+    std::uint64_t clock_ = 1;
 
     Entry* find_chunk(std::int32_t cx, std::int32_t cy);
     Entry* acquire_chunk(std::int32_t cx, std::int32_t cy);
