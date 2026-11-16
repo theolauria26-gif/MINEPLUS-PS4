@@ -48,3 +48,8 @@ Não anuncie o mapa como infinito até a troca do armazenamento do gameplay, a m
 3. Aplicar orçamento de chunks por frame e geração assíncrona sem criar recursos SDL/GPU em workers.
 4. Renderizar estruturas e volumes subterrâneos a partir de dados de chunk, com limites de memória medidos.
 5. Medir FPS, RAM, tempo de carregamento e estabilidade no PS4 real antes de aumentar o raio ou a densidade.
+
+
+## Cavernas Primordiais (geração subterrânea)
+
+As âncoras de marcos agora definem complexos subterrâneos determinísticos de cinco câmaras: uma sala central e quatro alas cardeais ligadas por corredores em cruz. O teto e o piso permanecem em DarkStone; veios raros de cristal aparecem nas áreas escavadas sem bloquear a passagem. A forma depende apenas da seed e das coordenadas globais, mantendo continuidade nas bordas dos chunks. Isso é geração de dados voxel: renderização 3D, iluminação volumétrica, criaturas e estruturas decorativas completas ainda precisam ser integradas ao gameplay.
