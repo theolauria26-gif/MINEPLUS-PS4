@@ -95,9 +95,9 @@ bool save_world(){
  mkdir(SAVE_DIR,0777);
  const char* temp="/data/MINEPLUS/world.sav.tmp";
  FILE* f=std::fopen(temp,"wb");if(!f)return false;
- SaveHeader h{{'M','P','L','U','S','3','D','\0'},1,px,py,selected,faceX,faceY,{}};
+ SaveHeader h{{'M','P','L','U','S','3','D','\0'},2,px,py,selected,faceX,faceY,{}};
  for(int i=0;i<9;i++)h.stock[i]=stock[i];
- bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size();
+ bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size();
  if(std::fflush(f)!=0)ok=false;
  if(std::fclose(f)!=0)ok=false;
  if(ok&&std::rename(temp,SAVE_FILE)!=0)ok=false;
@@ -107,11 +107,14 @@ bool save_world(){
 bool load_world(){
  FILE* f=std::fopen(SAVE_FILE,"rb");if(!f)return false;
  SaveHeader h{};std::array<unsigned char,COLS*ROWS> restored{};
- bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&h.version==1;
+ bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version==1||h.version==2);
  if(ok)ok=std::fread(restored.data(),1,restored.size(),f)==restored.size();
+ std::array<Creature,48> restoredCreatures{};
+ if(ok&&h.version==2)ok=std::fread(restoredCreatures.data(),sizeof(Creature),restoredCreatures.size(),f)==restoredCreatures.size();
  if(ok&&std::fgetc(f)!=EOF)ok=false;
  std::fclose(f);if(!ok)return false;
  world=restored;
+ if(h.version==2){for(auto &m:restoredCreatures){if(m.type<0||m.type>5||m.hp<0||m.hp>3||m.x< -100||m.x>=COLS||m.y< -100||m.y>=ROWS)return false;}creatures=restoredCreatures;}
  px=std::clamp(h.x,1,COLS-2);py=std::clamp(h.y,1,ROWS-2);
  selected=std::clamp(h.selected,0,7);faceX=h.fx;faceY=h.fy;
  if(abs(faceX)+abs(faceY)!=1){faceX=1;faceY=0;}
