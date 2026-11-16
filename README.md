@@ -8,7 +8,7 @@ Cliente nativo de exploração e sobrevivência para PlayStation 4, escrito em C
 - Controles DualShock, teclado e mouse; movimentação, mineração, construção, combate e pausa.
 - Salvamento manual por F5 ou pelo botão X no menu de pausa, além de autosave periódico e ao sair; o HUD confirma sucesso ou falha do salvamento manual.
 - Ritmo de frames limitado a aproximadamente 60 FPS sem somar um segundo atraso quando o VSync já bloqueou a apresentação.
-- Inventário de recursos, nove receitas, coleta, criaturas e salvamento local com migração de formatos antigos.
+- Inventário de recursos, nove receitas, coleta, criaturas e salvamento local com migração de formatos antigos. A coleta por mineração e combate limita cada pilha a 9.999 unidades para evitar overflow e manter consistência com a validação dos saves.
 - PCG determinístico com seed, FBM multi-octave, relevo, temperatura, umidade, oito biomas, continente/oceano e âncoras de estruturas.
 - O cliente jogável ainda usa uma janela residente de 2048×2048 células. **O mundo jogável ainda não é infinito.**
 - A camada de streaming já existe em módulos isolados: chunks 16×16, cache LRU de 81 chunks, journal limitado de alterações, consulta de voxels e adaptador `StreamedWorldGrid`. Esses módulos são compilados e testados, mas ainda não substituíram o armazenamento fixo usado pelo loop em `main.cpp`.
