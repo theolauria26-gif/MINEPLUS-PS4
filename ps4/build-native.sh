@@ -13,9 +13,20 @@ for tool in create-fself create-gp4; do [[ -x "$TOOLCHAIN/bin/linux/$tool" ]] ||
 PKG="$TOOLCHAIN/bin/linux/PkgTool.Core"
 [[ -x "$PKG" ]] || fail "PkgTool.Core ausente."
 export OO_PS4_TOOLCHAIN="$TOOLCHAIN"
+rm -rf "$STAGE" "$OUT"
 mkdir -p "$STAGE/sce_sys" "$STAGE/sce_module" "$OUT"
 make -C "$NATIVE" clean all
 cp "$NATIVE/eboot.bin" "$STAGE/eboot.bin"
+python3 - "$STAGE/eboot.bin" <<'PYSELF'
+import os,sys
+p=sys.argv[1]
+with open(p,"rb") as f: head=f.read(4)
+if head != bytes.fromhex("53434500"):
+    raise SystemExit(f"ERRO: EBOOT não é um SELF PS4 válido (magic={head.hex()}).")
+if os.path.getsize(p) < 65536:
+    raise SystemExit("ERRO: EBOOT pequeno demais; geração do SELF falhou.")
+print(f"EBOOT SELF verificado: {os.path.getsize(p)} bytes.")
+PYSELF
 python3 - "$STAGE/sce_sys/icon0.png" <<'PY'
 import struct,zlib,sys
 S=512
