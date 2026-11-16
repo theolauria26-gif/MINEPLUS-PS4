@@ -143,7 +143,7 @@ func _remove_block(cell: Vector3i) -> void:
 
 func _create_player() -> void:
 	# Saves antigos vinham de um terreno plano em Y=0; eleva o spawn se ficar soterrado.
-	var floor_height := chunk_streamer.generator.ground_height_at(roundi(saved_player_position.x), roundi(saved_player_position.z))
+	var floor_height := int(chunk_streamer.generator.surface_at(roundi(saved_player_position.x), roundi(saved_player_position.z))[0])
 	if saved_player_position.y < float(floor_height) + 2.2:
 		saved_player_position.y = float(floor_height) + 2.2
 	player = CharacterBody3D.new()
@@ -696,7 +696,10 @@ func _physics_process(delta: float) -> void:
 func _respawn_player() -> void:
 	if player == null:
 		return
-	player.global_position = Vector3(0, 13.0, 5)
+	var respawn_x := 0
+	var respawn_z := 5
+	var respawn_height := int(chunk_streamer.generator.surface_at(respawn_x, respawn_z)[0]) if chunk_streamer else 11
+	player.global_position = Vector3(respawn_x, float(respawn_height) + 2.2, respawn_z)
 	player.velocity = Vector3.ZERO
 	player.rotation.y = 0.0
 	pitch = 0.0
