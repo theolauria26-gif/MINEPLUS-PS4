@@ -27,11 +27,15 @@ int main() {
     assert(streamed.contains(-1000000, 1000000));
     assert(streamed.set(-17, 33, 255));
     assert(streamed.get(-17, 33, tile) && tile == 255);
+    mineplus::SurfaceSample sample{};
+    assert(streamed.get_sample(-17, 33, sample));
+    assert(sample.surface == 255);
     runtime.update_center(4096, -4096, 4);
     assert(streamed.get(-17, 33, tile) && tile == 255);
+    assert(streamed.get_sample(-17, 33, sample) && sample.surface == 255);
     assert(runtime.saved_edits() == 1);
 
     mineplus::WorldGridView* active = &streamed;
     assert(active->get(-17, 33, tile) && tile == 255);
-    std::cout << "MINEPLUS world grid tests: OK\\n";
+    std::cout << "MINEPLUS world grid tests: OK\n";
 }
