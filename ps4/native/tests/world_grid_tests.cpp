@@ -30,6 +30,12 @@ int main() {
     mineplus::SurfaceSample sample{};
     assert(streamed.get_sample(-17, 33, sample));
     assert(sample.surface == 255);
+    mineplus::VoxelSample voxel{};
+    assert(streamed.get_voxel(-17, 33, sample.height, voxel));
+    assert(voxel.solid && voxel.material != mineplus::VoxelMaterial::Air);
+    assert(streamed.get_voxel(-17, 33, sample.height - 8, voxel));
+    assert(streamed.get_voxel(-17, 33, -1, voxel));
+    assert(!voxel.solid && voxel.material == mineplus::VoxelMaterial::Air);
     runtime.update_center(4096, -4096, 4);
     assert(streamed.get(-17, 33, tile) && tile == 255);
     assert(streamed.get_sample(-17, 33, sample) && sample.surface == 255);
