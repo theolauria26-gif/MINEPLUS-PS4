@@ -94,16 +94,19 @@ int main() {
             const int wingRadius = std::max(2, int(dungeon.radius) / 5);
             const int wingX = dungeon.x + offset;
             const int wingY = dungeon.y;
+            const auto eastSurface = worldA.sample_surface(wingX, wingY);
+            const auto northSurface = worldA.sample_surface(dungeon.x, dungeon.y - offset);
             const auto eastWing = worldA.sample_voxel(
-                wingX, wingY, surface.height - 11);
+                wingX, wingY, eastSurface.height - 11);
             const auto northWing = worldA.sample_voxel(
-                dungeon.x, dungeon.y - offset, surface.height - 11);
+                dungeon.x, dungeon.y - offset, northSurface.height - 11);
             assert(eastWing.material == VoxelMaterial::Air ||
                    eastWing.material == VoxelMaterial::Crystal);
             assert(northWing.material == VoxelMaterial::Air ||
                    northWing.material == VoxelMaterial::Crystal);
             const auto eastEdge = worldA.sample_voxel(
-                wingX + wingRadius, wingY, surface.height - 11);
+                wingX + wingRadius, wingY,
+                worldA.sample_surface(wingX + wingRadius, wingY).height - 11);
             assert(eastEdge.material == VoxelMaterial::Air ||
                    eastEdge.material == VoxelMaterial::Crystal);
             checkedDungeon = true;
