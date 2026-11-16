@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <climits>
 
 namespace mineplus {
 namespace {
@@ -91,10 +92,12 @@ bool PcgWorld::structure_anchor_for_cell(std::int32_t ax,std::int32_t ay,
     constexpr std::int32_t CELL=96;
     const auto h=hash(ax,ay,313);
     if(h%11u!=0u) return false;
-    const std::int32_t sx=ax*CELL+std::int32_t(hash(ax,ay,317)%CELL);
-    const std::int32_t sy=ay*CELL+std::int32_t(hash(ax,ay,331)%CELL);
+    const std::int64_t sx=std::int64_t(ax)*CELL+std::int64_t(hash(ax,ay,317)%CELL);
+    const std::int64_t sy=std::int64_t(ay)*CELL+std::int64_t(hash(ax,ay,331)%CELL);
+    if(sx<INT32_MIN||sx>INT32_MAX||sy<INT32_MIN||sy>INT32_MAX) return false;
     const std::int32_t radius=7+std::int32_t(hash(ax,ay,337)%18);
-    out={sx,sy,static_cast<std::uint16_t>(1+hash(ax,ay,347)%4),
+    out={static_cast<std::int32_t>(sx),static_cast<std::int32_t>(sy),
+         static_cast<std::uint16_t>(1+hash(ax,ay,347)%4),
          static_cast<std::uint16_t>(radius)};
     return true;
 }
@@ -102,7 +105,8 @@ bool PcgWorld::structure_anchor_for_cell(std::int32_t ax,std::int32_t ay,
 bool PcgWorld::structure_at(std::int32_t x,std::int32_t y,StructureAnchor& out) const {
     // Query neighboring macro-cells because a structure can cross chunk borders.
     constexpr int CELL=96;
-    const int cx=floor_i(float(x)/CELL), cy=floor_i(float(y)/CELL);
+    const int cx=x/CELL-((x%CELL)!=0&&x<0?1:0);
+    const int cy=y/CELL-((y%CELL)!=0&&y<0?1:0);
     bool found=false; std::uint64_t best=~std::uint64_t(0);
     for(int oy=-1;oy<=1;++oy) for(int ox=-1;ox<=1;++ox){
         StructureAnchor candidate{};
