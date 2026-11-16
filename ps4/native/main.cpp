@@ -4,11 +4,11 @@
 #include <array>
 #include <cstdlib>
 namespace {
-constexpr int W=1280,H=720,COLS=128,ROWS=72,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
-enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8};
+constexpr int W=1280,H=720,COLS=1024,ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
+enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13};
 std::array<unsigned char,COLS*ROWS> world{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0;
-struct Creature{int x,y,type,hp;};std::array<Creature,12> creatures{};std::array<int,9> stock{{24,18,12,8,6,0,0,0,0}};
+struct Creature{int x,y,type,hp;};std::array<Creature,48> creatures{};std::array<int,9> stock{{24,18,12,8,6,0,0,0,0}};
 unsigned hash2(int x,int y){unsigned n=(unsigned)(x*374761393u+y*668265263u+0x9e3779b9u);n=(n^(n>>13))*1274126177u;return n^(n>>16);}
 bool running=true,playing=false,inventory=false,paused=false;
 Uint32 lastMove=0;
@@ -49,15 +49,42 @@ case ' ':return "00000""00000""00000""00000""00000""00000""00000";
 default:return "00000""00000""00000""00000""00000""00000""00000";}}
 void draw_text(const char*s,int x,int y,int scale,Uint8 r=230,Uint8 g=240,Uint8 b=236){color(r,g,b);for(;*s;s++,x+=6*scale){const char*p=glyph(*s);for(int yy=0;yy<7;yy++)for(int xx=0;xx<5;xx++)if(p[yy*5+xx]=='1'){SDL_Rect q{x+xx*scale,y+yy*scale,scale,scale};SDL_RenderFillRect(renderer,&q);}}}
 void init_world(){
- for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){unsigned h=hash2(x,y);unsigned char t=Grass;if(h%100<18)t=Stone;if(h%100<9)t=Dirt;if(h%100<5)t=Moss;if(h%997<4)t=Crystal;if((x%31==0||y%27==0)&&h%5==0)t=DarkStone;world[y*COLS+x]=t;}
- // Ruined keeps, broken walls, crystal shrines and burial stones.
- for(int cy=9;cy<ROWS-8;cy+=19)for(int cx=12;cx<COLS-10;cx+=27){int w=7+(hash2(cx,cy)%5),h=6+(hash2(cy,cx)%4);for(int y=cy;y<cy+h;y++)for(int x=cx;x<cx+w;x++)if(x==cx||x==cx+w-1||y==cy||y==cy+h-1)world[y*COLS+x]=DarkStone;world[(cy+h/2)*COLS+cx+w/2]=Air;world[(cy+1)*COLS+cx+1]=Crystal;for(int k=0;k<4;k++){int tx=cx+(int)(hash2(cx+k,cy)%w),ty=cy+(int)(hash2(cy+k,cx)%h);world[ty*COLS+tx]=Bone;}}
- // Dead forests and scattered trunks.
- for(int y=2;y<ROWS-2;y++)for(int x=2;x<COLS-2;x++)if(hash2(x,y)%83==0)world[y*COLS+x]=Wood;
- for(int i=0;i<(int)creatures.size();i++){auto &m=creatures[i];m.x=8+(int)(hash2(i,91)%(COLS-16));m.y=8+(int)(hash2(91,i)%(ROWS-16));m.type=(int)(hash2(m.x,m.y)%3);m.hp=3;}
+ // Deterministic 1024 x 1024 world: biome regions and local terrain variation.
+ for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){
+  unsigned h=hash2(x,y),region=hash2(x/96,y/96)%6;
+  unsigned char t=Grass;
+  if(region==0){if(h%100<24)t=Stone;if(h%100<8)t=Moss;}
+  else if(region==1){t=Sand;if(h%100<8)t=Stone;}
+  else if(region==2){t=Snow;if(h%100<14)t=Ice;if(h%100<5)t=Stone;}
+  else if(region==3){t=DarkStone;if(h%100<20)t=Bone;if(h%100<7)t=Crystal;}
+  else if(region==4){t=Grass;if(h%100<22)t=Wood;if(h%100<6)t=Moss;}
+  else {t=Stone;if(h%100<12)t=Lava;if(h%100<4)t=Crystal;}
+  if(h%997<3)t=Crystal;
+  world[y*COLS+x]=t;
+ }
+ // Large ancient keeps, watchtowers, shrines and circular ruins.
+ for(int cy=24;cy<ROWS-24;cy+=61)for(int cx=24;cx<COLS-24;cx+=73){
+  unsigned seed=hash2(cx,cy);int w=9+(seed%13),h=8+(hash2(cy,cx)%11);
+  for(int y=cy;y<cy+h;y++)for(int x=cx;x<cx+w;x++)
+   if(x==cx||x==cx+w-1||y==cy||y==cy+h-1)world[y*COLS+x]=DarkStone;
+  world[(cy+h/2)*COLS+cx+w/2]=Air;
+  world[(cy+1)*COLS+cx+1]=Crystal;
+  for(int k=0;k<6;k++){int tx=cx+(int)(hash2(cx+k,cy)%w),ty=cy+(int)(hash2(cy+k,cx)%h);world[ty*COLS+tx]=Bone;}
+  // Four corner towers.
+  world[(cy+1)*COLS+cx+1]=DarkStone;world[(cy+1)*COLS+cx+w-2]=DarkStone;
+  world[(cy+h-2)*COLS+cx+1]=DarkStone;world[(cy+h-2)*COLS+cx+w-2]=DarkStone;
+ }
+ // Dense dead forests, crystal groves and scattered natural landmarks.
+ for(int y=3;y<ROWS-3;y++)for(int x=3;x<COLS-3;x++){
+  unsigned h=hash2(x,y);
+  if(h%137==0&&(world[y*COLS+x]==Grass||world[y*COLS+x]==Snow))world[y*COLS+x]=Wood;
+  if(h%1201==0)world[y*COLS+x]=Crystal;
+  if(h%1807==0)world[y*COLS+x]=Bone;
+ }
+ for(int i=0;i<(int)creatures.size();i++){auto &m=creatures[i];m.x=8+(int)(hash2(i,91)%(COLS-16));m.y=8+(int)(hash2(91,i)%(ROWS-16));m.type=(int)(hash2(m.x,m.y)%6);m.hp=3;}
  world[py*COLS+px]=Air;
 }
-void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){case Grass:r=43;g=76;b=61;break;case Dirt:r=83;g=62;b=52;break;case Stone:r=79;g=86;b=94;break;case Wood:r=65;g=58;b=54;break;case Moss:r=39;g=55;b=48;break;case Crystal:r=125;g=139;b=151;break;case Bone:r=137;g=133;b=119;break;case DarkStone:r=35;g=39;b=47;break;default:r=16;g=23;b=29;break;}}
+void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){case Grass:r=43;g=76;b=61;break;case Dirt:r=83;g=62;b=52;break;case Stone:r=79;g=86;b=94;break;case Wood:r=65;g=58;b=54;break;case Moss:r=39;g=55;b=48;break;case Crystal:r=125;g=139;b=151;break;case Bone:r=137;g=133;b=119;break;case DarkStone:r=35;g=39;b=47;break;case Sand:r=133;g=119;b=85;break;case Snow:r=155;g=164;b=166;break;case Ice:r=95;g=132;b=145;break;case Lava:r=142;g=62;b=39;break;case Water:r=35;g=72;b=91;break;default:r=16;g=23;b=29;break;}}
 void move_player(int dx,int dy){if(!dx&&!dy)return;px=std::clamp(px+dx,1,COLS-2);py=std::clamp(py+dy,1,ROWS-2);faceX=dx;faceY=dy;for(auto &m:creatures)if(hash2((int)SDL_GetTicks()+m.x,m.y)%5==0){if(abs(m.x-px)>abs(m.y-py))m.x+=m.x<px?1:-1;else m.y+=m.y<py?1:-1;}}
 int target_index(){int x=px+faceX,y=py+faceY;if(x<0||x>=COLS||y<0||y>=ROWS)return -1;return y*COLS+x;}
 void place_block(){int i=target_index();int block=selected+1;if(i>=0&&world[i]==Air&&block<=8&&stock[block]>0){world[i]=static_cast<unsigned char>(block);--stock[block];}}
@@ -93,11 +120,11 @@ void draw_world(){
  // Cold moonlight and low-contrast fog behind the block field.
  rect(920,92,74,74,104,115,119,80);for(int i=0;i<5;i++)rect(0,555+i*23,W,7,26,34,41,35);
  int ox=(W-VIEW_COLS*TILE)/2,oy=90;int camX=std::clamp(px-VIEW_COLS/2,0,COLS-VIEW_COLS),camY=std::clamp(py-VIEW_ROWS/2,0,ROWS-VIEW_ROWS);
- for(int vy=0;vy<VIEW_ROWS;vy++)for(int vx=0;vx<VIEW_COLS;vx++){int x=camX+vx,y=camY+vy;Uint8 r,g,b;tile_color(world[y*COLS+x],r,g,b);int sx=ox+vx*TILE,sy=oy+vy*TILE;rect(sx+1,sy+1,TILE-2,TILE-2,r,g,b);outline(sx,sy,TILE,TILE,20,27,31);if(world[y*COLS+x]==Grass){rect(sx+3,sy+3,TILE-6,3,83,126,91);rect(sx+5,sy+9,4,3,111,143,106);}else if(world[y*COLS+x]==Stone){rect(sx+5,sy+7,8,2,119,128,134);rect(sx+21,sy+22,6,2,47,55,63);}else if(world[y*COLS+x]==Wood){rect(sx+8,sy+3,3,TILE-6,123,98,76);}}
+ for(int vy=0;vy<VIEW_ROWS;vy++)for(int vx=0;vx<VIEW_COLS;vx++){int x=camX+vx,y=camY+vy;Uint8 r,g,b;tile_color(world[y*COLS+x],r,g,b);int sx=ox+vx*TILE,sy=oy+vy*TILE;rect(sx+1,sy+1,TILE-2,TILE-2,r,g,b);outline(sx,sy,TILE,TILE,20,27,31);if(world[y*COLS+x]==Grass){rect(sx+3,sy+3,TILE-6,3,83,126,91);rect(sx+5,sy+9,4,3,111,143,106);}else if(world[y*COLS+x]==Stone){rect(sx+5,sy+7,8,2,119,128,134);rect(sx+21,sy+22,6,2,47,55,63);}else if(world[y*COLS+x]==Wood){rect(sx+8,sy+3,3,TILE-6,123,98,76);}else if(world[y*COLS+x]==Crystal){rect(sx+12,sy+8,12,20,185,205,215);rect(sx+16,sy+4,5,28,215,226,232);}else if(world[y*COLS+x]==Lava){rect(sx+4,sy+8,TILE-8,5,220,116,54);}else if(world[y*COLS+x]==Water||world[y*COLS+x]==Ice){rect(sx+3,sy+7,TILE-6,3,110,157,173);}}
  int tx=px+faceX,ty=py+faceY;if(tx>=camX&&tx<camX+VIEW_COLS&&ty>=camY&&ty<camY+VIEW_ROWS)outline(ox+(tx-camX)*TILE+2,oy+(ty-camY)*TILE+2,TILE-4,TILE-4,240,226,105);
- for(const auto &m:creatures)if(m.x>=camX&&m.x<camX+VIEW_COLS&&m.y>=camY&&m.y<camY+VIEW_ROWS){int mx=ox+(m.x-camX)*TILE,my=oy+(m.y-camY)*TILE;rect(mx+7,my+8,22,24,m.type==0?82:m.type==1?105:65,m.type==0?78:m.type==1?91:72,m.type==0?86:m.type==1?101:81);rect(mx+10,my+13,5,5,220,220,215);rect(mx+22,my+13,5,5,220,220,215);}
+ for(const auto &m:creatures)if(m.x>=camX&&m.x<camX+VIEW_COLS&&m.y>=camY&&m.y<camY+VIEW_ROWS){int mx=ox+(m.x-camX)*TILE,my=oy+(m.y-camY)*TILE;rect(mx+7,my+8,22,24,m.type==0?82:m.type==1?105:m.type==2?65:m.type==3?125:m.type==4?145:90,m.type==0?78:m.type==1?91:m.type==2?72:m.type==3?112:m.type==4?95:105,m.type==0?86:m.type==1?101:m.type==2?81:m.type==3?125:m.type==4?155:130);rect(mx+10,my+13,5,5,220,220,215);rect(mx+22,my+13,5,5,220,220,215);}
  int sxp=ox+(px-camX)*TILE,syp=oy+(py-camY)*TILE;rect(sxp+9,syp+5,18,26,224,224,231);rect(sxp+11,syp+8,5,5,30,35,43);rect(sxp+20,syp+8,5,5,30,35,43);
- rect(0,0,W,70,7,12,16,245);rect(20,16,8,38,52,212,132);draw_text("MINEPLUS",45,17,3);draw_text("THE FORGOTTEN WILDS  /  128 x 72",45,45,1,160,166,165);
+ rect(0,0,W,70,7,12,16,245);rect(20,16,8,38,52,212,132);draw_text("MINEPLUS",45,17,3);draw_text("THE FORGOTTEN WILDS  /  1024 x 1024",45,45,1,160,166,165);
  draw_text("DPAD MOVE  A PLACE  X BREAK",650,27,2,190,194,190);
  int start=(W-5*62)/2;for(int i=0;i<5;i++){int x=start+i*62;rect(x,H-88,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-88,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-73,24,24,r,g,b);}
  if(inventory||paused){rect(250,150,780,430,8,14,18,245);outline(250,150,780,430,68,166,111);draw_text(inventory?"INVENTORY":"PAUSED",310,195,5,132,235,166);
