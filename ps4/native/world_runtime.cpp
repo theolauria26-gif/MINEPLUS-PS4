@@ -65,7 +65,9 @@ bool WorldRuntime::import_edits(const ChunkCache::Edit* edits,
 }
 
 std::size_t WorldRuntime::loaded_chunks() const { return chunks_.loaded_count(); }
-std::size_t WorldRuntime::saved_edits() const { return chunks_.delta_count(); }
+std::size_t WorldRuntime::saved_edits() const {
+    return chunks_.delta_count() + chunks_.voxel_delta_count();
+}
 std::uint64_t WorldRuntime::seed() const { return chunks_.seed(); }
 
 bool WorldRuntime::encode_save(std::vector<std::uint8_t>& bytes) const {
