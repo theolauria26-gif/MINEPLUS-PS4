@@ -1,6 +1,7 @@
 #pragma once
 #include "chunk_generator.hpp"
 #include <array>
+#include <cstddef>
 #include <cstdint>
 
 namespace mineplus {
