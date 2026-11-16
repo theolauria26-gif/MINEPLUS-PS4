@@ -21,7 +21,9 @@ $(INTDIR)/chunk_generator.o: chunk_generator.cpp chunk_generator.hpp pcg_world.h
 	$(CXX) $(CXXFLAGS) -o $@ chunk_generator.cpp
 $(INTDIR)/chunk_cache.o: chunk_cache.cpp chunk_cache.hpp chunk_generator.hpp pcg_world.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ chunk_cache.cpp
-$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o
+$(INTDIR)/save_codec.o: save_codec.cpp save_codec.hpp chunk_cache.hpp | $(INTDIR)
+	$(CXX) $(CXXFLAGS) -o $@ save_codec.cpp
+$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o $(INTDIR)/save_codec.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 eboot.bin: $(INTDIR)/mineplus.elf
 	$(TOOLCHAIN)/bin/linux/create-fself -in=$< -out=$(INTDIR)/mineplus.oelf --eboot "$@" --paid 0x3800000000000011
