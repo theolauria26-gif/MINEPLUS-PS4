@@ -17,9 +17,10 @@ struct SurfaceSample {
 };
 
 enum class VoxelMaterial : std::uint8_t {
-    Air = 0, Grass = 1, Dirt = 2, Stone = 3, Sand = 4,
-    Moss = 5, Crystal = 6, Snow = 7, Water = 13,
-    VolcanicRock = 16, Ore = 17
+    Air = 0, Grass = 1, Dirt = 2, Stone = 3, Wood = 4,
+    Moss = 5, Crystal = 6, Bone = 7, DarkStone = 8, Sand = 9,
+    Snow = 10, Ice = 11, Lava = 12, Water = 13, IronOre = 14,
+    Obsidian = 15, Ember = 16, Rune = 17, VolcanicRock = 22, Ore = 23
 };
 
 struct VoxelSample {
