@@ -56,16 +56,33 @@ int main() {
         assert(quad.width > 0 && quad.height > 0);
     }
 
-    // Halo voxels suppress faces at chunk boundaries, avoiding cracks and
-    // duplicate internal polygons when neighboring chunks are meshed.
+    // Halo voxels suppress faces at all negative chunk boundaries.
     chunk = VoxelChunk{};
     assert(chunk.set(0, 0, 0, 2));
     assert(chunk.set(-1, 0, 0, 2));
-    assert(chunk.set(VoxelChunk::SIZE_X, 0, 0, 2));
+    assert(chunk.set(0, -1, 0, 2));
+    assert(chunk.set(0, 0, -1, 2));
     assert(VoxelMesher::build(chunk, mesh));
     assert(count_face(mesh, VoxelFace::NegativeX) == 0);
+    assert(count_face(mesh, VoxelFace::NegativeY) == 0);
+    assert(count_face(mesh, VoxelFace::NegativeZ) == 0);
+    assert(mesh.size() == 3);
+
+    // The positive halo is at SIZE, not at local coordinate 1.
+    chunk = VoxelChunk{};
+    assert(chunk.set(VoxelChunk::SIZE_X - 1, VoxelChunk::SIZE_Y - 1,
+                     VoxelChunk::SIZE_Z - 1, 2));
+    assert(chunk.set(VoxelChunk::SIZE_X, VoxelChunk::SIZE_Y - 1,
+                     VoxelChunk::SIZE_Z - 1, 2));
+    assert(chunk.set(VoxelChunk::SIZE_X - 1, VoxelChunk::SIZE_Y,
+                     VoxelChunk::SIZE_Z - 1, 2));
+    assert(chunk.set(VoxelChunk::SIZE_X - 1, VoxelChunk::SIZE_Y - 1,
+                     VoxelChunk::SIZE_Z, 2));
+    assert(VoxelMesher::build(chunk, mesh));
     assert(count_face(mesh, VoxelFace::PositiveX) == 0);
-    assert(mesh.size() == 4);
+    assert(count_face(mesh, VoxelFace::PositiveY) == 0);
+    assert(count_face(mesh, VoxelFace::PositiveZ) == 0);
+    assert(mesh.size() == 3);
 
     // A caller can impose a hard geometry budget. Failure never leaves a
     // partial mesh that could be uploaded as if it were complete.
