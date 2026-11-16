@@ -8,7 +8,7 @@
 #include <cstring>
 #include <sys/stat.h>
 namespace {
-constexpr int W=1280,H=720,COLS=1024,ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
+constexpr int W=1280,H=720,COLS=2048,ROWS=2048,LEGACY_COLS=1024,LEGACY_ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
 enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13};
 std::array<unsigned char,COLS*ROWS> world{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0;
@@ -54,7 +54,7 @@ case ' ':return "00000""00000""00000""00000""00000""00000""00000";
 default:return "00000""00000""00000""00000""00000""00000""00000";}}
 void draw_text(const char*s,int x,int y,int scale,Uint8 r=230,Uint8 g=240,Uint8 b=236){color(r,g,b);for(;*s;s++,x+=6*scale){const char*p=glyph(*s);for(int yy=0;yy<7;yy++)for(int xx=0;xx<5;xx++)if(p[yy*5+xx]=='1'){SDL_Rect q{x+xx*scale,y+yy*scale,scale,scale};SDL_RenderFillRect(renderer,&q);}}}
 void init_world(){
- // Deterministic 1024 x 1024 world: biome regions and local terrain variation.
+ // Deterministic 2048 x 2048 world: four times the previous explorable area.
  for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){
   unsigned h=hash2(x,y),region=hash2(x/96,y/96)%6;
   unsigned char t=Grass;
@@ -96,7 +96,7 @@ bool save_world(){
  mkdir(SAVE_DIR,0777);
  const char* temp="/data/MINEPLUS/world.sav.tmp";
  FILE* f=std::fopen(temp,"wb");if(!f)return false;
- SaveHeader h{{'M','P','L','U','S','3','D','\0'},4,px,py,selected,faceX,faceY,{}};
+ SaveHeader h{{'M','P','L','U','S','3','D','\0'},5,px,py,selected,faceX,faceY,{}};
  for(int i=0;i<9;i++)h.stock[i]=stock[i];
  bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size()&&std::fwrite(&playerHealth,sizeof(playerHealth),1,f)==1;
  if(std::fflush(f)!=0)ok=false;
@@ -106,27 +106,42 @@ bool save_world(){
  return ok;
 }
 bool load_world(){
- FILE* f=std::fopen(SAVE_FILE,"rb");if(!f)return false;
- SaveHeader h{};std::array<unsigned char,COLS*ROWS> restored{};
- bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version==1||h.version==2||h.version==3||h.version==4);
- if(ok)ok=std::fread(restored.data(),1,restored.size(),f)==restored.size();
- std::array<Creature,96> restoredCreatures{};
- if(ok&&(h.version==2||h.version==3)){
-  std::array<Creature,48> legacyCreatures{};
-  ok=std::fread(legacyCreatures.data(),sizeof(Creature),legacyCreatures.size(),f)==legacyCreatures.size();
-  if(ok)std::copy(legacyCreatures.begin(),legacyCreatures.end(),restoredCreatures.begin());
- }else if(ok&&h.version>=4)ok=std::fread(restoredCreatures.data(),sizeof(Creature),restoredCreatures.size(),f)==restoredCreatures.size();
- int restoredHealth=10;if(ok&&h.version>=3)ok=std::fread(&restoredHealth,sizeof(restoredHealth),1,f)==1;
- if(ok&&std::fgetc(f)!=EOF)ok=false;
- std::fclose(f);if(!ok)return false;
- if(h.version>=2){for(auto &m:restoredCreatures){if(m.type<0||m.type>(h.version>=4?11:5)||m.hp<0||m.hp>3||m.x< -100||m.x>=COLS||m.y< -100||m.y>=ROWS)return false;}creatures=restoredCreatures;}
- world=restored;
- playerHealth=std::clamp(restoredHealth,1,10);lastDamage=0;damageCooldown=0;
- px=std::clamp(h.x,1,COLS-2);py=std::clamp(h.y,1,ROWS-2);
- selected=std::clamp(h.selected,0,7);faceX=h.fx;faceY=h.fy;
- if(abs(faceX)+abs(faceY)!=1){faceX=1;faceY=0;}
- for(int i=0;i<9;i++)stock[i]=std::clamp(h.stock[i],0,9999);
- return true;
+  FILE* f=std::fopen(SAVE_FILE,"rb");if(!f)return false;
+  SaveHeader h{};
+  bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version>=1&&h.version<=5);
+  const bool legacy=h.version<5;
+  std::array<unsigned char,COLS*ROWS> restored{};
+  if(ok&&legacy){
+   std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> oldWorld{};
+   ok=std::fread(oldWorld.data(),1,oldWorld.size(),f)==oldWorld.size();
+   if(ok)for(int y=0;y<LEGACY_ROWS;y++)
+    std::copy_n(oldWorld.data()+size_t(y)*LEGACY_COLS,LEGACY_COLS,
+                restored.data()+size_t(y+ROWS/2-LEGACY_ROWS/2)*COLS+(COLS/2-LEGACY_COLS/2));
+  }else if(ok)ok=std::fread(restored.data(),1,restored.size(),f)==restored.size();
+  std::array<Creature,96> restoredCreatures{};
+  if(ok&&(h.version==2||h.version==3)){
+   std::array<Creature,48> legacyCreatures{};
+   ok=std::fread(legacyCreatures.data(),sizeof(Creature),legacyCreatures.size(),f)==legacyCreatures.size();
+   if(ok)std::copy(legacyCreatures.begin(),legacyCreatures.end(),restoredCreatures.begin());
+  }else if(ok&&h.version>=4)ok=std::fread(restoredCreatures.data(),sizeof(Creature),restoredCreatures.size(),f)==restoredCreatures.size();
+  int restoredHealth=10;if(ok&&h.version>=3)ok=std::fread(&restoredHealth,sizeof(restoredHealth),1,f)==1;
+  if(ok&&std::fgetc(f)!=EOF)ok=false;
+  std::fclose(f);if(!ok)return false;
+  if(h.version>=2){
+   for(auto &m:restoredCreatures){
+    if(m.type<0||m.type>(h.version>=4?11:5)||m.hp<0||m.hp>3||m.x< -100||m.x>=(legacy?LEGACY_COLS:COLS)||m.y< -100||m.y>=(legacy?LEGACY_ROWS:ROWS))return false;
+    if(legacy&&m.x>=0&&m.y>=0){m.x+=COLS/2-LEGACY_COLS/2;m.y+=ROWS/2-LEGACY_ROWS/2;}
+   }
+   creatures=restoredCreatures;
+  }
+  world=restored;
+  playerHealth=std::clamp(restoredHealth,1,10);lastDamage=0;damageCooldown=0;
+  px=std::clamp(legacy?h.x+COLS/2-LEGACY_COLS/2:h.x,1,COLS-2);
+  py=std::clamp(legacy?h.y+ROWS/2-LEGACY_ROWS/2:h.y,1,ROWS-2);
+  selected=std::clamp(h.selected,0,7);faceX=h.fx;faceY=h.fy;
+  if(abs(faceX)+abs(faceY)!=1){faceX=1;faceY=0;}
+  for(int i=0;i<9;i++)stock[i]=std::clamp(h.stock[i],0,9999);
+  return true;
 }
 void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){case Grass:r=43;g=76;b=61;break;case Dirt:r=83;g=62;b=52;break;case Stone:r=79;g=86;b=94;break;case Wood:r=65;g=58;b=54;break;case Moss:r=39;g=55;b=48;break;case Crystal:r=125;g=139;b=151;break;case Bone:r=137;g=133;b=119;break;case DarkStone:r=35;g=39;b=47;break;case Sand:r=133;g=119;b=85;break;case Snow:r=155;g=164;b=166;break;case Ice:r=95;g=132;b=145;break;case Lava:r=142;g=62;b=39;break;case Water:r=35;g=72;b=91;break;default:r=16;g=23;b=29;break;}}
 bool solid_tile(int t){return t==DarkStone||t==Stone||t==Wood||t==Bone||t==Crystal;}
