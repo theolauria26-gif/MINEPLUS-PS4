@@ -10,14 +10,14 @@ int main() {
     assert(cache.get(-1, -1, sample));
     assert(sample.surface == 9);
 
-    const mineplus::ChunkCache::Edit invalid[] = {{4, 5, 255}};
-    assert(!cache.import_edits(invalid, 1));
+    const mineplus::ChunkCache::Edit duplicate[] = {{4, 5, 255}, {4, 5, 3}};
+    assert(!cache.import_edits(duplicate, 2));
     assert(cache.delta_count() == 1);
 
-    const mineplus::ChunkCache::Edit valid[] = {{32, -17, 21}, {-48, 64, 0}};
+    const mineplus::ChunkCache::Edit valid[] = {{32, -17, 255}, {-48, 64, 0}};
     assert(cache.import_edits(valid, 2));
     assert(cache.delta_count() == 2);
     assert(cache.get(32, -17, sample));
-    assert(sample.surface == 21);
+    assert(sample.surface == 255);
     std::cout << "MINEPLUS chunk cache validation tests: OK\\n";
 }
