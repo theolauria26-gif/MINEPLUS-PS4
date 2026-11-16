@@ -86,6 +86,35 @@ void init_world(){
   if(h%1201==0)world[y*COLS+x]=Crystal;
   if(h%1807==0)world[y*COLS+x]=Bone;
  }
+ // Natural water basins and volcanic pools seeded across the expanded continent.
+ for(int cy=32;cy<ROWS-32;cy+=83)for(int cx=32;cx<COLS-32;cx+=89){
+  unsigned seed=hash2(cx,cy);if(seed%5!=0)continue;
+  int radius=4+int(seed%7);bool volcanic=((seed>>8)%4)==0;
+  for(int oy=-radius-2;oy<=radius+2;oy++)for(int ox=-radius-2;ox<=radius+2;ox++){
+   int x=cx+ox,y=cy+oy,d=ox*ox+oy*oy;
+   if(d<=radius*radius)world[y*COLS+x]=volcanic?Lava:Water;
+   else if(d<=(radius+2)*(radius+2))world[y*COLS+x]=volcanic?DarkStone:Sand;
+  }
+ }
+ // Rare monumental citadels with courtyards, corner towers and central relics.
+ for(int cy=128;cy<ROWS-128;cy+=257)for(int cx=128;cx<COLS-128;cx+=263){
+  unsigned seed=hash2(cx+71,cy+193);if(seed%3!=0)continue;
+  int w=25+int(seed%17),h=23+int(hash2(cy,cx)%15);
+  for(int y=cy;y<cy+h;y++)for(int x=cx;x<cx+w;x++){
+   bool edge=x==cx||x==cx+w-1||y==cy||y==cy+h-1;
+   if(edge)world[y*COLS+x]=DarkStone;
+   else if((x==cx+3||x==cx+w-4)&&(y%5==0))world[y*COLS+x]=Bone;
+  }
+  for(int k=0;k<4;k++){
+   int tx=cx+(k%2)*(w-1),ty=cy+(k/2)*(h-1);
+   for(int oy=-2;oy<=2;oy++)for(int ox=-2;ox<=2;ox++)
+    world[(ty+oy)*COLS+tx+ox]=DarkStone;
+  }
+  int mx=cx+w/2,my=cy+h/2;
+  world[my*COLS+mx]=Crystal;
+  world[my*COLS+mx-1]=Bone;world[my*COLS+mx+1]=Bone;
+  world[(my-1)*COLS+mx]=Bone;world[(my+1)*COLS+mx]=Bone;
+ }
  for(int i=0;i<(int)creatures.size();i++){auto &m=creatures[i];m.x=8+(int)(hash2(i,91)%(COLS-16));m.y=8+(int)(hash2(91,i)%(ROWS-16));m.type=(int)(hash2(m.x,m.y)%12);m.hp=3;}
  world[py*COLS+px]=Air;
 }
