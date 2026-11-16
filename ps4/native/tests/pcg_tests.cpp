@@ -63,6 +63,9 @@ int main() {
     assert(same_sample(right.cells[0], worldA.sample_surface(0, -16)));
     assert(same_sample(left.cells[0], worldA.sample_surface(-16, -16)));
 
+    static_assert(sizeof(ChunkCache) <= 512u * 1024u,
+                  "PS4 chunk cache must stay within the 512 KiB memory budget");
+
     ChunkCache cache(4839201ULL);
     cache.update_center(0, 0, 4);
     assert(cache.loaded_count() == ChunkCache::CAPACITY);
