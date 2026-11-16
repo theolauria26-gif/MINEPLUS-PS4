@@ -96,8 +96,32 @@ bool ChunkCache::get_voxel(std::int32_t wx, std::int32_t wy,
     // must be visible through both the 2D compatibility API and 3D voxel API.
     if (z == column.height) {
         const std::uint8_t id = column.surface;
-        const auto material = id <= static_cast<std::uint8_t>(VoxelMaterial::Rune)
-            ? static_cast<VoxelMaterial>(id) : VoxelMaterial::Stone;
+        // Surface tile IDs are sparse: keep the extended volcanic/ore IDs
+        // while rejecting gaps so an arbitrary byte never becomes an invalid enum.
+        VoxelMaterial material = VoxelMaterial::Stone;
+        switch (id) {
+            case 0: material = VoxelMaterial::Air; break;
+            case 1: material = VoxelMaterial::Grass; break;
+            case 2: material = VoxelMaterial::Dirt; break;
+            case 3: material = VoxelMaterial::Stone; break;
+            case 4: material = VoxelMaterial::Wood; break;
+            case 5: material = VoxelMaterial::Moss; break;
+            case 6: material = VoxelMaterial::Crystal; break;
+            case 7: material = VoxelMaterial::Bone; break;
+            case 8: material = VoxelMaterial::DarkStone; break;
+            case 9: material = VoxelMaterial::Sand; break;
+            case 10: material = VoxelMaterial::Snow; break;
+            case 11: material = VoxelMaterial::Ice; break;
+            case 12: material = VoxelMaterial::Lava; break;
+            case 13: material = VoxelMaterial::Water; break;
+            case 14: material = VoxelMaterial::IronOre; break;
+            case 15: material = VoxelMaterial::Obsidian; break;
+            case 16: material = VoxelMaterial::Ember; break;
+            case 17: material = VoxelMaterial::Rune; break;
+            case 22: material = VoxelMaterial::VolcanicRock; break;
+            case 23: material = VoxelMaterial::Ore; break;
+            default: material = VoxelMaterial::Stone; break;
+        }
         const bool liquid = material == VoxelMaterial::Water ||
                             material == VoxelMaterial::Lava;
         out = VoxelSample{material, material != VoxelMaterial::Air && !liquid, liquid};
