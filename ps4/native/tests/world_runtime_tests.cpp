@@ -11,7 +11,7 @@ int main() {
     world.update_center(0, 0, 1);
     assert(world.loaded_chunks() == 9);
 
-    std::uint8_t before = 0;
+    mineplus::SurfaceSample originalSample{};\n    assert(world.get_sample(-1, -1, originalSample));\n    assert(originalSample.surface <= 255);\n    std::uint8_t before = 0;
     assert(world.get_tile(-1, -1, before));
     assert(world.set_tile(-1, -1, 255));
     std::uint8_t edited = 0;
