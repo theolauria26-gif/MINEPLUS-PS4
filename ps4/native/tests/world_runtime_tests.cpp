@@ -48,6 +48,19 @@ int main() {
     assert(world.get_voxel(-1, -1, editedDepth, voxel));
     assert(voxel.material == mineplus::VoxelMaterial::Crystal && voxel.solid);
 
+    // Invalid or duplicate imports must not erase the already valid voxel journal.
+    const mineplus::ChunkCache::VoxelEdit invalidVoxel[] = {
+        {-1, -1, mineplus::PcgWorld::WORLD_HEIGHT, mineplus::VoxelMaterial::Stone}
+    };
+    assert(!world.import_voxel_edits(invalidVoxel, 1));
+    const mineplus::ChunkCache::VoxelEdit duplicateVoxel[] = {
+        {-1, -1, editedDepth, mineplus::VoxelMaterial::Stone},
+        {-1, -1, editedDepth, mineplus::VoxelMaterial::Air}
+    };
+    assert(!world.import_voxel_edits(duplicateVoxel, 2));
+    assert(world.saved_edits() == 2);
+    assert(world.get_voxel(-1, -1, editedDepth, voxel));
+    assert(voxel.material == mineplus::VoxelMaterial::Crystal);
 
     // Moving far enough evicts the original chunk; edits and base metadata persist.
     world.update_center(4096, -4096, 4);
