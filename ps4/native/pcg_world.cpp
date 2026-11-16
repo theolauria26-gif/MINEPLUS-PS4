@@ -87,6 +87,53 @@ SurfaceSample PcgWorld::sample_surface(std::int32_t x,std::int32_t y) const {
             static_cast<std::uint8_t>(std::clamp(int((temperature+1.0f)*127.5f),0,255))};
 }
 
+
+VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
+                                    std::int32_t z) const {
+    if (z < 0 || z >= WORLD_HEIGHT) return {};
+    const SurfaceSample column = sample_surface(x, y);
+    const std::int32_t surface_z = column.height;
+    const Biome biome = static_cast<Biome>(column.biome);
+
+    // Ocean columns expose water up to a stable sea level.
+    if (z > surface_z) {
+        if (biome == Biome::Ocean && z <= 22)
+            return {VoxelMaterial::Water, false, true};
+        return {};
+    }
+    if (z == surface_z) {
+        VoxelMaterial top = VoxelMaterial::Grass;
+        switch (biome) {
+            case Biome::Ocean: top = VoxelMaterial::Sand; break;
+            case Biome::Forest: top = VoxelMaterial::Moss; break;
+            case Biome::Desert: top = VoxelMaterial::Sand; break;
+            case Biome::Tundra: top = VoxelMaterial::Snow; break;
+            case Biome::Highlands: top = VoxelMaterial::Stone; break;
+            case Biome::Volcanic: top = VoxelMaterial::VolcanicRock; break;
+            case Biome::CrystalWastes: top = VoxelMaterial::Crystal; break;
+            default: break;
+        }
+        return {top, true, false};
+    }
+
+    const std::int32_t depth = surface_z - z;
+    if (depth <= 3) {
+        const VoxelMaterial soil = (biome == Biome::Desert || biome == Biome::Ocean)
+            ? VoxelMaterial::Sand : VoxelMaterial::Dirt;
+        return {soil, true, false};
+    }
+    if (z > 4) {
+        const std::int32_t cave_x = x / 4;
+        const std::int32_t cave_y = y / 4;
+        const std::uint32_t cave = hash(cave_x, cave_y,
+            0xCA000000u ^ static_cast<std::uint32_t>(z / 3));
+        if ((cave % 100u) < 13u) return {};
+        const std::uint32_t ore = hash(x, y, 0x0E000000u ^ static_cast<std::uint32_t>(z));
+        if ((ore % 211u) == 0u) return {VoxelMaterial::Ore, true, false};
+    }
+    return {VoxelMaterial::Stone, true, false};
+}
+
 bool PcgWorld::structure_anchor_for_cell(std::int32_t ax,std::int32_t ay,
                                                 StructureAnchor& out) const {
     constexpr std::int32_t CELL=96;
