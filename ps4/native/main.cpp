@@ -113,8 +113,8 @@ bool load_world(){
  if(ok&&h.version==2)ok=std::fread(restoredCreatures.data(),sizeof(Creature),restoredCreatures.size(),f)==restoredCreatures.size();
  if(ok&&std::fgetc(f)!=EOF)ok=false;
  std::fclose(f);if(!ok)return false;
- world=restored;
  if(h.version==2){for(auto &m:restoredCreatures){if(m.type<0||m.type>5||m.hp<0||m.hp>3||m.x< -100||m.x>=COLS||m.y< -100||m.y>=ROWS)return false;}creatures=restoredCreatures;}
+ world=restored;
  px=std::clamp(h.x,1,COLS-2);py=std::clamp(h.y,1,ROWS-2);
  selected=std::clamp(h.selected,0,7);faceX=h.fx;faceY=h.fy;
  if(abs(faceX)+abs(faceY)!=1){faceX=1;faceY=0;}
