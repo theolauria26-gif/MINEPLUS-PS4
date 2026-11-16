@@ -7,27 +7,35 @@
 int main() {
     mineplus::WorldRuntime world(4839201ULL);
     assert(world.seed() == 4839201ULL);
-
     world.update_center(0, 0, 1);
     assert(world.loaded_chunks() == 9);
 
-    mineplus::SurfaceSample originalSample{};\n    assert(world.get_sample(-1, -1, originalSample));\n    assert(originalSample.surface <= 255);\n    std::uint8_t before = 0;
+    mineplus::SurfaceSample originalSample{};
+    assert(world.get_sample(-1, -1, originalSample));
+    std::uint8_t before = 0;
     assert(world.get_tile(-1, -1, before));
+    assert(before == originalSample.surface);
     assert(world.set_tile(-1, -1, 255));
     std::uint8_t edited = 0;
     assert(world.get_tile(-1, -1, edited) && edited == 255);
     assert(world.saved_edits() == 1);
 
-    // Moving far enough evicts the original chunk; the journal must restore it.
+    // Moving far enough evicts the original chunk; edits and base metadata persist.
     world.update_center(4096, -4096, 4);
     assert(world.loaded_chunks() == 81);
     assert(world.get_tile(-1, -1, edited) && edited == 255);
+    mineplus::SurfaceSample reloadedSample{};
+    assert(world.get_sample(-1, -1, reloadedSample));
+    assert(reloadedSample.surface == 255);
+    assert(reloadedSample.biome == originalSample.biome);
+    assert(reloadedSample.height == originalSample.height);
 
     mineplus::ChunkCache::Edit saved[4]{};
     assert(world.export_edits(saved, 4) == 1);
     mineplus::WorldRuntime restored(4839201ULL);
     assert(restored.import_edits(saved, 1));
     assert(restored.get_tile(-1, -1, edited) && edited == 255);
+
     std::vector<std::uint8_t> snapshot;
     assert(world.encode_save(snapshot));
     mineplus::WorldRuntime diskLoaded(1);
