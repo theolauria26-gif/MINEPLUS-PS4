@@ -183,6 +183,49 @@ void init_world(){
   for(int oy=-4;oy<=4;oy++)for(int ox=-4;ox<=4;ox++){int x=cx+ox,y=cy+oy;if(abs(ox)==4||abs(oy)==4)world[y*COLS+x]=((ox+oy)&1)?Wood:DarkStone;else if((ox==0&&oy==0)||((ox*ox+oy*oy)<5&&seed%2))world[y*COLS+x]=Bone;}world[(cy-1)*COLS+cx]=Crystal;
  }
  for(int y=4;y<ROWS-4;y++)for(int x=4;x<COLS-4;x++){unsigned ore=hash2(x/2+991,y/2+577);if(world[y*COLS+x]==Stone&&ore%389==0)world[y*COLS+x]=IronOre;if((world[y*COLS+x]==DarkStone||world[y*COLS+x]==Stone)&&ore%12007==0)world[y*COLS+x]=Rune;}
+ // Secondary landmark pass: roadside shrines, collapsed arches, wells and camps.
+ // Each site is coordinate-hashed, so the same seed always recreates the same world.
+ for(int cy=42;cy<ROWS-42;cy+=47)for(int cx=42;cx<COLS-42;cx+=53){
+  const unsigned h=hash2(cx+1201,cy+701);
+  if(h%6u!=0u)continue;
+  const int kind=int((h>>5)%4u),radius=4+int((h>>11)%4u);
+  for(int oy=-radius;oy<=radius;++oy)for(int ox=-radius;ox<=radius;++ox){
+   const int x=cx+ox,y=cy+oy,d=ox*ox+oy*oy;
+   if(x<2||y<2||x>=COLS-2||y>=ROWS-2)continue;
+   if(kind==0){ // Mossy well with a broken stone rim and water core.
+    if(d>=radius*radius-2&&d<=radius*radius+2)world[y*COLS+x]=Moss;
+    if(d<=2)world[y*COLS+x]=Water;
+    if((ox==0&&abs(oy)==radius-1)||(oy==0&&abs(ox)==radius-1))world[y*COLS+x]=Bone;
+   }else if(kind==1){ // Twin-pillar arch and a cracked path.
+    if(abs(ox)==radius/2&&abs(oy)<=2)world[y*COLS+x]=DarkStone;
+    if(oy==0&&abs(ox)<=radius)world[y*COLS+x]=((ox&1)==0)?Stone:Sand;
+    if(ox==0&&oy==-2)world[y*COLS+x]=Rune;
+   }else if(kind==2){ // Abandoned hunter camp with firepit and timber stakes.
+    if(abs(ox)==radius||abs(oy)==radius)world[y*COLS+x]=((ox+oy)&1)?Wood:Bone;
+    if(d<=2)world[y*COLS+x]=Ember;
+    if(d==radius*radius)world[y*COLS+x]=DarkStone;
+   }else{ // Small crystal altar protected by four broken monoliths.
+    if((abs(ox)==radius&&oy==0)||(abs(oy)==radius&&ox==0))world[y*COLS+x]=Crystal;
+    if(d<=2)world[y*COLS+x]=AncientRune;
+    if(d>radius*radius/2&&d<radius*radius/2+radius)world[y*COLS+x]=Moss;
+   }
+  }
+ }
+ // Winding ancient causeways: short deterministic segments link nearby landmarks.
+ for(int cy=80;cy<ROWS-80;cy+=181)for(int cx=80;cx<COLS-80;cx+=193){
+  const unsigned h=hash2(cx+1901,cy+2309);
+  if(h%3u!=0u)continue;
+  const int length=24+int(h%28u),direction=int((h>>8)%4u);
+  for(int step=0;step<length;++step){
+   const int x=cx+(direction==0?step:(direction==1?-step:0));
+   const int y=cy+(direction==2?step:(direction==3?-step:0));
+   for(int side=-1;side<=1;++side){
+    const int tx=x+(direction<2?0:side),ty=y+(direction<2?side:0);
+    if(tx>1&&ty>1&&tx<COLS-1&&ty<ROWS-1&&world[ty*COLS+tx]!=Water&&world[ty*COLS+tx]!=Lava)
+     world[ty*COLS+tx]=(side==0)?DarkStone:((step%5==0)?Moss:Stone);
+   }
+  }
+ }
  for(int i=0;i<(int)creatures.size();i++){auto &m=creatures[i];m.x=8+(int)(hash2(i,91)%(COLS-16));m.y=8+(int)(hash2(91,i)%(ROWS-16));m.type=(int)(hash2(m.x,m.y)%12);m.hp=3;}
  world[py*COLS+px]=Air;
 }
