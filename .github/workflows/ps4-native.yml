@@ -58,10 +58,10 @@ jobs:
             ps4/native/voxel_face_uv.cpp ps4/native/tests/voxel_face_uv_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-voxel-face-uv-tests"
           "$RUNNER_TEMP/mineplus-voxel-face-uv-tests"
-          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \\
-            ps4/native/voxel_mesher.cpp ps4/native/voxel_face_uv.cpp \\
-            ps4/native/material_atlas.cpp ps4/native/voxel_mesh_vertices.cpp \\
-            ps4/native/tests/voxel_mesh_vertices_tests.cpp \\
+          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
+            ps4/native/voxel_mesher.cpp ps4/native/voxel_face_uv.cpp \
+            ps4/native/material_atlas.cpp ps4/native/voxel_mesh_vertices.cpp \
+            ps4/native/tests/voxel_mesh_vertices_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-voxel-mesh-vertices-tests"
           "$RUNNER_TEMP/mineplus-voxel-mesh-vertices-tests"
           clang++ -std=c++17 -O2 -Wall -Wextra -I ps4/native \
