@@ -160,7 +160,6 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
         return {top, true, false};
     }
 
-    const std::int32_t depth = surface_z - z;
     if (depth <= 3) {
         const VoxelMaterial soil = (biome == Biome::Desert || biome == Biome::Ocean)
             ? VoxelMaterial::Sand : VoxelMaterial::Dirt;
