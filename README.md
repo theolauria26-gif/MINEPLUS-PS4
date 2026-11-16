@@ -40,7 +40,7 @@ O script interrompe o processo se faltar uma dependência, se o EBOOT não for c
 
 ### Bloqueio verificado no ambiente atual
 
-Em 16/11/2026, o ambiente de trabalho usado nesta execução não possui OpenOrbis montado (`OO_PS4_TOOLCHAIN`/SDK), `PkgTool.Core`, `create-fself`, `create-gp4`, .NET ou os headers de desenvolvimento SDL2. Há compiladores C++ e Make disponíveis, mas isso não basta para gerar o EBOOT/PKG PS4. O workflow do GitHub está configurado para provisionar a toolchain; nenhum artefato PKG foi gerado ou validado nesta execução e não há confirmação de instalação no console.
+Em 16/11/2026, o ambiente de trabalho usado nesta execução não possui OpenOrbis montado (`OO_PS4_TOOLCHAIN`/SDK), `PkgTool.Core`, `create-fself`, `create-gp4`, .NET ou os headers de desenvolvimento SDL2. Também não há `ANDROID_HOME`/`ANDROID_SDK_ROOT`, `adb`, `sdkmanager` ou Gradle, e esta branch nativa PS4 não contém um projeto Android configurado. Há compiladores C++ e Make disponíveis, mas isso não basta para gerar EBOOT/PKG nem APK. O workflow do GitHub está configurado para provisionar a toolchain PS4; nenhum artefato PKG ou APK foi gerado ou validado nesta execução e não há confirmação de instalação no console.
 
 Para concluir a etapa local, é necessário disponibilizar OpenOrbis v0.5.4, as ferramentas de empacotamento e dependências listadas acima. A validação final ainda exige instalar e executar o pacote em um PS4 compatível.
 
