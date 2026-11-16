@@ -76,6 +76,19 @@ int main() {
     assert(cache.get(-1, -1, cached) && cached.surface == 77);
     assert(cache.delta_count() == 1);
 
+    // The bounded edit journal must reject a new edit when full, but still
+    // allow updating an existing coordinate without losing its old record.
+    ChunkCache fullJournal(4839201ULL);
+    for (std::int32_t i = 0; i < static_cast<std::int32_t>(ChunkCache::DELTA_CAPACITY); ++i) {
+        assert(fullJournal.set_surface(i, 7000, static_cast<std::uint8_t>(i & 0xff)));
+    }
+    assert(fullJournal.delta_count() == ChunkCache::DELTA_CAPACITY);
+    assert(!fullJournal.set_surface(9000, 7000, 12));
+    assert(fullJournal.set_surface(0, 7000, 99));
+    SurfaceSample edited{};
+    assert(fullJournal.get(0, 7000, edited) && edited.surface == 99);
+    assert(fullJournal.delta_count() == ChunkCache::DELTA_CAPACITY);
+
     std::cout << "MINEPLUS PCG/chunk tests: OK\n";
     return 0;
 }
