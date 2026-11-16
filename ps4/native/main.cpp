@@ -12,6 +12,8 @@ namespace {
 constexpr int W=1280,H=720,COLS=2048,ROWS=2048,LEGACY_COLS=1024,LEGACY_ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
 enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21};
 std::array<unsigned char,COLS*ROWS> world{};
+// Cached procedural elevation avoids recomputing multi-octave noise for every ray step.
+std::array<unsigned char,COLS*ROWS> heightMap{};
 // Large save buffers live in static storage, not on the PS4 main-thread stack.
 // A 2048x2048 byte world is 4 MiB and can overflow the small homebrew thread stack.
 // Keep migration and restore scratch space out of stack frames on every save version.
@@ -79,6 +81,7 @@ void init_world(){
    else if(d<int(anchor.radius*anchor.radius/4)) tile=(anchor.kind==4?Crystal:Bone);
   }
   world[y*COLS+x]=tile;
+  heightMap[y*COLS+x]=static_cast<unsigned char>(std::clamp<int>(sample.height,0,255));
  }
  // Large ancient keeps, watchtowers, shrines and circular ruins.
  for(int cy=24;cy<ROWS-24;cy+=61)for(int cx=24;cx<COLS-24;cx+=73){
@@ -295,8 +298,9 @@ float smooth_noise(float x,float y){
  return a*(1.0f-fy)+b*fy;
 }
 float terrain_height(int t,int x,int y){
- const auto pcgSample=pcgWorld.sample_surface(x-COLS/2,y-ROWS/2);
- float h=float(pcgSample.height)/48.0f;
+ // Elevation was generated once with the chunk-independent PCG world seed.
+ // Reusing it here keeps the first-person ray marcher cheap enough for PS4.
+ float h=float(heightMap[y*COLS+x])/48.0f;
  switch(t){case Grass:h+=0.12f;break;case Dirt:h+=0.04f;break;case Stone:h+=0.34f;break;case Wood:h+=0.72f;break;case Moss:h+=0.18f;break;case Crystal:h+=0.92f;break;case Bone:h+=0.48f;break;case DarkStone:h+=0.42f;break;case Sand:h-=0.08f;break;case Snow:h+=0.24f;break;case Ice:h+=0.12f;break;case Lava:h-=0.08f;break;case Water:h-=0.22f;break;case IronOre:h+=0.36f;break;case Obsidian:h+=0.46f;break;case Ember:h+=0.02f;break;case Rune:h+=0.58f;break;case IronBar:h+=0.3f;break;case ObsidianCore:h+=0.6f;break;case EmberCatalyst:h+=0.5f;break;case AncientRune:h+=0.8f;break;default:break;}
  // Multi-scale elevation creates broad mountain ranges, rolling foothills and rocky peaks.
  float continental=smooth_noise(x/310.0f,y/310.0f);
