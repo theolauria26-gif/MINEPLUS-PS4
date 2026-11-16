@@ -113,8 +113,7 @@ bool DungeonGraphGenerator::generate(std::uint64_t seed,
             const DungeonRoom& b = output.rooms[j];
             const int distance = (a.grid_x > b.grid_x ? a.grid_x - b.grid_x : b.grid_x - a.grid_x) +
                                  (a.grid_y > b.grid_y ? a.grid_y - b.grid_y : b.grid_y - a.grid_y);
-            if (distance == 1 && rng.range(100) < 22 &&
-                !connected_pair(output.connections[0], 0, 0)) {
+            if (distance == 1 && rng.range(100) < 22) {
                 bool exists = false;
                 for (const DungeonConnection& edge : output.connections)
                     if (connected_pair(edge, a.id, b.id)) { exists = true; break; }
