@@ -93,18 +93,25 @@ constexpr const char* SAVE_FILE="/data/MINEPLUS/world.sav";
 struct SaveHeader{char magic[8];unsigned version;int x,y,selected,fx,fy;int stock[9];};
 bool save_world(){
  mkdir(SAVE_DIR,0777);
- FILE* f=std::fopen(SAVE_FILE,"wb");if(!f)return false;
+ const char* temp="/data/MINEPLUS/world.sav.tmp";
+ FILE* f=std::fopen(temp,"wb");if(!f)return false;
  SaveHeader h{{'M','P','L','U','S','3','D','\0'},1,px,py,selected,faceX,faceY,{}};
  for(int i=0;i<9;i++)h.stock[i]=stock[i];
  bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size();
+ if(std::fflush(f)!=0)ok=false;
  if(std::fclose(f)!=0)ok=false;
+ if(ok&&std::rename(temp,SAVE_FILE)!=0)ok=false;
+ if(!ok)std::remove(temp);
  return ok;
 }
 bool load_world(){
  FILE* f=std::fopen(SAVE_FILE,"rb");if(!f)return false;
- SaveHeader h{};bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&h.version==1;
- if(ok)ok=std::fread(world.data(),1,world.size(),f)==world.size();
+ SaveHeader h{};std::array<unsigned char,COLS*ROWS> restored{};
+ bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&h.version==1;
+ if(ok)ok=std::fread(restored.data(),1,restored.size(),f)==restored.size();
+ if(ok&&std::fgetc(f)!=EOF)ok=false;
  std::fclose(f);if(!ok)return false;
+ world=restored;
  px=std::clamp(h.x,1,COLS-2);py=std::clamp(h.y,1,ROWS-2);
  selected=std::clamp(h.selected,0,7);faceX=h.fx;faceY=h.fy;
  if(abs(faceX)+abs(faceY)!=1){faceX=1;faceY=0;}
@@ -122,7 +129,6 @@ void draw_menu(){
  for(int y=0;y<H;y+=4){Uint8 shade=static_cast<Uint8>(8+(y*13/H));rect(0,y,W,4,shade,shade+3,shade+9);}
  rect(0,430,W,290,9,13,18);
  // Broken skyline and black-stone spires.
- polyline_dummy:
  rect(0,455,1280,265,8,12,16);rect(95,350,58,180,12,18,24);rect(108,305,32,45,18,25,31);rect(1010,330,72,210,11,17,23);rect(1028,285,36,45,18,24,30);
  rect(205,405,34,130,13,19,25);rect(222,375,8,30,29,36,40);rect(875,390,45,150,12,18,24);
  // Moon and mist bands.
@@ -150,7 +156,7 @@ float terrain_height(int t,int x,int y){
  return h;
 }
 void draw_world(){
- // Native 3D voxel-terrain renderer: perspective height-field ray casting.
+ // Perspective height-field renderer for the native PS4 build.
  rect(0,0,W,H,8,13,22);
  for(int y=0;y<330;y+=3){Uint8 v=static_cast<Uint8>(13+y/28);rect(0,y,W,3,v,v+7,v+15);}
  // Moon, distant haze and layered atmospheric fog.
@@ -207,7 +213,7 @@ void draw_world(){
  draw_text("WASD MOVE  F BREAK  SPACE PLACE  E INVENTORY",650,25,2,190,198,192);
  int start=(W-8*62)/2;for(int i=0;i<8;i++){int x=start+i*62;rect(x,H-72,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-72,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-57,24,24,r,g,b);char qty[8];std::snprintf(qty,sizeof(qty),"%d",stock[i+1]);draw_text(qty,x+17,H-20,1,225,230,220);}
  if(inventory||paused){rect(250,150,780,430,8,14,18,245);outline(250,150,780,430,68,166,111);draw_text(inventory?"INVENTORY":"PAUSED",310,195,5,132,235,166);
-  if(inventory){for(int i=0;i<8;i++){int x=300+(i%4)*170,y=275+(i/4)*105;rect(x,y,125,80,27,43,43);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+12,y+15,38,38,r,g,b);outline(x,y,125,80,75,145,98);draw_text(i==0?"GRASS":i==1?"DIRT":i==2?"STONE":i==3?"WOOD":i==4?"MOSS":i==5?"CRYSTAL":i==6?"BONE":"DARKSTONE",x+57,y+18,1,208,215,208);draw_text(stock[i+1]>=10?"10+": "0"+stock[i+1],x+57,y+43,2,160,220,174);}draw_text("3D WORLD  /  BUILD AND EXPLORE",420,535,2,140,175,150);}
+  if(inventory){for(int i=0;i<8;i++){int x=300+(i%4)*170,y=275+(i/4)*105;rect(x,y,125,80,27,43,43);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+12,y+15,38,38,r,g,b);outline(x,y,125,80,75,145,98);draw_text(i==0?"GRASS":i==1?"DIRT":i==2?"STONE":i==3?"WOOD":i==4?"MOSS":i==5?"CRYSTAL":i==6?"BONE":"DARKSTONE",x+57,y+18,1,208,215,208);char amount[12];std::snprintf(amount,sizeof(amount),"%d",stock[i+1]);draw_text(amount,x+57,y+43,2,160,220,174);}draw_text("3D WORLD  /  BUILD AND EXPLORE",420,535,2,140,175,150);}
   else{draw_text("ENTER CONTINUE",350,320,3);draw_text("ESC BACK TO WORLD",350,385,3);}
  }
 }
