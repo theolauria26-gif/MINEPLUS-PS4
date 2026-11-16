@@ -61,7 +61,7 @@ int main() {
     chunk = VoxelChunk{};
     assert(chunk.set(0, 0, 0, 2));
     assert(chunk.set(-1, 0, 0, 2));
-    assert(chunk.set(1, 0, 0, 2));
+    assert(chunk.set(VoxelChunk::SIZE_X, 0, 0, 2));
     assert(VoxelMesher::build(chunk, mesh));
     assert(count_face(mesh, VoxelFace::NegativeX) == 0);
     assert(count_face(mesh, VoxelFace::PositiveX) == 0);
