@@ -598,7 +598,7 @@ func _save_world(silent: bool = false) -> void:
 	var saved_blocks: Array = []
 	for cell in blocks.keys():
 		saved_blocks.append([cell.x, cell.y, cell.z, int(blocks[cell].get_meta("block_type"))])
-	var player_position := [0.0, 2.4, 5.0]
+	var player_position := [0.0, 13.0, 5.0]
 	var player_rotation_y := 0.0
 	var camera_pitch := 0.0
 	if player != null and camera != null:
@@ -755,9 +755,9 @@ func _interact(place: bool) -> void:
 	if hit.is_empty():
 		return
 	var body = hit.collider
-	if not body.has_meta("cell"):
-		return
 	var terrain_hit := body.has_meta("chunk") and chunk_streamer != null
+	if not body.has_meta("cell") and not terrain_hit:
+		return
 	var cell: Vector3i
 	if body.has_meta("cell"):
 		cell = body.get_meta("cell")
