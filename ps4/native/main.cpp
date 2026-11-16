@@ -122,7 +122,6 @@ void init_world(){
    if(tile!=Air)world[ly*COLS+lx]=tile;
   }
  }
- }
  // Large ancient keeps, watchtowers, shrines and circular ruins.
  for(int cy=24;cy<ROWS-24;cy+=61)for(int cx=24;cx<COLS-24;cx+=73){
   unsigned seed=hash2(cx,cy);int w=9+(seed%13),h=8+(hash2(cy,cx)%11);
