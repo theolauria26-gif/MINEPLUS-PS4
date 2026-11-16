@@ -13,7 +13,7 @@ enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bon
 std::array<unsigned char,COLS*ROWS> world{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10;
 Uint32 lastDamage=0,damageCooldown=0;
-struct Creature{int x,y,type,hp;};std::array<Creature,48> creatures{};std::array<int,9> stock{{24,18,12,8,6,0,0,0,0}};
+struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};std::array<int,9> stock{{24,18,12,8,6,0,0,0,0}};
 unsigned hash2(int x,int y){unsigned n=(unsigned)(x*374761393u+y*668265263u+0x9e3779b9u);n=(n^(n>>13))*1274126177u;return n^(n>>16);}
 bool running=true,playing=false,inventory=false,paused=false;
 Uint32 lastMove=0,lastTurn=0;
@@ -86,7 +86,7 @@ void init_world(){
   if(h%1201==0)world[y*COLS+x]=Crystal;
   if(h%1807==0)world[y*COLS+x]=Bone;
  }
- for(int i=0;i<(int)creatures.size();i++){auto &m=creatures[i];m.x=8+(int)(hash2(i,91)%(COLS-16));m.y=8+(int)(hash2(91,i)%(ROWS-16));m.type=(int)(hash2(m.x,m.y)%6);m.hp=3;}
+ for(int i=0;i<(int)creatures.size();i++){auto &m=creatures[i];m.x=8+(int)(hash2(i,91)%(COLS-16));m.y=8+(int)(hash2(91,i)%(ROWS-16));m.type=(int)(hash2(m.x,m.y)%12);m.hp=3;}
  world[py*COLS+px]=Air;
 }
 constexpr const char* SAVE_DIR="/data/MINEPLUS";
@@ -96,7 +96,7 @@ bool save_world(){
  mkdir(SAVE_DIR,0777);
  const char* temp="/data/MINEPLUS/world.sav.tmp";
  FILE* f=std::fopen(temp,"wb");if(!f)return false;
- SaveHeader h{{'M','P','L','U','S','3','D','\0'},3,px,py,selected,faceX,faceY,{}};
+ SaveHeader h{{'M','P','L','U','S','3','D','\0'},4,px,py,selected,faceX,faceY,{}};
  for(int i=0;i<9;i++)h.stock[i]=stock[i];
  bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size()&&std::fwrite(&playerHealth,sizeof(playerHealth),1,f)==1;
  if(std::fflush(f)!=0)ok=false;
@@ -108,14 +108,18 @@ bool save_world(){
 bool load_world(){
  FILE* f=std::fopen(SAVE_FILE,"rb");if(!f)return false;
  SaveHeader h{};std::array<unsigned char,COLS*ROWS> restored{};
- bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version==1||h.version==2||h.version==3);
+ bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version==1||h.version==2||h.version==3||h.version==4);
  if(ok)ok=std::fread(restored.data(),1,restored.size(),f)==restored.size();
- std::array<Creature,48> restoredCreatures{};
- if(ok&&h.version>=2)ok=std::fread(restoredCreatures.data(),sizeof(Creature),restoredCreatures.size(),f)==restoredCreatures.size();
+ std::array<Creature,96> restoredCreatures{};
+ if(ok&&(h.version==2||h.version==3)){
+  std::array<Creature,48> legacyCreatures{};
+  ok=std::fread(legacyCreatures.data(),sizeof(Creature),legacyCreatures.size(),f)==legacyCreatures.size();
+  if(ok)std::copy(legacyCreatures.begin(),legacyCreatures.end(),restoredCreatures.begin());
+ }else if(ok&&h.version>=4)ok=std::fread(restoredCreatures.data(),sizeof(Creature),restoredCreatures.size(),f)==restoredCreatures.size();
  int restoredHealth=10;if(ok&&h.version>=3)ok=std::fread(&restoredHealth,sizeof(restoredHealth),1,f)==1;
  if(ok&&std::fgetc(f)!=EOF)ok=false;
  std::fclose(f);if(!ok)return false;
- if(h.version>=2){for(auto &m:restoredCreatures){if(m.type<0||m.type>5||m.hp<0||m.hp>3||m.x< -100||m.x>=COLS||m.y< -100||m.y>=ROWS)return false;}creatures=restoredCreatures;}
+ if(h.version>=2){for(auto &m:restoredCreatures){if(m.type<0||m.type>(h.version>=4?11:5)||m.hp<0||m.hp>3||m.x< -100||m.x>=COLS||m.y< -100||m.y>=ROWS)return false;}creatures=restoredCreatures;}
  world=restored;
  playerHealth=std::clamp(restoredHealth,1,10);lastDamage=0;damageCooldown=0;
  px=std::clamp(h.x,1,COLS-2);py=std::clamp(h.y,1,ROWS-2);
@@ -269,7 +273,13 @@ void draw_world(){
   int sx=int(W*0.5f+(side/forward)*focal/fov);
   int size=int(430.0f/forward);
   int sy=int(horizon+focal*0.65f/forward-size*0.8f);
-  if(sx>8&&sx<W-8&&size>3){int rr=m.type==0?75:m.type==1?105:m.type==2?61:m.type==3?130:m.type==4?150:92;rect(sx-size/3,sy,size*2/3,size,rr,rr-8,rr+5);rect(sx-size/5,sy+size/4,3,3,230,225,210);rect(sx+size/8,sy+size/4,3,3,230,225,210);}
+  if(sx>8&&sx<W-8&&size>3){static const int speciesColor[12]={75,105,61,130,150,92,112,83,158,67,137,98};
+  int rr=speciesColor[std::clamp(m.type,0,11)];
+  int bodyW=std::max(2,size*(m.type==8||m.type==10?4:2)/3);
+  int bodyH=std::max(2,size*(m.type==3||m.type==8?5:4)/4);
+  rect(sx-bodyW/2,sy,bodyW,bodyH,rr,rr-8,rr+5);
+  if(m.type==6||m.type==9)rect(sx-bodyW/2,sy+bodyH/3,bodyW,2,210,174,115);
+  if(m.type==8||m.type==10)rect(sx-bodyW/2,sy-std::max(2,size/5),bodyW,std::max(2,size/5),rr+25,rr+12,rr+8);rect(sx-size/5,sy+size/4,3,3,230,225,210);rect(sx+size/8,sy+size/4,3,3,230,225,210);}
  }
  // First-person blocky arms and tool silhouette.
  rect(W/2+115,H-158,75,180,91,65,49);rect(W/2+125,H-166,58,28,155,119,82);
