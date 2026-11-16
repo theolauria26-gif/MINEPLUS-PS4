@@ -100,6 +100,45 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
     const std::int32_t surface_z = column.height;
     const Biome biome = static_cast<Biome>(column.biome);
 
+    // Every major landmark conceals a deterministic three-chamber dungeon.
+    // Rooms and their connecting corridor are carved below the surface, while
+    // the roof/floor remain solid. Geometry is derived only from seed + anchor.
+    StructureAnchor dungeon{};
+    const std::int32_t depth = surface_z - z;
+    if (surface_z >= 15 && depth >= 8 && depth <= 14 &&
+        structure_at(x, y, dungeon)) {
+        const std::int32_t dx = x - dungeon.x;
+        const std::int32_t dy = y - dungeon.y;
+        const std::int32_t main_radius = std::max(2, int(dungeon.radius) / 4);
+        const std::int32_t side_radius = std::max(2, int(dungeon.radius) / 5);
+        const std::int32_t offset = std::max(3, int(dungeon.radius) * 2 / 3);
+        const std::int64_t main_d2 = std::int64_t(dx) * dx + std::int64_t(dy) * dy;
+        bool chamber = main_d2 <= std::int64_t(main_radius) * main_radius;
+        bool corridor = false;
+        if ((dungeon.kind & 1u) == 0u) {
+            const std::int64_t north = std::int64_t(dx) * dx +
+                std::int64_t(dy - offset) * (dy - offset);
+            const std::int64_t south = std::int64_t(dx) * dx +
+                std::int64_t(dy + offset) * (dy + offset);
+            chamber = chamber || north <= std::int64_t(side_radius) * side_radius ||
+                                  south <= std::int64_t(side_radius) * side_radius;
+            corridor = std::abs(dx) <= 1 && std::abs(dy) <= offset;
+        } else {
+            const std::int64_t west = std::int64_t(dx - offset) * (dx - offset) +
+                std::int64_t(dy) * dy;
+            const std::int64_t east = std::int64_t(dx + offset) * (dx + offset) +
+                std::int64_t(dy) * dy;
+            chamber = chamber || west <= std::int64_t(side_radius) * side_radius ||
+                                  east <= std::int64_t(side_radius) * side_radius;
+            corridor = std::abs(dy) <= 1 && std::abs(dx) <= offset;
+        }
+        const bool inside = chamber || corridor;
+        if (inside && (depth == 8 || depth == 14))
+            return {VoxelMaterial::DarkStone, true, false};
+        if (inside && depth >= 9 && depth <= 13)
+            return {};
+    }
+
     // Ocean columns expose water up to a stable sea level.
     if (z > surface_z) {
         if (biome == Biome::Ocean && z <= 22)
