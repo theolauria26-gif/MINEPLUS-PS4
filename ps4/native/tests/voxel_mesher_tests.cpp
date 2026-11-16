@@ -108,7 +108,7 @@ int main() {
     // catches missing/duplicated greedy rectangles across all three axes.
     chunk = VoxelChunk{};
     std::uint32_t rng = 0x91e10da5u;
-    const auto next_random = [&rng]() mutable {
+    auto next_random = [&rng]() {
         rng ^= rng << 13;
         rng ^= rng >> 17;
         rng ^= rng << 5;
