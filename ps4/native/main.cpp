@@ -115,21 +115,73 @@ void draw_menu(){
  draw_text("DPAD MOVE",820,355,2,177,184,182);draw_text("A PLACE X BREAK",820,390,2,177,184,182);draw_text("Y INVENTORY",820,425,2,177,184,182);draw_text("START PAUSE",820,460,2,177,184,182);
  draw_text("MINEPLUS PS4  /  DARK FANTASY EDITION",105,610,1,151,158,160);
 }
+float terrain_height(int t,int x,int y){
+ float h=0.0f;
+ switch(t){case Grass:h=0.42f;break;case Dirt:h=0.34f;break;case Stone:h=0.72f;break;case Wood:h=1.15f;break;case Moss:h=0.48f;break;case Crystal:h=1.55f;break;case Bone:h=0.92f;break;case DarkStone:h=0.82f;break;case Sand:h=0.25f;break;case Snow:h=0.52f;break;case Ice:h=0.38f;break;case Lava:h=0.20f;break;case Water:h=0.08f;break;default:h=0.0f;break;}
+ unsigned n=hash2(x/3,y/3);h+=float(n%17)/100.0f;
+ if(t==Wood||t==Crystal||t==Bone)h+=0.45f;
+ return h;
+}
 void draw_world(){
- rect(0,0,W,H,7,11,17);for(int y=70;y<H;y+=6)rect(0,y,W,3,static_cast<Uint8>(9+y/90),static_cast<Uint8>(14+y/95),static_cast<Uint8>(21+y/80));
- // Cold moonlight and low-contrast fog behind the block field.
- rect(920,92,74,74,104,115,119,80);for(int i=0;i<5;i++)rect(0,555+i*23,W,7,26,34,41,35);
- int ox=(W-VIEW_COLS*TILE)/2,oy=90;int camX=std::clamp(px-VIEW_COLS/2,0,COLS-VIEW_COLS),camY=std::clamp(py-VIEW_ROWS/2,0,ROWS-VIEW_ROWS);
- for(int vy=0;vy<VIEW_ROWS;vy++)for(int vx=0;vx<VIEW_COLS;vx++){int x=camX+vx,y=camY+vy;Uint8 r,g,b;tile_color(world[y*COLS+x],r,g,b);int sx=ox+vx*TILE,sy=oy+vy*TILE;rect(sx+1,sy+1,TILE-2,TILE-2,r,g,b);outline(sx,sy,TILE,TILE,20,27,31);if(world[y*COLS+x]==Grass){rect(sx+3,sy+3,TILE-6,3,83,126,91);rect(sx+5,sy+9,4,3,111,143,106);}else if(world[y*COLS+x]==Stone){rect(sx+5,sy+7,8,2,119,128,134);rect(sx+21,sy+22,6,2,47,55,63);}else if(world[y*COLS+x]==Wood){rect(sx+8,sy+3,3,TILE-6,123,98,76);}else if(world[y*COLS+x]==Crystal){rect(sx+12,sy+8,12,20,185,205,215);rect(sx+16,sy+4,5,28,215,226,232);}else if(world[y*COLS+x]==Lava){rect(sx+4,sy+8,TILE-8,5,220,116,54);}else if(world[y*COLS+x]==Water||world[y*COLS+x]==Ice){rect(sx+3,sy+7,TILE-6,3,110,157,173);}}
- int tx=px+faceX,ty=py+faceY;if(tx>=camX&&tx<camX+VIEW_COLS&&ty>=camY&&ty<camY+VIEW_ROWS)outline(ox+(tx-camX)*TILE+2,oy+(ty-camY)*TILE+2,TILE-4,TILE-4,240,226,105);
- for(const auto &m:creatures)if(m.x>=camX&&m.x<camX+VIEW_COLS&&m.y>=camY&&m.y<camY+VIEW_ROWS){int mx=ox+(m.x-camX)*TILE,my=oy+(m.y-camY)*TILE;rect(mx+7,my+8,22,24,m.type==0?82:m.type==1?105:m.type==2?65:m.type==3?125:m.type==4?145:90,m.type==0?78:m.type==1?91:m.type==2?72:m.type==3?112:m.type==4?95:105,m.type==0?86:m.type==1?101:m.type==2?81:m.type==3?125:m.type==4?155:130);rect(mx+10,my+13,5,5,220,220,215);rect(mx+22,my+13,5,5,220,220,215);}
- int sxp=ox+(px-camX)*TILE,syp=oy+(py-camY)*TILE;rect(sxp+9,syp+5,18,26,224,224,231);rect(sxp+11,syp+8,5,5,30,35,43);rect(sxp+20,syp+8,5,5,30,35,43);
- rect(0,0,W,70,7,12,16,245);rect(20,16,8,38,52,212,132);draw_text("MINEPLUS",45,17,3);draw_text("THE FORGOTTEN WILDS  /  1024 x 1024",45,45,1,160,166,165);
- draw_text("DPAD MOVE  A PLACE  X BREAK",650,27,2,190,194,190);
- int start=(W-5*62)/2;for(int i=0;i<5;i++){int x=start+i*62;rect(x,H-88,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-88,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-73,24,24,r,g,b);}
+ // Native 3D voxel-terrain renderer: perspective height-field ray casting.
+ rect(0,0,W,H,8,13,22);
+ for(int y=0;y<330;y+=3){Uint8 v=static_cast<Uint8>(13+y/28);rect(0,y,W,3,v,v+7,v+15);}
+ // Moon, distant haze and layered atmospheric fog.
+ rect(930,82,82,82,145,157,157,175);rect(950,70,82,82,8,13,22,255);
+ for(int i=0;i<6;i++)rect(0,285+i*19,W,4,38,52,58,25);
+ const float dirX=float(faceX),dirY=float(faceY);
+ const float rightX=-dirY,rightY=dirX;
+ const float focal=720.0f, horizon=H*0.48f, cameraH=1.48f;
+ const float fov=0.92f;
+ for(int sx=0;sx<W;sx+=2){
+  float cameraX=(2.0f*(sx+1)/float(W)-1.0f)*fov;
+  float rayX=dirX+rightX*cameraX,rayY=dirY+rightY*cameraX;
+  float len=sqrtf(rayX*rayX+rayY*rayY);rayX/=len;rayY/=len;
+  int ceiling=int(horizon),lastY=H;
+  for(float dist=0.55f;dist<30.0f&&ceiling<lastY;dist+=0.22f+dist*0.003f){
+   int wx=int(px+rayX*dist),wy=int(py+rayY*dist);
+   if(wx<1||wy<1||wx>=COLS-1||wy>=ROWS-1)break;
+   int t=world[wy*COLS+wx];
+   float height=terrain_height(t,wx,wy);
+   float corrected=dist*(0.82f+0.18f*(1.0f-fabsf(cameraX)));
+   int sy=int(horizon-(height-cameraH)*focal/corrected);
+   if(sy<ceiling)sy=ceiling;
+   if(sy<lastY){
+    Uint8 r,g,b;tile_color(t,r,g,b);
+    float light=1.0f/(1.0f+dist*0.055f);
+    if(t==Lava)light=std::min(1.0f,light+0.35f);
+    r=Uint8(r*light);g=Uint8(g*light);b=Uint8(b*light);
+    color(r,g,b);SDL_RenderDrawLine(renderer,sx,sy,sx,lastY);
+    // Thin illuminated top edge gives the terrain a block-built silhouette.
+    if(sy<lastY-2){color(Uint8(std::min(255,int(r)+22)),Uint8(std::min(255,int(g)+24)),Uint8(std::min(255,int(b)+22)));SDL_RenderDrawLine(renderer,sx,sy,sx,sy+1);}
+    lastY=sy;
+   }
+   if(t==Lava&&dist<12.0f){color(190,75,38,45);SDL_RenderDrawPoint(renderer,sx,int(horizon+70.0f/dist));}
+  }
+  if(lastY<H){color(9,14,19);SDL_RenderDrawLine(renderer,sx,lastY,sx,H);}
+ }
+ // Distant silhouettes create scale and a recognizable horizon.
+ for(int i=0;i<18;i++){int x=(i*173+91)%W;int base=300+(i%4)*13;rect(x,base-24-(i%5)*13,5+(i%3)*4,base>horizon?H-base:25,13,19,24,150);}
+ // Project living creatures as perspective billboards.
+ for(const auto &m:creatures)if(m.hp>0){
+  float dx=float(m.x-px),dy=float(m.y-py),forward=dx*dirX+dy*dirY,side=dx*rightX+dy*rightY;
+  if(forward<0.7f||forward>22.0f)continue;
+  int sx=int(W*0.5f+(side/forward)*focal/fov);
+  int size=int(430.0f/forward);
+  int sy=int(horizon+focal*0.65f/forward-size*0.8f);
+  if(sx>8&&sx<W-8&&size>3){int rr=m.type==0?75:m.type==1?105:m.type==2?61:m.type==3?130:m.type==4?150:92;rect(sx-size/3,sy,size*2/3,size,rr,rr-8,rr+5);rect(sx-size/5,sy+size/4,3,3,230,225,210);rect(sx+size/8,sy+size/4,3,3,230,225,210);}
+ }
+ // First-person blocky arms and tool silhouette.
+ rect(W/2+115,H-158,75,180,91,65,49);rect(W/2+125,H-166,58,28,155,119,82);
+ rect(W/2+164,H-190,12,95,151,159,163);rect(W/2+132,H-198,75,13,181,190,190);
+ // Crosshair and interaction hint.
+ color(225,232,222);SDL_RenderDrawLine(renderer,W/2-9,H/2,W/2+9,H/2);SDL_RenderDrawLine(renderer,W/2,H/2-9,W/2,H/2+9);
+ rect(0,0,W,64,7,12,16,235);rect(20,13,7,38,52,212,132);draw_text("MINEPLUS  /  THE FORGOTTEN WILDS",44,15,3);draw_text("3D VOXEL SURVIVAL",45,43,1,160,190,174);
+ draw_text("WASD MOVE  F BREAK  SPACE PLACE  E INVENTORY",650,25,2,190,198,192);
+ int start=(W-8*62)/2;for(int i=0;i<8;i++){int x=start+i*62;rect(x,H-72,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-72,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-57,24,24,r,g,b);draw_text(stock[i+1]>99?"99+":stock[i+1]>9?"10+":stock[i+1]>0?"0"+stock[i+1]:"0",x+17,H-20,1,225,230,220);}
  if(inventory||paused){rect(250,150,780,430,8,14,18,245);outline(250,150,780,430,68,166,111);draw_text(inventory?"INVENTORY":"PAUSED",310,195,5,132,235,166);
- if(inventory){for(int i=0;i<8;i++){int x=300+(i%4)*170,y=275+(i/4)*125;rect(x,y,125,95,27,43,43);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+12,y+18,38,38,r,g,b);outline(x,y,125,95,75,145,98);draw_text(i==0?"GRASS":i==1?"DIRT":i==2?"STONE":i==3?"WOOD":i==4?"MOSS":i==5?"CRYSTAL":i==6?"BONE":"DARKSTONE",x+57,y+22,1,208,215,208);draw_text(stock[i+1]>=10?"10+":"0"+stock[i+1],x+57,y+49,2,160,220,174);}draw_text("CRAFTING COMING NEXT",420,535,2,140,155,150);}
- else{draw_text("START CONTINUE",350,320,3);draw_text("B BACK TO MENU",350,385,3);}
+  if(inventory){for(int i=0;i<8;i++){int x=300+(i%4)*170,y=275+(i/4)*105;rect(x,y,125,80,27,43,43);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+12,y+15,38,38,r,g,b);outline(x,y,125,80,75,145,98);draw_text(i==0?"GRASS":i==1?"DIRT":i==2?"STONE":i==3?"WOOD":i==4?"MOSS":i==5?"CRYSTAL":i==6?"BONE":"DARKSTONE",x+57,y+18,1,208,215,208);draw_text(stock[i+1]>=10?"10+": "0"+stock[i+1],x+57,y+43,2,160,220,174);}draw_text("3D WORLD  /  BUILD AND EXPLORE",420,535,2,140,175,150);}
+  else{draw_text("ENTER CONTINUE",350,320,3);draw_text("ESC BACK TO WORLD",350,385,3);}
  }
 }
 void handle_key(SDL_Keycode k){if(!playing){if(k==SDLK_RETURN||k==SDLK_SPACE)playing=true;if(k==SDLK_ESCAPE)running=false;return;}if(k==SDLK_ESCAPE){paused=!paused;inventory=false;return;}if(paused){if(k==SDLK_RETURN)paused=false;return;}if(k==SDLK_TAB||k==SDLK_e)inventory=!inventory;if(inventory){if(k>=SDLK_1&&k<=SDLK_8)selected=k-SDLK_1;return;}if(k==SDLK_w||k==SDLK_UP)move_player(0,-1);if(k==SDLK_s||k==SDLK_DOWN)move_player(0,1);if(k==SDLK_a||k==SDLK_LEFT)move_player(-1,0);if(k==SDLK_d||k==SDLK_RIGHT)move_player(1,0);if(k>=SDLK_1&&k<=SDLK_5)selected=k-SDLK_1;if(k==SDLK_SPACE)place_block();if(k==SDLK_f)mine_block();}
