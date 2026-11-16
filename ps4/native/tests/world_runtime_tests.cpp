@@ -10,6 +10,20 @@ int main() {
     world.update_center(0, 0, 1);
     assert(world.loaded_chunks() == 9);
 
+    mineplus::PcgWorld anchorGenerator(4839201ULL);
+    mineplus::StructureAnchor expectedAnchor{};
+    bool foundAnchor = false;
+    for (int cy = -20; cy <= 20 && !foundAnchor; ++cy) {
+        for (int cx = -20; cx <= 20 && !foundAnchor; ++cx) {
+            foundAnchor = anchorGenerator.structure_anchor_for_cell(cx, cy, expectedAnchor);
+        }
+    }
+    assert(foundAnchor);
+    mineplus::StructureAnchor cachedAnchor{};
+    assert(world.get_structure(expectedAnchor.x, expectedAnchor.y, cachedAnchor));
+    assert(cachedAnchor.x == expectedAnchor.x && cachedAnchor.y == expectedAnchor.y);
+    assert(cachedAnchor.kind == expectedAnchor.kind);
+
     mineplus::SurfaceSample originalSample{};
     assert(world.get_sample(-1, -1, originalSample));
     std::uint8_t before = 0;
