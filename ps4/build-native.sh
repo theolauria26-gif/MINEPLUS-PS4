@@ -32,6 +32,13 @@ def chunk(t,d):return struct.pack(">I",len(d))+t+d+struct.pack(">I",zlib.crc32(t
 png=b"\x89PNG\r\n\x1a\n"+chunk(b"IHDR",struct.pack(">2I5B",w,h,8,2,0,0,0))+chunk(b"IDAT",zlib.compress(b"".join(rows),9))+chunk(b"IEND",b"")
 open(sys.argv[1],"wb").write(png)
 PY
+# Include the standard PS4 homebrew rights resource when the toolchain provides it.
+RIGHT_SPRX="$(find "$TOOLCHAIN/samples" -type f -path '*/sce_sys/about/right.sprx' -print -quit)"
+if [[ -n "$RIGHT_SPRX" ]]; then
+ mkdir -p "$STAGE/sce_sys/about"
+ cp "$RIGHT_SPRX" "$STAGE/sce_sys/about/right.sprx"
+fi
+# Bundle runtime modules shipped by the toolchain, if present.
 for module in libc.prx libSceFios2.prx; do
  [[ ! -f "$TOOLCHAIN/bin/data/modules/$module" ]] || cp "$TOOLCHAIN/bin/data/modules/$module" "$STAGE/sce_module/$module"
 done
@@ -48,11 +55,13 @@ cd "$STAGE"
 "$PKG" sfo_setentry sce_sys/param.sfo TITLE_ID --type Utf8 --maxsize 12 --value MNPX00001
 "$PKG" sfo_setentry sce_sys/param.sfo VERSION --type Utf8 --maxsize 8 --value 1.00
 FILES=(eboot.bin sce_sys/param.sfo sce_sys/icon0.png)
+[[ ! -f sce_sys/about/right.sprx ]] || FILES+=(sce_sys/about/right.sprx)
 for f in sce_module/*; do [[ ! -f "$f" ]] || FILES+=("$f"); done
 "$TOOLCHAIN/bin/linux/create-gp4" -out pkg.gp4 --content-id=IV0000-MNPX00001_00-MINEPLUS00000001 --files "${FILES[*]}"
 "$PKG" pkg_build pkg.gp4 "$OUT"
 PKG_FILE="$(find "$OUT" -maxdepth 1 -type f -name '*.pkg' -print -quit)"
 [[ -n "$PKG_FILE" && -s "$PKG_FILE" ]] || fail "Nenhum PKG válido foi gerado."
+"$PKG" pkg_validate --verbose "$PKG_FILE"
 python3 - "$PKG_FILE" <<'PY'
 import os,sys
 path=sys.argv[1]
