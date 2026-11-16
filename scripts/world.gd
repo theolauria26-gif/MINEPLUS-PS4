@@ -9,6 +9,7 @@ const BLOCK_COLORS := [
 const BLOCK_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo", "Tijolo"]
 
 var blocks: Dictionary = {}
+var chunk_streamer: MineplusChunkStreamer
 var selected_block := 0
 var block_counts: Array[int] = [64, 64, 32, 32, 16, 0]
 var player: CharacterBody3D
@@ -36,7 +37,7 @@ var world_slot := 1
 var autosave_elapsed := 0.0
 const AUTOSAVE_INTERVAL := 45.0
 var selected_skin := 0
-var saved_player_position := Vector3(0, 2.4, 5)
+var saved_player_position := Vector3(0, 13.0, 5)
 var saved_player_rotation_y := 0.0
 var saved_camera_pitch := 0.0
 var saved_selected_block := 0
@@ -50,6 +51,7 @@ func _ready() -> void:
 	_generate_world()
 	_load_world()
 	_create_player()
+	chunk_streamer.player = player
 	_create_hud()
 	if not OS.has_feature("mobile"):
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -77,28 +79,11 @@ func _setup_environment() -> void:
 	add_child(sun)
 
 func _generate_world() -> void:
-	for x in range(-WORLD_RADIUS, WORLD_RADIUS + 1):
-		for z in range(-WORLD_RADIUS, WORLD_RADIUS + 1):
-			_add_block(Vector3i(x, 0, z), 0)
-			if (x * 17 + z * 31) % 23 == 0:
-				_add_block(Vector3i(x, -1, z), 1)
-	for x in range(-2, 3):
-		for z in range(-2, 3):
-			if abs(x) == 2 or abs(z) == 2:
-				_add_block(Vector3i(x, 1, z), 1)
-	_add_tree(Vector3i(-5, 1, -4))
-	_add_tree(Vector3i(5, 1, -5))
-	_add_tree(Vector3i(-6, 1, 5))
-	_add_tree(Vector3i(6, 1, 4))
+	# Mundo base infinito em chunks; construções do jogador ficam no save separado.
+	chunk_streamer = MineplusChunkStreamer.new()
+	chunk_streamer.name = "ChunkStreamer"
+	add_child(chunk_streamer)
 
-func _add_tree(base: Vector3i) -> void:
-	for y in range(3):
-		_add_block(base + Vector3i(0, y, 0), 1)
-	for x in range(-2, 3):
-		for z in range(-2, 3):
-			for y in range(2, 4):
-				if abs(x) + abs(z) < 4:
-					_add_block(base + Vector3i(x, y, z), 4)
 
 func _setup_block_textures() -> void:
 	block_textures.clear()
@@ -616,7 +601,7 @@ func _save_world(silent: bool = false) -> void:
 		player_position = [player.position.x, player.position.y, player.position.z]
 		player_rotation_y = player.rotation.y
 		camera_pitch = camera.rotation.x
-	var payload := {"version": 3, "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "selected_block": selected_block}
+	var payload := {"version": 4, "world_seed": chunk_streamer.generator.world_seed if chunk_streamer else 4839201, "terrain_edits": chunk_streamer.export_edits() if chunk_streamer else [], "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "selected_block": selected_block}
 	var file := FileAccess.open(_world_save_path(), FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(payload))
@@ -637,6 +622,9 @@ func _load_world() -> void:
 	for body in blocks.values():
 		body.queue_free()
 	blocks.clear()
+	if chunk_streamer:
+		chunk_streamer.generator = MineplusWorldGen.new(int(parsed.get("world_seed", 4839201)))
+		chunk_streamer.import_edits(parsed.get("terrain_edits", []))
 	if parsed.has("pickaxe_durability"):
 		pickaxe_durability = clampi(int(parsed["pickaxe_durability"]), 0, 40)
 	if parsed.has("player_position") and parsed["player_position"] is Array and parsed["player_position"].size() == 3:
@@ -704,7 +692,7 @@ func _physics_process(delta: float) -> void:
 func _respawn_player() -> void:
 	if player == null:
 		return
-	player.global_position = Vector3(0, 2.4, 5)
+	player.global_position = Vector3(0, 13.0, 5)
 	player.velocity = Vector3.ZERO
 	player.rotation.y = 0.0
 	pitch = 0.0
@@ -744,6 +732,16 @@ func _rotate_view(relative: Vector2) -> void:
 	pitch = clampf(pitch - relative.y * look_sensitivity, -1.45, 1.45)
 	camera.rotation.x = pitch
 
+func _terrain_drop_index(terrain_type: int) -> int:
+	match terrain_type:
+		MineplusWorldGen.Block.GRASS: return 0
+		MineplusWorldGen.Block.DIRT, MineplusWorldGen.Block.SNOW, MineplusWorldGen.Block.ICE, MineplusWorldGen.Block.WOOD: return 1
+		MineplusWorldGen.Block.STONE, MineplusWorldGen.Block.BASALT: return 2
+		MineplusWorldGen.Block.SAND: return 3
+		MineplusWorldGen.Block.MOSS: return 4
+		MineplusWorldGen.Block.BRICK: return 5
+	return -1
+
 func _interact(place: bool) -> void:
 	var origin := camera.global_position
 	var end := origin + (-camera.global_transform.basis.z * 6.0)
@@ -755,7 +753,14 @@ func _interact(place: bool) -> void:
 	var body = hit.collider
 	if not body.has_meta("cell"):
 		return
-	var cell: Vector3i = body.get_meta("cell")
+	var terrain_hit := body.has_meta("chunk") and chunk_streamer != null
+	var cell: Vector3i
+	if body.has_meta("cell"):
+		cell = body.get_meta("cell")
+	elif terrain_hit:
+		cell = chunk_streamer.cell_from_hit(hit)
+	else:
+		return
 	if place:
 		var normal: Vector3 = hit.normal
 		var target := cell + Vector3i(roundi(normal.x), roundi(normal.y), roundi(normal.z))
@@ -771,6 +776,28 @@ func _interact(place: bool) -> void:
 		block_counts[selected_block] -= 1
 		_update_hotbar()
 	else:
+		if terrain_hit:
+			var terrain_type := chunk_streamer.mine_surface(cell)
+			if terrain_type < 0:
+				return
+			var drop_index := _terrain_drop_index(terrain_type)
+			if drop_index < 0:
+				return
+			if block_counts[drop_index] >= MAX_STACK_SIZE:
+				if status_label: status_label.text = "Pilha cheia: máximo de %d por material." % MAX_STACK_SIZE
+				return
+			if (drop_index == 2 or drop_index == 5) and pickaxe_durability <= 0:
+				chunk_streamer.terrain_edits.erase("%d,%d" % [cell.x, cell.z])
+				chunk_streamer._rebuild_chunk(chunk_streamer._chunk_of_world(Vector3(cell.x, 0, cell.z)))
+				if status_label: status_label.text = "Precisa de uma picareta para minerar este bloco."
+				return
+			if drop_index == 2 or drop_index == 5:
+				pickaxe_durability -= 1
+				_animate_pickaxe_swing()
+			block_counts[drop_index] += 1
+			_update_hotbar()
+			_save_world(true)
+			return
 		if cell.y >= 0:
 			var block_type := int(body.get_meta("block_type"))
 			if block_counts[block_type] >= MAX_STACK_SIZE:
