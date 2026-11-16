@@ -2,12 +2,23 @@
 #include <cassert>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <vector>
 
 static_assert(sizeof(mineplus::ChunkCache) <= 512u * 1024u,
               "PS4 streamed chunk cache exceeded its static memory budget");
 
 int main() {
+    // Signed world coordinates must map to mathematically correct chunks,
+    // including the int32 limits used by the streamed-world API.
+    using mineplus::ChunkGenerator;
+    assert(ChunkGenerator::floor_div(std::numeric_limits<std::int32_t>::min(), 16) ==
+           -134217728);
+    assert(ChunkGenerator::floor_div(std::numeric_limits<std::int32_t>::max(), 16) ==
+           134217727);
+    assert(ChunkGenerator::floor_div(-1, 16) == -1);
+    assert(ChunkGenerator::floor_div(-16, 16) == -1);
+    assert(ChunkGenerator::floor_div(-17, 16) == -2);
     mineplus::WorldRuntime world(4839201ULL);
     assert(world.seed() == 4839201ULL);
     world.update_center(0, 0, 1);
