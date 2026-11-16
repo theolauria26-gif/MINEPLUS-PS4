@@ -1,14 +1,22 @@
 #pragma once
+#include "world_runtime.hpp"
 #include <cstddef>
 #include <cstdint>
-#include "world_runtime.hpp"
 
-namespace mineplus {\n\n// Common gameplay contract for resident and streamed terrain backends.\nclass WorldGridView {\npublic:\n    virtual ~WorldGridView() = default;\n    virtual bool contains(std::int32_t x, std::int32_t y) const = 0;\n    virtual bool get(std::int32_t x, std::int32_t y, std::uint8_t& tile) = 0;\n    virtual bool set(std::int32_t x, std::int32_t y, std::uint8_t tile) = 0;\n};
+namespace mineplus {
 
-// Transitional adapter for the resident legacy map. It centralizes bounds
-// checks and tile mutation so gameplay can migrate to streamed coordinates
-// without touching save layout or procedural-generation code in one step.
-class FixedWorldGrid : public WorldGridView {
+// Shared contract lets gameplay switch terrain storage without changing
+// collision, mining, placement, or rendering call sites.
+class WorldGridView {
+public:
+    virtual ~WorldGridView() = default;
+    virtual bool contains(std::int32_t x, std::int32_t y) const = 0;
+    virtual bool get(std::int32_t x, std::int32_t y, std::uint8_t& tile) = 0;
+    virtual bool set(std::int32_t x, std::int32_t y, std::uint8_t tile) = 0;
+};
+
+// Transitional adapter for the resident legacy map.
+class FixedWorldGrid final : public WorldGridView {
 public:
     FixedWorldGrid(std::uint8_t* cells, std::int32_t width, std::int32_t height)
         : cells_(cells), width_(width), height_(height) {}
@@ -40,6 +48,22 @@ private:
     std::uint8_t* cells_;
     std::int32_t width_;
     std::int32_t height_;
+};
+
+// Signed world coordinates are unlimited by the resident map dimensions.
+// Reads acquire procedural chunks; writes are retained in the edit journal.
+class StreamedWorldGrid final : public WorldGridView {
+public:
+    explicit StreamedWorldGrid(WorldRuntime& runtime) : runtime_(runtime) {}
+    bool contains(std::int32_t, std::int32_t) const override { return true; }
+    bool get(std::int32_t x, std::int32_t y, std::uint8_t& tile) override {
+        return runtime_.get_tile(x, y, tile);
+    }
+    bool set(std::int32_t x, std::int32_t y, std::uint8_t tile) override {
+        return runtime_.set_tile(x, y, tile);
+    }
+private:
+    WorldRuntime& runtime_;
 };
 
 } // namespace mineplus
