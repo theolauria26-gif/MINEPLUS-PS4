@@ -143,6 +143,24 @@ bool ChunkCache::import_edits(const Edit* edits, std::size_t count) {
     return true;
 }
 
+bool ChunkCache::restore(std::uint64_t seed, const Edit* edits, std::size_t count) {
+    // Validate before resetting any live state. No large temporary cache is
+    // placed on the PS4 thread stack during load.
+    if ((count != 0 && !edits) || count > DELTA_CAPACITY) return false;
+    for (std::size_t i = 0; i < count; ++i) {
+        for (std::size_t j = i + 1; j < count; ++j) {
+            if (edits[i].x == edits[j].x && edits[i].y == edits[j].y)
+                return false;
+        }
+    }
+    generator_ = ChunkGenerator(seed);
+    generator_seed_ = seed;
+    entries_ = {};
+    deltas_ = {};
+    clock_ = 1;
+    return import_edits(edits, count);
+}
+
 std::size_t ChunkCache::loaded_count() const {
     std::size_t count = 0;
     for (const auto& entry : entries_) if (entry.valid) ++count;
