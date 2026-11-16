@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdint>
 #include <iostream>
+#include <vector>
 
 int main() {
     mineplus::WorldRuntime world(4839201ULL);
@@ -27,6 +28,18 @@ int main() {
     mineplus::WorldRuntime restored(4839201ULL);
     assert(restored.import_edits(saved, 1));
     assert(restored.get_tile(-1, -1, edited) && edited == 255);
+    std::vector<std::uint8_t> snapshot;
+    assert(world.encode_save(snapshot));
+    mineplus::WorldRuntime diskLoaded(1);
+    assert(diskLoaded.decode_save(snapshot.data(), snapshot.size()));
+    assert(diskLoaded.seed() == world.seed());
+    assert(diskLoaded.get_tile(-1, -1, edited) && edited == 255);
+    auto corrupt = snapshot;
+    corrupt.back() ^= 0x80;
+    const auto previousSeed = diskLoaded.seed();
+    assert(!diskLoaded.decode_save(corrupt.data(), corrupt.size()));
+    assert(diskLoaded.seed() == previousSeed);
+
     const mineplus::ChunkCache::Edit duplicate[] = {{7, 8, 1}, {7, 8, 2}};
     assert(!restored.import_edits(duplicate, 2));
     std::cout << "MINEPLUS world runtime tests: OK\n";
