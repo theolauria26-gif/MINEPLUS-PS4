@@ -95,6 +95,11 @@ int main() {
     assert(count_face(mesh, VoxelFace::PositiveZ) == 0);
     assert(mesh.size() == 3);
 
+    // A mesh that exactly fills its budget is valid; only the next quad
+    // beyond the budget must fail and clear the output.
+    assert(VoxelMesher::build(chunk, mesh, 3));
+    assert(mesh.size() == 3);
+
     // A caller can impose a hard geometry budget. Failure never leaves a
     // partial mesh that could be uploaded as if it were complete.
     assert(!VoxelMesher::build(chunk, mesh, 2));
