@@ -39,6 +39,13 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain.git "$RUNNER_TEMP/openorbis-source"
           echo "OO_PS4_MODULE_SOURCE_ROOT=$RUNNER_TEMP/openorbis-source" >> "$GITHUB_ENV"
+      - name: Run portable procedural-world tests
+        run: |
+          set -euxo pipefail
+          clang++ -std=c++17 -O2 -Wall -Wextra -I ps4/native \
+            ps4/native/pcg_world.cpp ps4/native/chunk_generator.cpp \
+            ps4/native/tests/pcg_tests.cpp -o "$RUNNER_TEMP/mineplus-pcg-tests"
+          "$RUNNER_TEMP/mineplus-pcg-tests"
       - name: Build native EBOOT and PKG
         run: |
           set -euxo pipefail
