@@ -1,5 +1,7 @@
 #include "chunk_generator.hpp"
 #include <algorithm>
+#include <climits>
+#include <cstddef>
 
 namespace mineplus {
 
