@@ -11,6 +11,8 @@ const BLOCK_SIZE := 1.0
 var generator := MineplusWorldGen.new()
 var player: Node3D
 var chunks: Dictionary = {}
+var pending_chunks: Array[Vector2i] = []
+var queued_chunks: Dictionary = {}
 var terrain_edits: Dictionary = {}
 var material: StandardMaterial3D
 
@@ -29,13 +31,28 @@ func _process(_delta: float) -> void:
 		for x in range(center.x - LOAD_RADIUS, center.x + LOAD_RADIUS + 1):
 			var key := Vector2i(x, z)
 			wanted[key] = true
-			if not chunks.has(key):
-				_build_chunk(key)
+			if not chunks.has(key) and not queued_chunks.has(key):
+				pending_chunks.append(key)
+				queued_chunks[key] = true
 	for key in chunks.keys():
 		if not wanted.has(key) and maxi(abs(key.x - center.x), abs(key.y - center.y)) > UNLOAD_RADIUS:
 			var node: Node3D = chunks[key]
 			chunks.erase(key)
 			node.queue_free()
+	# Budgeta a criação: no máximo um chunk por frame para evitar um pico de FPS.
+	if not pending_chunks.is_empty():
+		var next_key: Vector2i = pending_chunks.pop_front()
+		queued_chunks.erase(next_key)
+		if wanted.has(next_key) and not chunks.has(next_key):
+			_build_chunk(next_key)
+	# Descarta trabalho obsoleto quando o jogador atravessa o mapa rapidamente.
+	var keep_queue: Array[Vector2i] = []
+	for pending in pending_chunks:
+		if maxi(abs(pending.x - center.x), abs(pending.y - center.y)) <= UNLOAD_RADIUS:
+			keep_queue.append(pending)
+		else:
+			queued_chunks.erase(pending)
+	pending_chunks = keep_queue
 
 func _chunk_of_world(position: Vector3) -> Vector2i:
 	return Vector2i(floori(position.x / CHUNK_SIZE), floori(position.z / CHUNK_SIZE))
@@ -89,19 +106,19 @@ func _build_chunk(key: Vector2i) -> void:
 			var z0 := float(z) - 0.5
 			var z1 := float(z) + 0.5
 			var top := float(y) + 0.5
-			_add_quad(st, Vector3(x0, top, z0), Vector3(x1, top, z0), Vector3(x1, top, z1), Vector3(x0, top, z1), color)
+			_add_quad(st, Vector3(x0, top, z0), Vector3(x0, top, z1), Vector3(x1, top, z1), Vector3(x1, top, z0), color)
 			var west := _height(x - 1, z)
 			var east := _height(x + 1, z)
 			var north := _height(x, z - 1)
 			var south := _height(x, z + 1)
 			if west < y:
-				_add_quad(st, Vector3(x0, float(west) + 0.5, z1), Vector3(x0, float(west) + 0.5, z0), Vector3(x0, top, z0), Vector3(x0, top, z1), color.darkened(0.18))
+				_add_quad(st, Vector3(x0, float(west) + 0.5, z0), Vector3(x0, float(west) + 0.5, z1), Vector3(x0, top, z1), Vector3(x0, top, z0), color.darkened(0.18))
 			if east < y:
-				_add_quad(st, Vector3(x1, float(east) + 0.5, z0), Vector3(x1, float(east) + 0.5, z1), Vector3(x1, top, z1), Vector3(x1, top, z0), color.darkened(0.18))
+				_add_quad(st, Vector3(x1, float(east) + 0.5, z1), Vector3(x1, float(east) + 0.5, z0), Vector3(x1, top, z0), Vector3(x1, top, z1), color.darkened(0.18))
 			if north < y:
-				_add_quad(st, Vector3(x0, float(north) + 0.5, z0), Vector3(x1, float(north) + 0.5, z0), Vector3(x1, top, z0), Vector3(x0, top, z0), color.darkened(0.28))
+				_add_quad(st, Vector3(x1, float(north) + 0.5, z0), Vector3(x0, float(north) + 0.5, z0), Vector3(x0, top, z0), Vector3(x1, top, z0), color.darkened(0.28))
 			if south < y:
-				_add_quad(st, Vector3(x1, float(south) + 0.5, z1), Vector3(x0, float(south) + 0.5, z1), Vector3(x0, top, z1), Vector3(x1, top, z1), color.darkened(0.28))
+				_add_quad(st, Vector3(x0, float(south) + 0.5, z1), Vector3(x1, float(south) + 0.5, z1), Vector3(x1, top, z1), Vector3(x0, top, z1), color.darkened(0.28))
 	var mesh := st.commit()
 	if mesh == null or mesh.get_surface_count() == 0:
 		return
