@@ -80,6 +80,53 @@ rows=b"".join(b"\x00"+bytes(v for rgb in row for v in rgb) for row in im)
 png=b"\x89PNG\r\n\x1a\n"+chunk(b"IHDR",struct.pack(">2I5B",S,S,8,2,0,0,0))+chunk(b"IDAT",zlib.compress(rows,9))+chunk(b"IEND",b"")
 open(sys.argv[1],"wb").write(png)
 PY
+# Replace the temporary emblem with the final monochrome Creeper-inspired sigil.
+python3 - "$STAGE/sce_sys/icon0.png" <<'PYICON'
+import struct,zlib,sys
+S=512
+im=[[(9,10,12) for _ in range(S)] for _ in range(S)]
+def rect(x,y,w,h,c):
+ for yy in range(max(0,y),min(S,y+h)):
+  for xx in range(max(0,x),min(S,x+w)): im[yy][xx]=c
+def chunk(t,d): return struct.pack(">I",len(d))+t+d+struct.pack(">I",zlib.crc32(t+d)&0xffffffff)
+# Subtle monochrome radial/stone texture.
+for y in range(S):
+ for x in range(S):
+  d=((x-256)**2+(y-230)**2)**0.5
+  v=max(8,22-int(d/20))
+  im[y][x]=(v,v+1,v+3)
+# Framed heraldic plaque.
+rect(62,48,388,388,(3,4,5));rect(72,58,368,368,(224,225,220));rect(86,72,340,340,(18,20,23))
+rect(100,86,312,312,(204,206,201));rect(112,98,288,288,(29,31,34))
+# Creeper face: angular white stone mask with black cut-outs.
+rect(156,132,200,220,(235,236,230))
+rect(178,178,48,55,(12,14,17));rect(286,178,48,55,(12,14,17))
+rect(226,224,60,75,(12,14,17))
+rect(198,286,40,42,(12,14,17));rect(274,286,40,42,(12,14,17))
+# Carved cheek/forehead highlights and pixel edges.
+rect(156,132,200,9,(255,255,250));rect(156,132,9,220,(255,255,250))
+rect(347,132,9,220,(130,133,133));rect(156,343,200,9,(130,133,133))
+# Small monochrome title plate.
+rect(110,392,292,54,(226,227,222));rect(118,400,276,38,(10,12,15))
+font={
+'M':["10001","11011","10101","10101","10001","10001","10001"],
+'I':["11111","00100","00100","00100","00100","00100","11111"],
+'N':["10001","11001","10101","10011","10001","10001","10001"],
+'E':["11111","10000","10000","11110","10000","10000","11111"],
+'P':["11110","10001","10001","11110","10000","10000","10000"],
+'L':["10000","10000","10000","10000","10000","10000","11111"],
+'U':["10001","10001","10001","10001","10001","10001","01110"],
+'S':["01111","10000","10000","01110","00001","00001","11110"]}
+word="MINEPLUS";scale=4;gap=3;x=(S-(len(word)*5*scale+(len(word)-1)*gap))//2
+for ch in word:
+ for yy,row in enumerate(font[ch]):
+  for xx,b in enumerate(row):
+   if b=="1": rect(x+xx*scale,409+yy*scale,scale,scale,(245,246,240))
+ x+=5*scale+gap
+rows=b"".join(b"\\x00"+bytes(v for rgb in row for v in rgb) for row in im)
+png=b"\\x89PNG\\r\\n\\x1a\\n"+chunk(b"IHDR",struct.pack(">2I5B",S,S,8,2,0,0,0))+chunk(b"IDAT",zlib.compress(rows,9))+chunk(b"IEND",b"")
+open(sys.argv[1],"wb").write(png)
+PYICON
 # Include the standard PS4 homebrew rights resource when the toolchain provides it.
 RIGHT_SPRX="$(find "$TOOLCHAIN/samples" -type f -path '*/sce_sys/about/right.sprx' -print -quit)"
 if [[ -n "$RIGHT_SPRX" ]]; then
