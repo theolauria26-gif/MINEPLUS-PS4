@@ -110,7 +110,40 @@ bool ChunkCache::set_surface(std::int32_t wx, std::int32_t wy,
     return true;
 }
 
-std::size_t ChunkCache::export_edits(Edit* output, std::size_t capacity) const {\n    if (!output || capacity < delta_count()) return 0;\n    std::size_t written = 0;\n    for (const auto& delta : deltas_) {\n        if (!delta.valid) continue;\n        output[written++] = Edit{delta.x, delta.y, delta.tile};\n    }\n    return written;\n}\n\nbool ChunkCache::import_edits(const Edit* edits, std::size_t count) {\n    if ((count != 0 && !edits) || count > DELTA_CAPACITY) return false;\n    // Validate the complete input before mutating the live journal.\n    for (std::size_t i = 0; i < count; ++i) {\n        for (std::size_t j = i + 1; j < count; ++j)\n            if (edits[i].x == edits[j].x && edits[i].y == edits[j].y) return false;\n    }\n    for (auto& delta : deltas_) delta = Delta{};\n    for (std::size_t i = 0; i < count; ++i) {\n        deltas_[i] = Delta{edits[i].x, edits[i].y, edits[i].tile, true};\n        const auto cx = ChunkGenerator::floor_div(edits[i].x, PcgWorld::CHUNK_SIZE);\n        const auto cy = ChunkGenerator::floor_div(edits[i].y, PcgWorld::CHUNK_SIZE);\n        if (auto* entry = find_chunk(cx, cy))\n            entry->data.cells[local_index(edits[i].x, edits[i].y)].surface = edits[i].tile;\n    }\n    return true;\n}\n\nstd::size_t ChunkCache::loaded_count() const {
+std::size_t ChunkCache::export_edits(Edit* output, std::size_t capacity) const {
+    const std::size_t required = delta_count();
+    if (required == 0) return 0;
+    if (!output || capacity < required) return 0;
+    std::size_t written = 0;
+    for (const auto& delta : deltas_) {
+        if (!delta.valid) continue;
+        output[written++] = Edit{delta.x, delta.y, delta.tile};
+    }
+    return written;
+}
+
+bool ChunkCache::import_edits(const Edit* edits, std::size_t count) {
+    if ((count != 0 && !edits) || count > DELTA_CAPACITY) return false;
+    // Validate the complete input before mutating the live journal.
+    for (std::size_t i = 0; i < count; ++i) {
+        for (std::size_t j = i + 1; j < count; ++j) {
+            if (edits[i].x == edits[j].x && edits[i].y == edits[j].y)
+                return false;
+        }
+    }
+    for (auto& delta : deltas_) delta = Delta{};
+    for (std::size_t i = 0; i < count; ++i) {
+        deltas_[i] = Delta{edits[i].x, edits[i].y, edits[i].tile, true};
+        const auto cx = ChunkGenerator::floor_div(edits[i].x, PcgWorld::CHUNK_SIZE);
+        const auto cy = ChunkGenerator::floor_div(edits[i].y, PcgWorld::CHUNK_SIZE);
+        if (auto* entry = find_chunk(cx, cy)) {
+            entry->data.cells[local_index(edits[i].x, edits[i].y)].surface = edits[i].tile;
+        }
+    }
+    return true;
+}
+
+std::size_t ChunkCache::loaded_count() const {
     std::size_t count = 0;
     for (const auto& entry : entries_) if (entry.valid) ++count;
     return count;
