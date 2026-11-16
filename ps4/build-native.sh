@@ -162,7 +162,8 @@ fi
 # Some v0.5.x archives omit the prebuilt PRXs, so build them from the toolchain's
 # matching source instead of silently producing a package without them.
 for module in libc libSceFios2; do
-  source_dir="$TOOLCHAIN/src/modules/$module"
+  MODULE_SOURCE_ROOT="${OO_PS4_MODULE_SOURCE_ROOT:-$TOOLCHAIN}"
+  source_dir="$MODULE_SOURCE_ROOT/src/modules/$module"
   prebuilt="$TOOLCHAIN/bin/data/modules/$module.prx"
   if [[ -s "$prebuilt" ]]; then
     cp "$prebuilt" "$STAGE/sce_module/$module.prx"
