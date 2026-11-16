@@ -33,12 +33,14 @@ int main() {
     mineplus::WorldRuntime diskLoaded(1);
     assert(diskLoaded.decode_save(snapshot.data(), snapshot.size()));
     assert(diskLoaded.seed() == world.seed());
+    assert(diskLoaded.loaded_chunks() == 0);
     assert(diskLoaded.get_tile(-1, -1, edited) && edited == 255);
     auto corrupt = snapshot;
     corrupt.back() ^= 0x80;
     const auto previousSeed = diskLoaded.seed();
     assert(!diskLoaded.decode_save(corrupt.data(), corrupt.size()));
     assert(diskLoaded.seed() == previousSeed);
+    assert(diskLoaded.get_tile(-1, -1, edited) && edited == 255);
 
     const mineplus::ChunkCache::Edit duplicate[] = {{7, 8, 1}, {7, 8, 2}};
     assert(!restored.import_edits(duplicate, 2));
