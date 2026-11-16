@@ -138,21 +138,28 @@ void update_player_combat(){
  Uint32 now=SDL_GetTicks();
  if(playerHealth<=0){playerHealth=10;px=COLS/2;py=ROWS/2;lastDamage=now;damageCooldown=now+1400;return;}
  if(now<damageCooldown)return;
- for(const auto &m:creatures){if(m.hp<=0)continue;int distance=abs(m.x-px)+abs(m.y-py);if(distance<=1&&now-lastDamage>=950){--playerHealth;lastDamage=now;damageCooldown=now+500;return;}}
+ for(const auto &m:creatures){if(m.hp<=0||m.type%4==3)continue;int distance=abs(m.x-px)+abs(m.y-py);if(distance<=1&&now-lastDamage>=950){--playerHealth;lastDamage=now;damageCooldown=now+500;return;}}
 }
 void update_creatures(){
  Uint32 now=SDL_GetTicks();if(now-lastCreatureUpdate<650)return;lastCreatureUpdate=now;
  for(auto &m:creatures){
   if(m.hp<=0)continue;
-  int dx=px-m.x,dy=py-m.y;
-  if(abs(dx)+abs(dy)>14||(!dx&&!dy))continue;
+  int dx=px-m.x,dy=py-m.y,distance=abs(dx)+abs(dy);
+  const bool passive=(m.type%4==3);
+  if((!passive&&distance>14)||(!dx&&!dy))continue;
+  if(passive&&distance>7)continue;
   int sx=0,sy=0;
-  if(abs(dx)>=abs(dy))sx=(dx>0)-(dx<0);else sy=(dy>0)-(dy<0);
+  if(passive){
+   // Skittish wildlife flees when approached instead of attacking the player.
+   if(abs(dx)>=abs(dy))sx=dx>0?-1:1;else sy=dy>0?-1:1;
+  }else{
+   if(abs(dx)>=abs(dy))sx=(dx>0)-(dx<0);else sy=(dy>0)-(dy<0);
+  }
   int nx=m.x+sx,ny=m.y+sy;
   if(nx==px&&ny==py)continue;
   if(nx<1||nx>=COLS-1||ny<1||ny>=ROWS-1||solid_tile(world[ny*COLS+nx])||creature_occupies(nx,ny,&m)){
    sx=0;sy=0;
-   if(abs(dx)<abs(dy))sx=(dx>0)-(dx<0);else sy=(dy>0)-(dy<0);
+   if(abs(dx)<abs(dy)){sx=passive?(dy>0?-1:1):(dy>0?1:-1);}else{sy=passive?(dx>0?-1:1):(dx>0?1:-1);}
    nx=m.x+sx;ny=m.y+sy;
   }
   if((nx!=px||ny!=py)&&nx>=1&&nx<COLS-1&&ny>=1&&ny<ROWS-1&&!solid_tile(world[ny*COLS+nx])&&!creature_occupies(nx,ny,&m)){m.x=nx;m.y=ny;}
@@ -175,7 +182,7 @@ void craft_item(){
    if(stock[Dirt]>=3&&stock[Bone]>=1&&stock[Stone]<=9997){stock[Dirt]-=3;stock[Bone]-=1;stock[Stone]+=2;}break;
  }
 }
-void mine_block(){int i=target_index();if(i<0)return;for(auto &m:creatures)if(m.x==px+faceX&&m.y==py+faceY&&m.hp>0){if(--m.hp<=0){stock[Bone]+=2;m.x=-100;m.y=-100;}return;}int block=world[i];if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)++stock[drop];world[i]=Air;}}
+void mine_block(){int i=target_index();if(i<0)return;for(auto &m:creatures)if(m.x==px+faceX&&m.y==py+faceY&&m.hp>0){if(--m.hp<=0){if(m.type<4)stock[Bone]+=2;else if(m.type<8)stock[Crystal]+=1;else stock[DarkStone]+=1;m.x=-100;m.y=-100;}return;}int block=world[i];if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)++stock[drop];world[i]=Air;}}
 void draw_menu(){
  // Dark-fantasy title screen: moonlit ruins, distant towers and drifting embers.
  rect(0,0,W,H,5,8,14);
