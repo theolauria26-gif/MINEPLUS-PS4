@@ -1,0 +1,24 @@
+name: Validate MINEPLUS Godot PCG
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/**"
+      - "scenes/**"
+      - "project.godot"
+      - ".github/workflows/godot-check.yml"
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot 4.3 headless
+        run: |
+          curl -L --fail --retry 3 "https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip" -o "$RUNNER_TEMP/godot.zip"
+          unzip -q "$RUNNER_TEMP/godot.zip" -d "$RUNNER_TEMP/godot"
+          chmod +x "$RUNNER_TEMP/godot/Godot_v4.3-stable_linux.x86_64"
+          echo "$RUNNER_TEMP/godot" >> "$GITHUB_PATH"
+      - name: Import and parse project
+        run: Godot_v4.3-stable_linux.x86_64 --headless --path . --editor --quit
+      - name: Instantiate streamed world
+        run: Godot_v4.3-stable_linux.x86_64 --headless --path . res://scenes/world.tscn --quit-after 90
