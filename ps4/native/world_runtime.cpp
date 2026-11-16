@@ -39,6 +39,21 @@ bool WorldRuntime::set_tile(std::int32_t world_x, std::int32_t world_y,
     return chunks_.set_surface(world_x, world_y, tile);
 }
 
+bool WorldRuntime::set_voxel(std::int32_t world_x, std::int32_t world_y,
+                             std::int32_t z, VoxelMaterial material) {
+    return chunks_.set_voxel(world_x, world_y, z, material);
+}
+
+std::size_t WorldRuntime::export_voxel_edits(ChunkCache::VoxelEdit* output,
+                                             std::size_t capacity) const {
+    return chunks_.export_voxel_edits(output, capacity);
+}
+
+bool WorldRuntime::import_voxel_edits(const ChunkCache::VoxelEdit* edits,
+                                      std::size_t count) {
+    return chunks_.import_voxel_edits(edits, count);
+}
+
 std::size_t WorldRuntime::export_edits(ChunkCache::Edit* output,
                                        std::size_t capacity) const {
     return chunks_.export_edits(output, capacity);
@@ -60,14 +75,18 @@ bool WorldRuntime::encode_save(std::vector<std::uint8_t>& bytes) const {
     WorldArchive archive;
     archive.seed = chunks_.seed();
     archive.edits.assign(edits.begin(), edits.begin() + count);
+    std::array<ChunkCache::VoxelEdit, ChunkCache::VOXEL_DELTA_CAPACITY> voxel_edits{};
+    const std::size_t voxel_count = chunks_.export_voxel_edits(voxel_edits.data(), voxel_edits.size());
+    if (voxel_count > voxel_edits.size()) return false;
+    archive.voxel_edits.assign(voxel_edits.begin(), voxel_edits.begin() + voxel_count);
     return SaveCodec::encode(archive, bytes);
 }
 
 bool WorldRuntime::decode_save(const std::uint8_t* bytes, std::size_t size) {
     WorldArchive archive;
     if (!SaveCodec::decode(bytes, size, archive)) return false;
-    return chunks_.restore(archive.seed, archive.edits.data(),
-                           archive.edits.size());
+    return chunks_.restore(archive.seed, archive.edits.data(), archive.edits.size(),
+                           archive.voxel_edits.data(), archive.voxel_edits.size());
 }
 
 } // namespace mineplus
