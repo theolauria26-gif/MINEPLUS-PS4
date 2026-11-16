@@ -31,19 +31,17 @@ bool VoxelMeshVertexBuilder::build(const std::vector<MeshQuad>& quads,
             output.clear(); return false;
         }
         float base[3]={static_cast<float>(q.x),static_cast<float>(q.y),static_cast<float>(q.z)};
-        const float u0=basis.u_sign>0?0.0f:static_cast<float>(q.width);
-        const float u1=basis.u_sign>0?static_cast<float>(q.width):0.0f;
-        const float v0=basis.v_sign>0?0.0f:static_cast<float>(q.height);
-        const float v1=basis.v_sign>0?static_cast<float>(q.height):0.0f;
+        const float u0=0.0f, u1=static_cast<float>(q.width);
+        const float v0=0.0f, v1=static_cast<float>(q.height);
         const float us[4]={u0,u1,u1,u0};
         const float vs[4]={v0,v0,v1,v1};
         for(int i=0;i<4;++i) {
             VoxelMeshVertex vertex{};
             vertex.x=base[0]; vertex.y=base[1]; vertex.z=base[2];
             set_axis(vertex.x,vertex.y,vertex.z,basis.u_axis,
-                     base[basis.u_axis]+us[i]*basis.u_sign);
+                     base[basis.u_axis]+(basis.u_sign>0?us[i]:static_cast<float>(q.width)-us[i]));
             set_axis(vertex.x,vertex.y,vertex.z,basis.v_axis,
-                     base[basis.v_axis]+vs[i]*basis.v_sign);
+                     base[basis.v_axis]+(basis.v_sign>0?vs[i]:static_cast<float>(q.height)-vs[i]));
             // The plane coordinate already lies on the exposed face.
             vertex.u=us[i]; vertex.v=vs[i]; vertex.material=q.material;
             set_normal(vertex,q.face);
