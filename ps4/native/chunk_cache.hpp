@@ -12,6 +12,8 @@ class ChunkCache {
 public:
     static constexpr std::size_t CAPACITY = 81;
     static constexpr std::size_t DELTA_CAPACITY = 2048;
+    // Reserve a bounded ID range for content packs and legacy test fixtures.
+    static constexpr std::uint8_t MAX_TILE_ID = 77;
 
     explicit ChunkCache(std::uint64_t seed = 4839201ULL);
 
