@@ -18,6 +18,8 @@ public:
                   std::uint8_t& tile);
     bool get_sample(std::int32_t world_x, std::int32_t world_y,
                     SurfaceSample& sample);
+    bool get_voxel(std::int32_t world_x, std::int32_t world_y,
+                   std::int32_t z, VoxelSample& voxel);
     bool get_structure(std::int32_t world_x, std::int32_t world_y,
                        StructureAnchor& anchor);
     bool set_tile(std::int32_t world_x, std::int32_t world_y,
