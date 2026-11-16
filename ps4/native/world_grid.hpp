@@ -65,6 +65,10 @@ public:
     bool get_sample(std::int32_t x, std::int32_t y, SurfaceSample& sample) {
         return runtime_.get_sample(x, y, sample);
     }
+    bool get_voxel(std::int32_t x, std::int32_t y, std::int32_t z,
+                   VoxelSample& voxel) {
+        return runtime_.get_voxel(x, y, z, voxel);
+    }
     bool get_structure(std::int32_t x, std::int32_t y, StructureAnchor& anchor) {
         return runtime_.get_structure(x, y, anchor);
     }
