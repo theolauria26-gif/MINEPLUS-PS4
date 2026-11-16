@@ -9,11 +9,16 @@ int main() {
     WorldArchive source;
     source.seed=0xfedcba9876543210ULL;
     source.edits={{-33,48,9},{700,-900,21},{0,0,0}};
+    source.voxel_edits={{-33,48,12,VoxelMaterial::Crystal},{700,-900,42,VoxelMaterial::Air}};
     std::vector<std::uint8_t> bytes;
     assert(SaveCodec::encode(source,bytes));
     WorldArchive restored;
     assert(SaveCodec::decode(bytes.data(),bytes.size(),restored));
     assert(restored.seed==source.seed && restored.edits.size()==3);
+    assert(restored.voxel_edits.size()==2);
+    assert(restored.voxel_edits[0].x==-33 && restored.voxel_edits[0].z==12);
+    assert(restored.voxel_edits[0].material==VoxelMaterial::Crystal);
+    assert(restored.voxel_edits[1].material==VoxelMaterial::Air);
     for(std::size_t i=0;i<source.edits.size();++i) {
         assert(restored.edits[i].x==source.edits[i].x);
         assert(restored.edits[i].y==source.edits[i].y);
@@ -26,6 +31,10 @@ int main() {
     assert(!SaveCodec::decode(trailing.data(),trailing.size(),restored));
     WorldArchive duplicate; duplicate.edits={{1,2,3},{1,2,4}};
     assert(!SaveCodec::encode(duplicate,damaged));
+    WorldArchive duplicateVoxel; duplicateVoxel.voxel_edits={{1,2,3,VoxelMaterial::Stone},{1,2,3,VoxelMaterial::Air}};
+    assert(!SaveCodec::encode(duplicateVoxel,damaged));
+    WorldArchive invalidVoxel; invalidVoxel.voxel_edits={{1,2,128,VoxelMaterial::Stone}};
+    assert(!SaveCodec::encode(invalidVoxel,damaged));
     WorldArchive extendedTile; extendedTile.edits={{1,2,255}};
     assert(SaveCodec::encode(extendedTile,damaged));
     WorldArchive extendedRestored;
