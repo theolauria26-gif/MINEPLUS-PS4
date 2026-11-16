@@ -27,7 +27,7 @@ std::array<unsigned char,COLS*ROWS> loadWorldBuffer{};
 std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> legacyWorldBuffer{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0;
 std::uint64_t worldSeed=4839201ULL;
-Uint32 lastDamage=0,damageCooldown=0;
+Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0;int lastCreatureHitX=-100,lastCreatureHitY=-100;
 struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};std::array<int,22> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
 unsigned hash2(int x,int y){unsigned n=(unsigned)(x*374761393u+y*668265263u+0x9e3779b9u);n=(n^(n>>13))*1274126177u;return n^(n>>16);}
 bool running=true,playing=false,inventory=false,paused=false;
@@ -307,24 +307,34 @@ void update_player_combat(){
 }
 void update_creatures(){
  Uint32 now=SDL_GetTicks();if(now-lastCreatureUpdate<650)return;lastCreatureUpdate=now;
+ const unsigned tick=now/650u;
  for(auto &m:creatures){
   if(m.hp<=0)continue;
   int dx=px-m.x,dy=py-m.y,distance=abs(dx)+abs(dy);
   const bool passive=(m.type%4==3);
-  if((!passive&&distance>14)||(!dx&&!dy))continue;
-  if(passive&&distance>7)continue;
+  const bool wandering=passive?distance>7:distance>14;
+  if(!wandering&&!dx&&!dy)continue;
   int sx=0,sy=0;
-  if(passive){
+  if(wandering){
+   // Distant creatures patrol instead of freezing; no mutable RNG state is needed.
+   const unsigned roam=hash2(m.x+int(tick*17u),m.y-int(tick*11u)+m.type*31);
+   if((roam&3u)!=0u)continue;
+   switch((roam>>4)&3u){case 0:sx=1;break;case 1:sx=-1;break;case 2:sy=1;break;default:sy=-1;break;}
+  }else if(passive){
    // Skittish wildlife flees when approached instead of attacking the player.
    if(abs(dx)>=abs(dy))sx=dx>0?-1:1;else sy=dy>0?-1:1;
   }else{
+   // Aggressive species pursue the player with axis-prioritized pathing.
    if(abs(dx)>=abs(dy))sx=(dx>0)-(dx<0);else sy=(dy>0)-(dy<0);
   }
   int nx=m.x+sx,ny=m.y+sy;
   if(nx==px&&ny==py)continue;
   if(nx<1||nx>=COLS-1||ny<1||ny>=ROWS-1||solid_tile(tile_at(nx,ny))||creature_occupies(nx,ny,&m)){
    sx=0;sy=0;
-   if(abs(dx)<abs(dy)){sx=passive?(dy>0?-1:1):(dy>0?1:-1);}else{sy=passive?(dx>0?-1:1):(dx>0?1:-1);}
+   if(wandering){
+    const unsigned turn=hash2(m.x+int(tick),m.y-m.type);
+    if(turn&1u)sx=(turn&2u)?1:-1;else sy=(turn&2u)?1:-1;
+   }else if(abs(dx)<abs(dy)){sx=passive?(dy>0?-1:1):(dy>0?1:-1);}else{sy=passive?(dx>0?-1:1):(dx>0?1:-1);}
    nx=m.x+sx;ny=m.y+sy;
   }
   if((nx!=px||ny!=py)&&nx>=1&&nx<COLS-1&&ny>=1&&ny<ROWS-1&&!solid_tile(tile_at(nx,ny))&&!creature_occupies(nx,ny,&m)){m.x=nx;m.y=ny;}
@@ -352,7 +362,7 @@ void craft_item(){
   case 8: if(stock[Rune]>=2&&stock[Crystal]>=2&&stock[AncientRune]<=9998){stock[Rune]-=2;stock[Crystal]-=2;stock[AncientRune]+=1;}break;
  }
 }
-void mine_block(){int x=0,y=0;if(!target_tile(x,y))return;for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){if(--m.hp<=0){if(m.type<4)stock[Bone]+=2;else if(m.type<8)stock[Crystal]+=1;else stock[DarkStone]+=1;m.x=-100;m.y=-100;}return;}int block=tile_at(x,y);if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)++stock[drop];else if(drop>=IronOre&&drop<=Rune)++stock[drop];set_tile_at(x,y,Air);}}
+void mine_block(){int x=0,y=0;if(!target_tile(x,y))return;for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){lastCreatureHit=SDL_GetTicks();lastCreatureHitX=x;lastCreatureHitY=y;if(--m.hp<=0){if(m.type<4)stock[Bone]+=2;else if(m.type<8)stock[Crystal]+=1;else stock[DarkStone]+=1;m.x=-100;m.y=-100;}return;}int block=tile_at(x,y);if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)++stock[drop];else if(drop>=IronOre&&drop<=Rune)++stock[drop];set_tile_at(x,y,Air);}}
 void draw_menu(){
  // Dark-fantasy title screen: moonlit ruins, distant towers and drifting embers.
  rect(0,0,W,H,5,8,14);
@@ -488,6 +498,7 @@ void draw_world(){
   int sy=int(horizon+focal*0.65f/forward-size*0.8f)+bob;
   if(sx>8&&sx<W-8&&size>3){
    static const int speciesColor[12]={75,105,61,130,150,92,112,83,158,67,137,98};
+   const bool recentlyHit=(m.x==lastCreatureHitX&&m.y==lastCreatureHitY&&SDL_GetTicks()-lastCreatureHit<190u);
    const int rr=speciesColor[std::clamp(m.type,0,11)];
    const int bodyW=std::max(2,size*(m.type==8||m.type==10?4:2)/3);
    const int bodyH=std::max(2,size*(m.type==3||m.type==8?5:4)/4);
@@ -496,7 +507,8 @@ void draw_world(){
    rect(sx-bodyW/2,sy+bodyH-1,bodyW, std::max(1,size/14),8,10,11,100);
    rect(sx-bodyW/3,sy+bodyH-std::max(2,size/8),std::max(2,bodyW/4),std::max(2,size/7)+legSwing,rr-17,rr-15,rr-10);
    rect(sx+bodyW/8,sy+bodyH-std::max(2,size/8),std::max(2,bodyW/4),std::max(2,size/7)-legSwing,rr-17,rr-15,rr-10);
-   rect(sx-bodyW/2,sy,bodyW,bodyH,rr,rr-8,rr+5);
+   rect(sx-bodyW/2,sy,bodyW,bodyH,recentlyHit?245:rr,recentlyHit?220:rr-8,recentlyHit?190:rr+5);
+   if(recentlyHit&&size>9){draw_text("1",sx,sy-std::max(9,size/3),std::max(1,size/32),255,225,180);}
    // Species 6/9 carry glowing mineral plates; 8/10 have raised horns.
    if(m.type==6||m.type==9){
     const int glow=110+int((std::sin(phase*3.0f)+1.0f)*35.0f);
