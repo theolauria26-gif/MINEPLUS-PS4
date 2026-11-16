@@ -47,7 +47,7 @@ Para concluir a etapa local, é necessário disponibilizar OpenOrbis v0.5.4, as 
 ## Testes automatizados
 
 O workflow executa testes C++ portáveis para:
-- determinismo do PCG, coordenadas negativas, fronteiras de chunks e estruturas subterrâneas;
+- determinismo do PCG, coordenadas negativas, limites `int32` do espaço de coordenadas, fronteiras de chunks e estruturas subterrâneas;
 - cache LRU, persistência de alterações e limites do journal;
 - runtime, edição de voxels, exportação/importação e checksum de saves;
 - adaptadores de mundo fixo e streamed.
