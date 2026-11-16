@@ -69,16 +69,20 @@ std::size_t WorldRuntime::saved_edits() const { return chunks_.delta_count(); }
 std::uint64_t WorldRuntime::seed() const { return chunks_.seed(); }
 
 bool WorldRuntime::encode_save(std::vector<std::uint8_t>& bytes) const {
-    std::array<ChunkCache::Edit, ChunkCache::DELTA_CAPACITY> edits{};
+    // Save scratch buffers are heap-backed: the 4096-entry voxel journal must
+    // never consume the constrained PS4 main-thread stack.
+    std::vector<ChunkCache::Edit> edits(ChunkCache::DELTA_CAPACITY);
     const std::size_t count = chunks_.export_edits(edits.data(), edits.size());
     if (count != chunks_.delta_count()) return false;
     WorldArchive archive;
     archive.seed = chunks_.seed();
-    archive.edits.assign(edits.begin(), edits.begin() + count);
-    std::array<ChunkCache::VoxelEdit, ChunkCache::VOXEL_DELTA_CAPACITY> voxel_edits{};
+    edits.resize(count);
+    archive.edits.swap(edits);
+    std::vector<ChunkCache::VoxelEdit> voxel_edits(ChunkCache::VOXEL_DELTA_CAPACITY);
     const std::size_t voxel_count = chunks_.export_voxel_edits(voxel_edits.data(), voxel_edits.size());
     if (voxel_count > voxel_edits.size()) return false;
-    archive.voxel_edits.assign(voxel_edits.begin(), voxel_edits.begin() + voxel_count);
+    voxel_edits.resize(voxel_count);
+    archive.voxel_edits.swap(voxel_edits);
     return SaveCodec::encode(archive, bytes);
 }
 
