@@ -123,11 +123,25 @@ for ch in word:
   for xx,b in enumerate(row):
    if b=="1": rect(x+xx*scale,409+yy*scale,scale,scale,(245,246,240))
  x+=5*scale+gap
-rows=b"".join(b"\\x00"+bytes(v for rgb in row for v in rgb) for row in im)
-png=b"\\x89PNG\\r\\n\\x1a\\n"+chunk(b"IHDR",struct.pack(">2I5B",S,S,8,2,0,0,0))+chunk(b"IDAT",zlib.compress(rows,9))+chunk(b"IEND",b"")
+rows=b"".join(b"\x00"+bytes(v for rgb in row for v in rgb) for row in im)
+png=b"\x89PNG\r\n\x1a\n"+chunk(b"IHDR",struct.pack(">2I5B",S,S,8,2,0,0,0))+chunk(b"IDAT",zlib.compress(rows,9))+chunk(b"IEND",b"")
 open(sys.argv[1],"wb").write(png)
 PYICON
 # Include the standard PS4 homebrew rights resource when the toolchain provides it.
+# Validate icon0 before creating the PKG: PS4 requires a 512x512, 24-bit PNG without alpha.
+python3 - "$STAGE/sce_sys/icon0.png" <<'PYICONCHECK'
+import struct,sys
+p=sys.argv[1]
+data=open(p,"rb").read()
+if data[:8] != b"\x89PNG\r\n\x1a\n":
+    raise SystemExit("ERRO: icon0.png possui assinatura PNG inválida.")
+if len(data) < 29 or data[12:16] != b"IHDR":
+    raise SystemExit("ERRO: icon0.png não possui cabeçalho IHDR válido.")
+w,h,depth,color=struct.unpack(">IIBB",data[16:26])
+if (w,h,depth,color) != (512,512,8,2):
+    raise SystemExit(f"ERRO: icon0.png deve ser RGB 24-bit 512x512; recebido {w}x{h}, depth={depth}, color_type={color}.")
+print("icon0.png validado: RGB 24-bit, 512x512, sem alpha.")
+PYICONCHECK
 RIGHT_SPRX="$(find "$TOOLCHAIN/samples" -type f -path '*/sce_sys/about/right.sprx' -print -quit)"
 if [[ -n "$RIGHT_SPRX" ]]; then
  mkdir -p "$STAGE/sce_sys/about"
