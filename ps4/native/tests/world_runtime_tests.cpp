@@ -18,8 +18,8 @@ int main() {
     assert(world.saved_edits() == 1);
 
     // Moving far enough evicts the original chunk; the journal must restore it.
-    world.update_center(4096, -4096, 1);
-    assert(world.loaded_chunks() == 9);
+    world.update_center(4096, -4096, 4);
+    assert(world.loaded_chunks() == 81);
     assert(world.get_tile(-1, -1, edited) && edited == 255);
 
     mineplus::ChunkCache::Edit saved[4]{};
