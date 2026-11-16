@@ -100,9 +100,9 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
     const std::int32_t surface_z = column.height;
     const Biome biome = static_cast<Biome>(column.biome);
 
-    // Every major landmark conceals a deterministic three-chamber dungeon.
-    // Rooms and their connecting corridor are carved below the surface, while
-    // the roof/floor remain solid. Geometry is derived only from seed + anchor.
+    // Major landmarks can conceal a deterministic five-chamber primordial
+    // complex. Rooms and connecting corridors are carved below the surface,
+    // while the roof/floor remain solid. Geometry uses seed + global anchor.
     StructureAnchor dungeon{};
     const std::int32_t depth = surface_z - z;
     if (surface_z >= 15 && depth >= 8 && depth <= 14 &&
