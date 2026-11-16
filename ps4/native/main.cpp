@@ -258,7 +258,7 @@ void draw_world(){
     color(r,g,b);SDL_RenderDrawLine(renderer,sx,sy,sx,lastY);
     // Fine surface marks break up flat polygons and give each material a readable grain.
     for(int ty=sy+4+(tex%5);ty<lastY;ty+=7){
-     unsigned mark=hash2(tex+unsigned(ty*13+sx*7));
+     unsigned mark=hash2(int(tex+unsigned(ty*13+sx*7)),int(sx+ty*3));
      if(mark%5==0){color(Uint8(std::min(255,int(r)+18)),Uint8(std::min(255,int(g)+18)),Uint8(std::min(255,int(b)+16)));SDL_RenderDrawPoint(renderer,sx,ty);}
     }
     // Thin illuminated top edge gives the terrain a block-built silhouette.
