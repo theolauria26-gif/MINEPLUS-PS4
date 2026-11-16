@@ -84,3 +84,8 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 ## Direção visual: materiais pixel-art
 
 O renderer recebeu uma primeira camada de materiais procedurais com paletas mais vivas e padrões específicos por bloco (grama, terra, pedra, madeira, cristais, runas, gelo, água e lava). Os padrões são determinísticos em coordenadas do mundo para permanecerem estáveis durante o movimento. Ainda não é um atlas UV nem renderização 3D de chunks: a arquitetura atual continua sendo um renderer SDL2 de colunas em perspectiva, e a evolução para malhas voxel, modelos cúbicos e iluminação avançada segue como trabalho pendente.
+
+
+## Próximos passos para o sandbox completo
+
+O diagnóstico de arquitetura, as lacunas reais e o plano priorizado de evolução estão em [docs/ROADMAP_HYTALE_PLUS.md](docs/ROADMAP_HYTALE_PLUS.md). O roteiro separa o que já existe do que ainda depende de renderer 3D, streaming integrado, IA, animações, áudio e progressão.
