@@ -90,6 +90,19 @@ bool ChunkCache::get_voxel(std::int32_t wx, std::int32_t wy,
     const auto cx = ChunkGenerator::floor_div(wx, PcgWorld::CHUNK_SIZE);
     const auto cy = ChunkGenerator::floor_div(wy, PcgWorld::CHUNK_SIZE);
     if (!acquire_chunk(cx, cy)) return false;
+    SurfaceSample column{};
+    if (!get(wx, wy, column)) return false;
+    // The editable surface is authoritative at its height: mining and placing
+    // must be visible through both the 2D compatibility API and 3D voxel API.
+    if (z == column.height) {
+        const std::uint8_t id = column.surface;
+        const auto material = id <= static_cast<std::uint8_t>(VoxelMaterial::Rune)
+            ? static_cast<VoxelMaterial>(id) : VoxelMaterial::Stone;
+        const bool liquid = material == VoxelMaterial::Water ||
+                            material == VoxelMaterial::Lava;
+        out = VoxelSample{material, material != VoxelMaterial::Air && !liquid, liquid};
+        return true;
+    }
     out = generator_.sample_voxel(wx, wy, z);
     return true;
 }
