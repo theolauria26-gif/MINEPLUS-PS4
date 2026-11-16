@@ -11,6 +11,8 @@ const BLOCK_SIZE := 1.0
 var generator := MineplusWorldGen.new()
 var player: Node3D
 var chunks: Dictionary = {}
+var chunk_pool: Array[Node3D] = []
+const MAX_POOLED_CHUNKS := 12
 var pending_chunks: Array[Vector2i] = []
 var queued_chunks: Dictionary = {}
 var terrain_edits: Dictionary = {}
@@ -44,7 +46,7 @@ func _process(_delta: float) -> void:
 		if not wanted.has(key) and maxi(abs(key.x - center.x), abs(key.y - center.y)) > UNLOAD_RADIUS:
 			var node: Node3D = chunks[key]
 			chunks.erase(key)
-			node.queue_free()
+			_recycle_chunk(node)
 	# Budgeta a criação: no máximo um chunk por frame para evitar um pico de FPS.
 	if not pending_chunks.is_empty():
 		var next_key: Vector2i = pending_chunks.pop_front()
@@ -128,22 +130,36 @@ func _build_chunk(key: Vector2i) -> void:
 	var mesh := st.commit()
 	if mesh == null or mesh.get_surface_count() == 0:
 		return
-	var root := Node3D.new()
+	var root: Node3D
+	if not chunk_pool.is_empty():
+		root = chunk_pool.pop_back()
+	else:
+		root = Node3D.new()
+		add_child(root)
 	root.name = "Chunk_%d_%d" % [key.x, key.y]
 	root.set_meta("chunk_coord", key)
-	var visual := MeshInstance3D.new()
+	root.visible = true
+	var visual := root.get_node_or_null("Visual") as MeshInstance3D
+	if visual == null:
+		visual = MeshInstance3D.new()
+		visual.name = "Visual"
+		root.add_child(visual)
 	visual.mesh = mesh
 	visual.material_override = material
-	root.add_child(visual)
-	var body := StaticBody3D.new()
+	var body := root.get_node_or_null("CollisionBody") as StaticBody3D
+	if body == null:
+		body = StaticBody3D.new()
+		body.name = "CollisionBody"
+		root.add_child(body)
 	body.set_meta("chunk", key)
 	body.collision_layer = 1
 	body.collision_mask = 1
-	var collision := CollisionShape3D.new()
+	var collision := body.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if collision == null:
+		collision = CollisionShape3D.new()
+		collision.name = "CollisionShape3D"
+		body.add_child(collision)
 	collision.shape = mesh.create_trimesh_shape()
-	body.add_child(collision)
-	root.add_child(body)
-	add_child(root)
 	chunks[key] = root
 
 func cell_from_hit(hit: Dictionary) -> Vector3i:
@@ -162,11 +178,22 @@ func mine_surface(cell: Vector3i) -> int:
 	_rebuild_cell_and_seams(cell)
 	return old_type
 
+func _recycle_chunk(node: Node3D) -> void:
+	node.visible = false
+	var body := node.get_node_or_null("CollisionBody") as StaticBody3D
+	if body:
+		body.collision_layer = 0
+		body.collision_mask = 0
+	if chunk_pool.size() < MAX_POOLED_CHUNKS:
+		chunk_pool.append(node)
+	else:
+		node.queue_free()
+
 func _rebuild_chunk(key: Vector2i) -> void:
 	if chunks.has(key):
 		var old: Node3D = chunks[key]
 		chunks.erase(key)
-		old.queue_free()
+		_recycle_chunk(old)
 	_build_chunk(key)
 
 func _rebuild_cell_and_seams(cell: Vector3i) -> void:
