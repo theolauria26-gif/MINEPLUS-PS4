@@ -68,8 +68,8 @@ int main() {
                a.kind == b.kind && a.radius == b.radius);
     }
 
-    // Landmark anchors also create a deterministic underground dungeon:
-    // three rooms connected by a corridor, with a solid roof and floor.
+    // Landmark anchors also create a deterministic primordial complex:
+    // five chambers connected by a cross corridor, with a solid roof and floor.
     bool checkedDungeon = false;
     for (int cy = -30; cy <= 30 && !checkedDungeon; ++cy) {
         for (int cx = -30; cx <= 30 && !checkedDungeon; ++cx) {
@@ -89,6 +89,23 @@ int main() {
             assert(floor.material == VoxelMaterial::DarkStone && floor.solid);
             assert(roof.material == VoxelMaterial::DarkStone && roof.solid);
             assert(room.material == repeatRoom.material);
+
+            const int offset = std::max(3, int(dungeon.radius) * 2 / 3);
+            const int wingRadius = std::max(2, int(dungeon.radius) / 5);
+            const int wingX = dungeon.x + offset;
+            const int wingY = dungeon.y;
+            const auto eastWing = worldA.sample_voxel(
+                wingX, wingY, surface.height - 11);
+            const auto northWing = worldA.sample_voxel(
+                dungeon.x, dungeon.y - offset, surface.height - 11);
+            assert(eastWing.material == VoxelMaterial::Air ||
+                   eastWing.material == VoxelMaterial::Crystal);
+            assert(northWing.material == VoxelMaterial::Air ||
+                   northWing.material == VoxelMaterial::Crystal);
+            const auto eastEdge = worldA.sample_voxel(
+                wingX + wingRadius, wingY, surface.height - 11);
+            assert(eastEdge.material == VoxelMaterial::Air ||
+                   eastEdge.material == VoxelMaterial::Crystal);
             checkedDungeon = true;
         }
     }
