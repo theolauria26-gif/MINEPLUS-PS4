@@ -16,6 +16,10 @@ public:
                        std::int32_t radius_chunks = 4);
     bool get_tile(std::int32_t world_x, std::int32_t world_y,
                   std::uint8_t& tile);
+    bool get_sample(std::int32_t world_x, std::int32_t world_y,
+                    SurfaceSample& sample);
+    bool get_structure(std::int32_t world_x, std::int32_t world_y,
+                       StructureAnchor& anchor);
     bool set_tile(std::int32_t world_x, std::int32_t world_y,
                   std::uint8_t tile);
 
