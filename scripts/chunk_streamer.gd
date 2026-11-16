@@ -27,13 +27,19 @@ func _process(_delta: float) -> void:
 		return
 	var center := _chunk_of_world(player.global_position)
 	var wanted: Dictionary = {}
+	var candidates: Array[Vector2i] = []
 	for z in range(center.y - LOAD_RADIUS, center.y + LOAD_RADIUS + 1):
 		for x in range(center.x - LOAD_RADIUS, center.x + LOAD_RADIUS + 1):
 			var key := Vector2i(x, z)
 			wanted[key] = true
 			if not chunks.has(key) and not queued_chunks.has(key):
-				pending_chunks.append(key)
-				queued_chunks[key] = true
+				candidates.append(key)
+	candidates.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return a.distance_squared_to(center) < b.distance_squared_to(center)
+	)
+	for key in candidates:
+		pending_chunks.append(key)
+		queued_chunks[key] = true
 	for key in chunks.keys():
 		if not wanted.has(key) and maxi(abs(key.x - center.x), abs(key.y - center.y)) > UNLOAD_RADIUS:
 			var node: Node3D = chunks[key]
@@ -153,7 +159,7 @@ func mine_surface(cell: Vector3i) -> int:
 	if old_height <= 0:
 		return -1
 	terrain_edits["%d,%d" % [cell.x, cell.z]] = {"height": old_height - 1, "type": old_type}
-	_rebuild_chunk(_chunk_of_world(Vector3(cell.x, 0, cell.z)))
+	_rebuild_cell_and_seams(cell)
 	return old_type
 
 func _rebuild_chunk(key: Vector2i) -> void:
@@ -162,6 +168,19 @@ func _rebuild_chunk(key: Vector2i) -> void:
 		chunks.erase(key)
 		old.queue_free()
 	_build_chunk(key)
+
+func _rebuild_cell_and_seams(cell: Vector3i) -> void:
+	var key := _chunk_of_world(Vector3(cell.x, 0, cell.z))
+	var rebuild: Array[Vector2i] = [key]
+	var local_x := posmod(cell.x, CHUNK_SIZE)
+	var local_z := posmod(cell.z, CHUNK_SIZE)
+	if local_x == 0: rebuild.append(key + Vector2i(-1, 0))
+	elif local_x == CHUNK_SIZE - 1: rebuild.append(key + Vector2i(1, 0))
+	if local_z == 0: rebuild.append(key + Vector2i(0, -1))
+	elif local_z == CHUNK_SIZE - 1: rebuild.append(key + Vector2i(0, 1))
+	for adjacent in rebuild:
+		if chunks.has(adjacent):
+			_rebuild_chunk(adjacent)
 
 func export_edits() -> Array:
 	var result: Array = []
