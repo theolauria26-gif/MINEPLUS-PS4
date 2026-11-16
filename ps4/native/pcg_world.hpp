@@ -33,6 +33,9 @@ public:
     // Retorna a âncora determinística mais próxima que pode afetar esta coluna.
     bool structure_at(std::int32_t world_x, std::int32_t world_y,
                       StructureAnchor& out) const;
+    // Resolve one 96x96 macro-cell once, instead of testing every world tile.
+    bool structure_anchor_for_cell(std::int32_t cell_x, std::int32_t cell_y,
+                                   StructureAnchor& out) const;
 
 private:
     std::uint64_t seed_;
