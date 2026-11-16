@@ -24,6 +24,11 @@ public:
                        StructureAnchor& anchor);
     bool set_tile(std::int32_t world_x, std::int32_t world_y,
                   std::uint8_t tile);
+    bool set_voxel(std::int32_t world_x, std::int32_t world_y, std::int32_t z,
+                   VoxelMaterial material);
+    std::size_t export_voxel_edits(ChunkCache::VoxelEdit* output,
+                                   std::size_t capacity) const;
+    bool import_voxel_edits(const ChunkCache::VoxelEdit* edits, std::size_t count);
 
     std::size_t export_edits(ChunkCache::Edit* output,
                              std::size_t capacity) const;
