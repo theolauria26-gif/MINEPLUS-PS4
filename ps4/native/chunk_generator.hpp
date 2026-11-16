@@ -21,6 +21,7 @@ public:
     explicit ChunkGenerator(std::uint64_t seed) : world_(seed) {}
     // Geração pura: mesma seed e coordenadas sempre retornam os mesmos bytes.
     void generate(std::int32_t chunk_x, std::int32_t chunk_y, ChunkData& out) const;
+    VoxelSample sample_voxel(std::int32_t x, std::int32_t y, std::int32_t z) const;
     static std::int32_t floor_div(std::int32_t value, std::int32_t divisor);
 private:
     PcgWorld world_;
