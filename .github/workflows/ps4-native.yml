@@ -52,6 +52,11 @@ jobs:
           "$RUNNER_TEMP/mineplus-cache-tests"
           clang++ -std=c++17 -O2 -Wall -Wextra -I ps4/native \
             ps4/native/pcg_world.cpp ps4/native/chunk_generator.cpp \
+            ps4/native/chunk_cache.cpp ps4/native/world_runtime.cpp \
+            ps4/native/tests/world_runtime_tests.cpp -o "$RUNNER_TEMP/mineplus-runtime-tests"
+          "$RUNNER_TEMP/mineplus-runtime-tests"
+          clang++ -std=c++17 -O2 -Wall -Wextra -I ps4/native \
+            ps4/native/pcg_world.cpp ps4/native/chunk_generator.cpp \
             ps4/native/chunk_cache.cpp ps4/native/save_codec.cpp \
             ps4/native/tests/save_codec_tests.cpp -o "$RUNNER_TEMP/mineplus-save-tests"
           "$RUNNER_TEMP/mineplus-save-tests"
