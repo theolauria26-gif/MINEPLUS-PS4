@@ -85,22 +85,32 @@ SurfaceSample PcgWorld::sample_surface(std::int32_t x,std::int32_t y) const {
             static_cast<std::uint8_t>(std::clamp(int((temperature+1.0f)*127.5f),0,255))};
 }
 
+bool PcgWorld::structure_anchor_for_cell(std::int32_t ax,std::int32_t ay,
+                                                StructureAnchor& out) const {
+    constexpr std::int32_t CELL=96;
+    const auto h=hash(ax,ay,313);
+    if(h%11u!=0u) return false;
+    const std::int32_t sx=ax*CELL+std::int32_t(hash(ax,ay,317)%CELL);
+    const std::int32_t sy=ay*CELL+std::int32_t(hash(ax,ay,331)%CELL);
+    const std::int32_t radius=7+std::int32_t(hash(ax,ay,337)%18);
+    out={sx,sy,static_cast<std::uint16_t>(1+hash(ax,ay,347)%4),
+         static_cast<std::uint16_t>(radius)};
+    return true;
+}
+
 bool PcgWorld::structure_at(std::int32_t x,std::int32_t y,StructureAnchor& out) const {
-    // Verifica células vizinhas: estruturas grandes podem cruzar qualquer borda de chunk.
+    // Query neighboring macro-cells because a structure can cross chunk borders.
     constexpr int CELL=96;
     const int cx=floor_i(float(x)/CELL), cy=floor_i(float(y)/CELL);
     bool found=false; std::uint64_t best=~std::uint64_t(0);
     for(int oy=-1;oy<=1;++oy) for(int ox=-1;ox<=1;++ox){
-        const int ax=cx+ox, ay=cy+oy;
-        const auto h=hash(ax,ay,313);
-        if(h%11u!=0u) continue;
-        const int sx=ax*CELL+int(hash(ax,ay,317)%CELL);
-        const int sy=ay*CELL+int(hash(ax,ay,331)%CELL);
-        const int radius=7+int(hash(ax,ay,337)%18);
-        const std::int64_t dx=std::int64_t(x)-sx,dy=std::int64_t(y)-sy;
-        if(dx*dx+dy*dy>std::int64_t(radius)*radius) continue;
+        StructureAnchor candidate{};
+        if(!structure_anchor_for_cell(cx+ox,cy+oy,candidate)) continue;
+        const std::int64_t dx=std::int64_t(x)-candidate.x;
+        const std::int64_t dy=std::int64_t(y)-candidate.y;
+        if(dx*dx+dy*dy>std::int64_t(candidate.radius)*candidate.radius) continue;
         const std::uint64_t score=std::uint64_t(dx*dx+dy*dy);
-        if(score<best){best=score;out={sx,sy,static_cast<std::uint16_t>(1+hash(ax,ay,347)%4),static_cast<std::uint16_t>(radius)};found=true;}
+        if(score<best){best=score;out=candidate;found=true;}
     }
     return found;
 }
