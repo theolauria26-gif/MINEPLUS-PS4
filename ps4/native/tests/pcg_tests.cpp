@@ -1,4 +1,5 @@
 #include "chunk_generator.hpp"
+#include "chunk_cache.hpp"
 #include "pcg_world.hpp"
 #include <cassert>
 #include <cstdint>
@@ -61,6 +62,19 @@ int main() {
     assert(same_sample(left.cells[15], worldA.sample_surface(-1, -16)));
     assert(same_sample(right.cells[0], worldA.sample_surface(0, -16)));
     assert(same_sample(left.cells[0], worldA.sample_surface(-16, -16)));
+
+    ChunkCache cache(4839201ULL);
+    cache.update_center(0, 0, 4);
+    assert(cache.loaded_count() == ChunkCache::CAPACITY);
+    SurfaceSample cached{};
+    assert(cache.get(-1, -1, cached));
+    assert(same_sample(cached, worldA.sample_surface(-1, -1)));
+    assert(cache.set_surface(-1, -1, 77));
+    assert(cache.get(-1, -1, cached) && cached.surface == 77);
+    assert(cache.delta_count() == 1);
+    cache.update_center(4096, 4096, 4);
+    assert(cache.get(-1, -1, cached) && cached.surface == 77);
+    assert(cache.delta_count() == 1);
 
     std::cout << "MINEPLUS PCG/chunk tests: OK\n";
     return 0;
