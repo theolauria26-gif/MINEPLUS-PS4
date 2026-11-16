@@ -14,7 +14,8 @@ namespace {
 constexpr int W=1280,H=720,COLS=2048,ROWS=2048,LEGACY_COLS=1024,LEGACY_ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
 enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21};
 std::array<unsigned char,COLS*ROWS> world{};
-mineplus::FixedWorldGrid worldGrid(world.data(), COLS, ROWS);
+mineplus::FixedWorldGrid fixedWorldGrid(world.data(), COLS, ROWS);
+mineplus::WorldGridView& worldGrid = fixedWorldGrid;
 inline unsigned char tile_at(int x,int y){unsigned char t=Air;worldGrid.get(x,y,t);return t;}
 inline bool set_tile_at(int x,int y,unsigned char t){return worldGrid.set(x,y,t);}
 // Cached procedural elevation avoids recomputing multi-octave noise for every ray step.
