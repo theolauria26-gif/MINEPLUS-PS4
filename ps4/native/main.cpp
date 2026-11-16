@@ -6,17 +6,77 @@ namespace {
 constexpr int W=1280,H=720,COLS=24,ROWS=14,TILE=36;
 enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4};
 std::array<unsigned char,COLS*ROWS> world{};
-int px=COLS/2,py=ROWS/2,selected=0;bool running=true,playing=false,inventory=false;
+int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0;
+bool running=true,playing=false,inventory=false,paused=false;
+Uint32 lastMove=0;
 SDL_Window* window=nullptr;SDL_Renderer* renderer=nullptr;SDL_GameController* pad=nullptr;
 void color(Uint8 r,Uint8 g,Uint8 b,Uint8 a=255){SDL_SetRenderDrawColor(renderer,r,g,b,a);}
 void rect(int x,int y,int w,int h,Uint8 r,Uint8 g,Uint8 b,Uint8 a=255){color(r,g,b,a);SDL_Rect q{x,y,w,h};SDL_RenderFillRect(renderer,&q);}
 void outline(int x,int y,int w,int h,Uint8 r,Uint8 g,Uint8 b){color(r,g,b);SDL_Rect q{x,y,w,h};SDL_RenderDrawRect(renderer,&q);}
+const char* glyph(char c){switch(c){
+case 'A':return "01110""10001""10001""11111""10001""10001""10001";
+case 'B':return "11110""10001""10001""11110""10001""10001""11110";
+case 'C':return "01111""10000""10000""10000""10000""10000""01111";
+case 'D':return "11110""10001""10001""10001""10001""10001""11110";
+case 'E':return "11111""10000""10000""11110""10000""10000""11111";
+case 'F':return "11111""10000""10000""11110""10000""10000""10000";
+case 'G':return "01111""10000""10000""10111""10001""10001""01111";
+case 'H':return "10001""10001""10001""11111""10001""10001""10001";
+case 'I':return "11111""00100""00100""00100""00100""00100""11111";
+case 'K':return "10001""10010""10100""11000""10100""10010""10001";
+case 'L':return "10000""10000""10000""10000""10000""10000""11111";
+case 'M':return "10001""11011""10101""10101""10001""10001""10001";
+case 'N':return "10001""11001""10101""10011""10001""10001""10001";
+case 'O':return "01110""10001""10001""10001""10001""10001""01110";
+case 'P':return "11110""10001""10001""11110""10000""10000""10000";
+case 'R':return "11110""10001""10001""11110""10100""10010""10001";
+case 'S':return "01111""10000""10000""01110""00001""00001""11110";
+case 'T':return "11111""00100""00100""00100""00100""00100""00100";
+case 'U':return "10001""10001""10001""10001""10001""10001""01110";
+case 'V':return "10001""10001""10001""10001""10001""01010""00100";
+case 'W':return "10001""10001""10001""10101""10101""10101""01010";
+case 'Y':return "10001""10001""01010""00100""00100""00100""00100";
+case '0':return "01110""10001""10011""10101""11001""10001""01110";
+case '1':return "00100""01100""00100""00100""00100""00100""01110";
+case '2':return "01110""10001""00001""00010""00100""01000""11111";
+case '3':return "11110""00001""00001""01110""00001""00001""11110";
+case '4':return "00010""00110""01010""10010""11111""00010""00010";
+case '5':return "11111""10000""10000""11110""00001""00001""11110";
+case ' ':return "00000""00000""00000""00000""00000""00000""00000";
+default:return "00000""00000""00000""00000""00000""00000""00000";}}
+void draw_text(const char*s,int x,int y,int scale,Uint8 r=230,Uint8 g=240,Uint8 b=236){color(r,g,b);for(;*s;s++,x+=6*scale){const char*p=glyph(*s);for(int yy=0;yy<7;yy++)for(int xx=0;xx<5;xx++)if(p[yy*5+xx]=='1'){SDL_Rect q{x+xx*scale,y+yy*scale,scale,scale};SDL_RenderFillRect(renderer,&q);}}}
 void init_world(){for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){unsigned char t=Grass;if((x*13+y*7)%19==0)t=Stone;else if((x*5+y*11)%13==0)t=Dirt;if((x==5&&y==5)||(x==18&&y==9))t=Wood;world[y*COLS+x]=t;}world[py*COLS+px]=Air;}
 void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){case Grass:r=74;g=145;b=83;break;case Dirt:r=132;g=91;b=60;break;case Stone:r=116;g=124;b=133;break;case Wood:r=154;g=111;b=65;break;default:r=28;g=38;b=43;break;}}
-void move_player(int dx,int dy){px=std::clamp(px+dx,0,COLS-1);py=std::clamp(py+dy,0,ROWS-1);}
-void place_block(){int i=py*COLS+px;if(world[i]==Air)world[i]=static_cast<unsigned char>(selected+1);}
-void draw_menu(){rect(0,0,W,H,13,18,24);rect(150,110,980,500,18,25,32);outline(150,110,980,500,57,76,87);rect(215,180,18,110,68,194,135);rect(255,180,440,28,235,239,242);rect(255,225,300,10,112,128,139);rect(255,310,420,66,37,105,77);outline(255,310,420,66,104,211,151);rect(300,337,210,10,238,243,240);rect(255,400,420,58,29,39,47);outline(255,400,420,58,69,84,95);rect(300,424,150,8,159,170,179);rect(760,185,280,270,24,34,41);for(int i=0;i<6;i++)rect(795+i*35,245+(i%2)*22,26,26,66+i*7,125+i*4,83+i*3);rect(795,365,210,8,91,107,118);}
-void draw_world(){rect(0,0,W,H,17,22,28);int ox=(W-COLS*TILE)/2,oy=90;for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){Uint8 r,g,b;tile_color(world[y*COLS+x],r,g,b);int sx=ox+x*TILE,sy=oy+y*TILE;rect(sx+1,sy+1,TILE-2,TILE-2,r,g,b);outline(sx,sy,TILE,TILE,20,27,31);if(world[y*COLS+x]==Grass)rect(sx+3,sy+3,TILE-6,4,104,183,101);}rect(ox+px*TILE+9,oy+py*TILE+5,18,26,224,224,231);rect(ox+px*TILE+11,oy+py*TILE+8,5,5,30,35,43);rect(ox+px*TILE+20,oy+py*TILE+8,5,5,30,35,43);rect(0,0,W,66,10,13,18,235);rect(24,18,8,30,65,190,135);rect(40,18,130,8,230,235,240);rect(40,34,86,5,112,125,137);int start=(W-5*58)/2;for(int i=0;i<5;i++){int x=start+i*58;rect(x,H-78,53,53,i==selected?55:27,i==selected?65:35,i==selected?72:43);outline(x,H-78,53,53,i==selected?100:65,i==selected?211:77,i==selected?151:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+14,H-64,25,25,r,g,b);}if(inventory){rect(330,190,620,340,12,17,22,245);outline(330,190,620,340,73,91,103);for(int i=0;i<5;i++){int x=390+i*100;rect(x,280,72,72,35,43,51);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+18,298,36,36,r,g,b);outline(x,280,72,72,95,113,124);}}}
-void handle_key(SDL_Keycode k){if(!playing){if(k==SDLK_RETURN||k==SDLK_SPACE)playing=true;if(k==SDLK_ESCAPE)running=false;return;}if(k==SDLK_ESCAPE){playing=false;inventory=false;return;}if(k==SDLK_TAB||k==SDLK_e)inventory=!inventory;if(inventory){if(k>=SDLK_1&&k<=SDLK_5)selected=k-SDLK_1;return;}if(k==SDLK_w||k==SDLK_UP)move_player(0,-1);if(k==SDLK_s||k==SDLK_DOWN)move_player(0,1);if(k==SDLK_a||k==SDLK_LEFT)move_player(-1,0);if(k==SDLK_d||k==SDLK_RIGHT)move_player(1,0);if(k>=SDLK_1&&k<=SDLK_5)selected=k-SDLK_1;if(k==SDLK_SPACE)place_block();}
+void move_player(int dx,int dy){if(!dx&&!dy)return;px=std::clamp(px+dx,0,COLS-1);py=std::clamp(py+dy,0,ROWS-1);faceX=dx;faceY=dy;}
+int target_index(){int x=px+faceX,y=py+faceY;if(x<0||x>=COLS||y<0||y>=ROWS)return -1;return y*COLS+x;}
+void place_block(){int i=target_index();if(i>=0&&world[i]==Air)world[i]=static_cast<unsigned char>(selected+1);}
+void mine_block(){int i=target_index();if(i>=0)world[i]=Air;}
+void draw_menu(){
+ rect(0,0,W,H,8,13,18);for(int i=0;i<26;i++)rect((i*173)%W,(i*97)%H,3,3,22,73,57);
+ rect(70,55,1140,610,14,23,27);outline(70,55,1140,610,43,91,68);
+ rect(105,95,12,150,41,204,132);draw_text("MINEPLUS",150,105,8,235,249,241);
+ draw_text("BLOCK WORLD",155,190,2,119,175,145);
+ rect(130,270,600,275,19,32,35);outline(130,270,600,275,51,112,82);
+ rect(165,310,92,92,25,42,43);outline(165,310,92,92,55,218,139);rect(181,326,60,60,55,157,103);rect(190,335,42,42,31,48,49);
+ draw_text("READY TO PLAY",290,320,3,125,220,166);
+ rect(290,420,300,70,38,150,91);outline(290,420,300,70,99,240,157);draw_text("START",390,445,4,255,255,255);
+ rect(780,270,350,275,18,29,33);outline(780,270,350,275,45,104,74);draw_text("CONTROLS",820,305,3,132,221,167);
+ draw_text("DPAD MOVE",820,355,2);draw_text("A PLACE X BREAK",820,390,2);draw_text("Y INVENTORY",820,425,2);draw_text("START PAUSE",820,460,2);
+ draw_text("MINEPLUS PS4",105,610,2,104,150,128);
 }
-int main(int,char**){if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_EVENTS)!=0)return 1;window=SDL_CreateWindow("MINEPLUS",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,W,H,SDL_WINDOW_SHOWN);if(!window){SDL_Quit();return 2;}renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}SDL_RenderSetLogicalSize(renderer,W,H);if(SDL_NumJoysticks()>0&&SDL_IsGameController(0))pad=SDL_GameControllerOpen(0);init_world();while(running){SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;if(e.type==SDL_KEYDOWN&&e.key.repeat==0)handle_key(e.key.keysym.sym);if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_START:playing=!playing;break;case SDL_CONTROLLER_BUTTON_BACK:inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_A:if(playing)place_block();else playing=true;break;case SDL_CONTROLLER_BUTTON_B:if(playing)playing=false;else running=false;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:if(playing)move_player(0,-1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(playing)move_player(0,1);break;case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(playing)move_player(-1,0);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(playing)move_player(1,0);break;case SDL_CONTROLLER_BUTTON_Y:inventory=!inventory;break;default:break;}}}if(playing){if(pad){Sint16 ax=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX),ay=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTY);if(ax>18000)move_player(1,0);else if(ax< -18000)move_player(-1,0);if(ay>18000)move_player(0,1);else if(ay< -18000)move_player(0,-1);}draw_world();}else draw_menu();SDL_RenderPresent(renderer);SDL_Delay(16);}if(pad)SDL_GameControllerClose(pad);SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;}
+void draw_world(){
+ rect(0,0,W,H,13,19,22);int ox=(W-COLS*TILE)/2,oy=90;
+ for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){Uint8 r,g,b;tile_color(world[y*COLS+x],r,g,b);int sx=ox+x*TILE,sy=oy+y*TILE;rect(sx+1,sy+1,TILE-2,TILE-2,r,g,b);outline(sx,sy,TILE,TILE,20,27,31);if(world[y*COLS+x]==Grass)rect(sx+3,sy+3,TILE-6,4,104,183,101);}
+ int tx=px+faceX,ty=py+faceY;if(tx>=0&&tx<COLS&&ty>=0&&ty<ROWS)outline(ox+tx*TILE+2,oy+ty*TILE+2,TILE-4,TILE-4,240,226,105);
+ rect(ox+px*TILE+9,oy+py*TILE+5,18,26,224,224,231);rect(ox+px*TILE+11,oy+py*TILE+8,5,5,30,35,43);rect(ox+px*TILE+20,oy+py*TILE+8,5,5,30,35,43);
+ rect(0,0,W,70,7,12,16,245);rect(20,16,8,38,52,212,132);draw_text("MINEPLUS",45,17,3);draw_text("WORLD 01",45,45,1,125,160,143);
+ draw_text("DPAD MOVE  A PLACE  X BREAK",650,27,2,160,190,173);
+ int start=(W-5*62)/2;for(int i=0;i<5;i++){int x=start+i*62;rect(x,H-88,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-88,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-73,24,24,r,g,b);}
+ if(inventory||paused){rect(250,150,780,430,8,14,18,245);outline(250,150,780,430,68,166,111);draw_text(inventory?"INVENTORY":"PAUSED",310,195,5,132,235,166);
+ if(inventory){for(int i=0;i<5;i++){int x=320+i*125;rect(x,300,90,90,27,43,43);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+23,323,44,44,r,g,b);outline(x,300,90,90,75,145,98);}}
+ else{draw_text("START CONTINUE",350,320,3);draw_text("B BACK TO MENU",350,385,3);}
+ }
+}
+void handle_key(SDL_Keycode k){if(!playing){if(k==SDLK_RETURN||k==SDLK_SPACE)playing=true;if(k==SDLK_ESCAPE)running=false;return;}if(k==SDLK_ESCAPE){paused=!paused;inventory=false;return;}if(paused){if(k==SDLK_RETURN)paused=false;return;}if(k==SDLK_TAB||k==SDLK_e)inventory=!inventory;if(inventory){if(k>=SDLK_1&&k<=SDLK_5)selected=k-SDLK_1;return;}if(k==SDLK_w||k==SDLK_UP)move_player(0,-1);if(k==SDLK_s||k==SDLK_DOWN)move_player(0,1);if(k==SDLK_a||k==SDLK_LEFT)move_player(-1,0);if(k==SDLK_d||k==SDLK_RIGHT)move_player(1,0);if(k>=SDLK_1&&k<=SDLK_5)selected=k-SDLK_1;if(k==SDLK_SPACE)place_block();if(k==SDLK_f)mine_block();}
+}
+int main(int,char**){if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_EVENTS)!=0)return 1;window=SDL_CreateWindow("MINEPLUS",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,W,H,SDL_WINDOW_SHOWN);if(!window){SDL_Quit();return 2;}renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}SDL_RenderSetLogicalSize(renderer,W,H);if(SDL_NumJoysticks()>0&&SDL_IsGameController(0))pad=SDL_GameControllerOpen(0);init_world();while(running){SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;if(e.type==SDL_KEYDOWN&&e.key.repeat==0)handle_key(e.key.keysym.sym);if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_START:if(!playing)playing=true;else paused=!paused;break;case SDL_CONTROLLER_BUTTON_BACK:inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_A:if(!playing)playing=true;else if(!paused&&!inventory)place_block();break;case SDL_CONTROLLER_BUTTON_X:if(playing&&!paused&&!inventory)mine_block();break;case SDL_CONTROLLER_BUTTON_B:if(paused)paused=false;else if(playing)paused=true;else running=false;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:if(playing&&!paused&&!inventory)move_player(0,-1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(playing&&!paused&&!inventory)move_player(0,1);break;case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(playing&&!paused&&!inventory)move_player(-1,0);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(playing&&!paused&&!inventory)move_player(1,0);break;case SDL_CONTROLLER_BUTTON_Y:inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:selected=(selected+4)%5;break;case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:selected=(selected+1)%5;break;default:break;}}}if(playing&&!paused&&!inventory&&pad){Uint32 now=SDL_GetTicks();if(now-lastMove>155){Sint16 ax=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX),ay=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTY);if(ax>18000){move_player(1,0);lastMove=now;}else if(ax< -18000){move_player(-1,0);lastMove=now;}else if(ay>18000){move_player(0,1);lastMove=now;}else if(ay< -18000){move_player(0,-1);lastMove=now;}}}if(playing)draw_world();else draw_menu();SDL_RenderPresent(renderer);SDL_Delay(16);}if(pad)SDL_GameControllerClose(pad);SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;}
