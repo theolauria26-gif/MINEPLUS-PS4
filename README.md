@@ -31,6 +31,14 @@ Remake/protótipo independente em Godot 4, com identidade visual própria. Não 
 - Save versão 3: também preserva posição do jogador, direção da câmera, inclinação vertical e material selecionado; saves antigos continuam carregando com valores padrão.
 - Renderizador Compatibility para favorecer dispositivos móveis e hardware limitado.
 
+## Mundo procedural infinito (Godot)
+
+O projeto Godot agora inclui geração determinística por seed, chunks 16×16 com streaming ao redor do jogador, continente central, faixa oceânica e terras exteriores com biomas, além de âncoras para árvores gigantes e ruínas. O carregamento é limitado a um chunk por frame, com descarregamento e pool de nós. Mineração do terreno e seed são persistidas no save versão 4.
+
+Detalhes técnicos, parâmetros e limitações: [docs/PCG_WORLD.md](docs/PCG_WORLD.md).
+
+**Nota:** essa geração pertence ao projeto Godot. O executável PS4 em `ps4/native/` é um port SDL2 independente e ainda não executa GDScript nem este sistema de chunks.
+
 ## Controles atuais
 
 | Ação | Teclado / PC | Touch |
