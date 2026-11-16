@@ -45,7 +45,29 @@ int main() {
     assert(streamed.get_sample(4, 5, editedColumn));
     assert(streamed.get_voxel(4, 5, editedColumn.height, voxel));
     assert(voxel.material == mineplus::VoxelMaterial::Air && !voxel.solid);
-    assert(runtime.saved_edits() == 2);
+
+    // Sparse material IDs used by the native tile catalog must map exactly.
+    struct MaterialCase { std::uint8_t tile; mineplus::VoxelMaterial expected; bool liquid; };
+    const MaterialCase materialCases[] = {
+        {12, mineplus::VoxelMaterial::Lava, true},
+        {13, mineplus::VoxelMaterial::Water, true},
+        {17, mineplus::VoxelMaterial::Rune, false},
+        {22, mineplus::VoxelMaterial::VolcanicRock, false},
+        {23, mineplus::VoxelMaterial::Ore, false},
+        {18, mineplus::VoxelMaterial::Stone, false},
+        {21, mineplus::VoxelMaterial::Stone, false},
+        {255, mineplus::VoxelMaterial::Stone, false}
+    };
+    for (const auto& item : materialCases) {
+        assert(streamed.set(8, 9, item.tile));
+        mineplus::SurfaceSample materialColumn{};
+        assert(streamed.get_sample(8, 9, materialColumn));
+        assert(streamed.get_voxel(8, 9, materialColumn.height, voxel));
+        assert(voxel.material == item.expected);
+        assert(voxel.liquid == item.liquid);
+        assert(voxel.solid == (item.expected != mineplus::VoxelMaterial::Air && !item.liquid));
+    }
+    assert(runtime.saved_edits() == 3);
 
     mineplus::WorldGridView* active = &streamed;
     assert(active->get(-17, 33, tile) && tile == 255);
