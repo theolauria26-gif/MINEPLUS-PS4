@@ -25,7 +25,7 @@ public:
     // Compact edit journal transfer for durable save files.
     struct Edit { std::int32_t x, y; std::uint8_t tile; };
     std::size_t export_edits(Edit* output, std::size_t capacity) const;
-    bool import_edits(const Edit* edits, std::size_t count);
+    bool import_edits(const Edit* edits, std::size_t count);\n    bool restore(std::uint64_t seed, const Edit* edits, std::size_t count);
 
     std::size_t loaded_count() const;
     std::size_t delta_count() const;
