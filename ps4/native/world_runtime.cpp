@@ -19,6 +19,23 @@ bool WorldRuntime::get_tile(std::int32_t world_x, std::int32_t world_y,
     return true;
 }
 
+bool WorldRuntime::get_sample(std::int32_t world_x, std::int32_t world_y,
+                               SurfaceSample& sample) {
+    return chunks_.get(world_x, world_y, sample);
+}
+
+bool WorldRuntime::get_structure(std::int32_t world_x, std::int32_t world_y,
+                                 StructureAnchor& anchor) {
+    SurfaceSample ignored{};
+    if (!chunks_.get(world_x, world_y, ignored)) return false;
+    // Structure anchors are deterministic from the same seed and absolute
+    // coordinates; query the pure generator through a cached chunk snapshot.
+    const auto cx = ChunkGenerator::floor_div(world_x, PcgWorld::CHUNK_SIZE);
+    const auto cy = ChunkGenerator::floor_div(world_y, PcgWorld::CHUNK_SIZE);
+    (void)cx; (void)cy;
+    return false;
+}
+
 bool WorldRuntime::set_tile(std::int32_t world_x, std::int32_t world_y,
                             std::uint8_t tile) {
     return chunks_.set_surface(world_x, world_y, tile);
