@@ -8,10 +8,14 @@
 #include <cstring>
 #include <sys/stat.h>
 #include "pcg_world.hpp"
+#include "world_grid.hpp"
 namespace {
 constexpr int W=1280,H=720,COLS=2048,ROWS=2048,LEGACY_COLS=1024,LEGACY_ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
 enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21};
 std::array<unsigned char,COLS*ROWS> world{};
+mineplus::FixedWorldGrid worldGrid(world.data(), COLS, ROWS);
+inline unsigned char tile_at(int x,int y){unsigned char t=Air;worldGrid.get(x,y,t);return t;}
+inline bool set_tile_at(int x,int y,unsigned char t){return worldGrid.set(x,y,t);}
 // Cached procedural elevation avoids recomputing multi-octave noise for every ray step.
 std::array<unsigned char,COLS*ROWS> heightMap{};
 // Large save buffers live in static storage, not on the PS4 main-thread stack.
@@ -221,7 +225,7 @@ bool load_world(){
 void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){case Grass:r=43;g=76;b=61;break;case Dirt:r=83;g=62;b=52;break;case Stone:r=79;g=86;b=94;break;case Wood:r=65;g=58;b=54;break;case Moss:r=39;g=55;b=48;break;case Crystal:r=125;g=139;b=151;break;case Bone:r=137;g=133;b=119;break;case DarkStone:r=35;g=39;b=47;break;case Sand:r=133;g=119;b=85;break;case Snow:r=155;g=164;b=166;break;case Ice:r=95;g=132;b=145;break;case Lava:r=142;g=62;b=39;break;case Water:r=35;g=72;b=91;break;case IronOre:r=112;g=105;b=91;break;case Obsidian:r=39;g=34;b=57;break;case Ember:r=198;g=75;b=38;break;case Rune:r=94;g=164;b=155;break;case IronBar:r=164;g=171;b=177;break;case ObsidianCore:r=57;g=43;b=78;break;case EmberCatalyst:r=232;g=103;b=49;break;case AncientRune:r=116;g=206;b=185;break;default:r=16;g=23;b=29;break;}}
 bool solid_tile(int t){return t==DarkStone||t==Stone||t==Wood||t==Bone||t==Crystal||t==IronOre||t==Obsidian||t==Rune;}
 bool creature_occupies(int x,int y,const Creature*skip=nullptr){for(const auto &m:creatures)if(&m!=skip&&m.hp>0&&m.x==x&&m.y==y)return true;return false;}
-void move_player(int dx,int dy){if(!dx&&!dy)return;int nx=std::clamp(px+dx,1,COLS-2),ny=std::clamp(py+dy,1,ROWS-2);if(solid_tile(world[ny*COLS+nx]))return;px=nx;py=ny;faceX=dx;faceY=dy;}
+void move_player(int dx,int dy){if(!dx&&!dy)return;int nx=std::clamp(px+dx,1,COLS-2),ny=std::clamp(py+dy,1,ROWS-2);if(solid_tile(tile_at(nx,ny)))return;px=nx;py=ny;faceX=dx;faceY=dy;}
 void turn_player(int direction){if(direction>0){int old=faceX;faceX=-faceY;faceY=old;}else if(direction<0){int old=faceX;faceX=faceY;faceY=-old;}}
 Uint32 lastCreatureUpdate=0;
 void update_player_combat(){
@@ -247,7 +251,7 @@ void update_creatures(){
   }
   int nx=m.x+sx,ny=m.y+sy;
   if(nx==px&&ny==py)continue;
-  if(nx<1||nx>=COLS-1||ny<1||ny>=ROWS-1||solid_tile(world[ny*COLS+nx])||creature_occupies(nx,ny,&m)){
+  if(nx<1||nx>=COLS-1||ny<1||ny>=ROWS-1||solid_tile(tile_at(nx,ny))||creature_occupies(nx,ny,&m)){
    sx=0;sy=0;
    if(abs(dx)<abs(dy)){sx=passive?(dy>0?-1:1):(dy>0?1:-1);}else{sy=passive?(dx>0?-1:1):(dx>0?1:-1);}
    nx=m.x+sx;ny=m.y+sy;
@@ -255,8 +259,8 @@ void update_creatures(){
   if((nx!=px||ny!=py)&&nx>=1&&nx<COLS-1&&ny>=1&&ny<ROWS-1&&!solid_tile(world[ny*COLS+nx])&&!creature_occupies(nx,ny,&m)){m.x=nx;m.y=ny;}
  }
 }
-int target_index(){int x=px+faceX,y=py+faceY;if(x<0||x>=COLS||y<0||y>=ROWS)return -1;return y*COLS+x;}
-void place_block(){int i=target_index();int block=selected+1;if(i>=0&&world[i]==Air&&block<=8&&stock[block]>0){world[i]=static_cast<unsigned char>(block);--stock[block];}}
+bool target_tile(int& x,int& y){x=px+faceX;y=py+faceY;return worldGrid.contains(x,y);}
+void place_block(){int x=0,y=0;int block=selected+1;if(target_tile(x,y)&&tile_at(x,y)==Air&&block<=8&&stock[block]>0&&set_tile_at(x,y,static_cast<unsigned char>(block)))--stock[block];}
 void change_recipe(int direction){selectedRecipe=(selectedRecipe+direction+9)%9;}
 void craft_item(){
  // Five deterministic survival recipes, all using resources already in the world.
@@ -277,7 +281,7 @@ void craft_item(){
   case 8: if(stock[Rune]>=2&&stock[Crystal]>=2&&stock[AncientRune]<=9998){stock[Rune]-=2;stock[Crystal]-=2;stock[AncientRune]+=1;}break;
  }
 }
-void mine_block(){int i=target_index();if(i<0)return;for(auto &m:creatures)if(m.x==px+faceX&&m.y==py+faceY&&m.hp>0){if(--m.hp<=0){if(m.type<4)stock[Bone]+=2;else if(m.type<8)stock[Crystal]+=1;else stock[DarkStone]+=1;m.x=-100;m.y=-100;}return;}int block=world[i];if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)++stock[drop];else if(drop>=IronOre&&drop<=Rune)++stock[drop];world[i]=Air;}}
+void mine_block(){int x=0,y=0;if(!target_tile(x,y))return;for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){if(--m.hp<=0){if(m.type<4)stock[Bone]+=2;else if(m.type<8)stock[Crystal]+=1;else stock[DarkStone]+=1;m.x=-100;m.y=-100;}return;}int block=tile_at(x,y);if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)++stock[drop];else if(drop>=IronOre&&drop<=Rune)++stock[drop];set_tile_at(x,y,Air);}}
 void draw_menu(){
  // Dark-fantasy title screen: moonlit ruins, distant towers and drifting embers.
  rect(0,0,W,H,5,8,14);
@@ -335,7 +339,7 @@ void draw_minimap(){
  outline(ox-5,oy-5,cell*17+10,cell*17+10,91,113,105);
  for(int my=-radius;my<=radius;my++)for(int mx=-radius;mx<=radius;mx++){
   int wx=px+mx,wy=py+my;Uint8 r=13,g=18,b=22;
-  if(wx>=0&&wy>=0&&wx<COLS&&wy<ROWS)tile_color(world[wy*COLS+wx],r,g,b);
+  if(wx>=0&&wy>=0&&wx<COLS&&wy<ROWS)tile_color(tile_at(wx,wy),r,g,b);
   float shade=(mx==0&&my==0)?1.35f:0.72f;
   rect(ox+(mx+radius)*cell,oy+(my+radius)*cell,cell-1,cell-1,
        Uint8(std::min(255,int(r*shade))),Uint8(std::min(255,int(g*shade))),Uint8(std::min(255,int(b*shade))));
@@ -366,7 +370,7 @@ void draw_world(){
   for(float dist=0.48f;dist<38.0f&&ceiling<lastY;dist+=0.18f+dist*0.0025f){
    int wx=int(px+rayX*dist),wy=int(py+rayY*dist);
    if(wx<1||wy<1||wx>=COLS-1||wy>=ROWS-1)break;
-   int t=world[wy*COLS+wx];
+   int t=tile_at(wx,wy);
    float height=terrain_height(t,wx,wy);
    float corrected=dist*(0.82f+0.18f*(1.0f-std::fabs(cameraX)));
    int sy=int(horizon-(height-cameraH)*focal/corrected);
