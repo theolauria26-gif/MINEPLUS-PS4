@@ -89,9 +89,9 @@ bool ChunkCache::get_voxel(std::int32_t wx, std::int32_t wy,
                             std::int32_t z, VoxelSample& out) {
     const auto cx = ChunkGenerator::floor_div(wx, PcgWorld::CHUNK_SIZE);
     const auto cy = ChunkGenerator::floor_div(wy, PcgWorld::CHUNK_SIZE);
-    if (!acquire_chunk(cx, cy)) return false;
-    SurfaceSample column{};
-    if (!get(wx, wy, column)) return false;
+    auto* entry = acquire_chunk(cx, cy);
+    if (!entry) return false;
+    const SurfaceSample& column = entry->data.cells[local_index(wx, wy)];
     // The editable surface is authoritative at its height: mining and placing
     // must be visible through both the 2D compatibility API and 3D voxel API.
     if (z == column.height) {
