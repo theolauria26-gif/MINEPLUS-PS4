@@ -41,3 +41,10 @@ O gerador é infinito por coordenadas, mas o cliente ainda mantém uma janela re
 - Seed padrão: 4839201.
 
 A próxima etapa é trocar o armazenamento fixo por cache de chunks e adaptar mineração/salvamento para deltas por coordenada. Até isso passar no build e em teste no console, o mapa infinito não deve ser considerado concluído.
+
+
+## Gerador de chunks nativo (primeira camada)
+
+`chunk_generator.hpp/.cpp` adiciona `ChunkData` e `ChunkGenerator`. Cada chunk contém 16×16 amostras de superfície e referências determinísticas às estruturas que cruzam suas células. A geração usa coordenadas globais com `int64_t` para calcular a origem, e `floor_div` corrige a divisão de coordenadas negativas (por exemplo, -1 pertence ao chunk -1, não ao chunk 0).
+
+Este módulo já é compilado no EBOOT pelo Makefile. Nesta etapa ele ainda é uma camada de geração isolada: o loop de jogo e as rotinas de mineração/salvamento continuam usando o array residente antigo. Não confundir o gerador de chunks compilado com streaming ativo no console.
