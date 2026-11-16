@@ -20,6 +20,7 @@ std::array<unsigned char,COLS*ROWS> heightMap{};
 std::array<unsigned char,COLS*ROWS> loadWorldBuffer{};
 std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> legacyWorldBuffer{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0;
+std::uint64_t worldSeed=4839201ULL;
 Uint32 lastDamage=0,damageCooldown=0;
 struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};std::array<int,22> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
 unsigned hash2(int x,int y){unsigned n=(unsigned)(x*374761393u+y*668265263u+0x9e3779b9u);n=(n^(n>>13))*1274126177u;return n^(n>>16);}
@@ -64,7 +65,7 @@ void draw_text(const char*s,int x,int y,int scale,Uint8 r=230,Uint8 g=240,Uint8 
 void init_world(){
  // PS4-native PCG sampling. Every coordinate is reproducible from one seed;
  // this 2048x2048 resident window is a transitional cache, not the final world limit.
- mineplus::PcgWorld pcg(4839201ULL);
+ mineplus::PcgWorld pcg(worldSeed);
  for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){
   const int wx=x-COLS/2, wy=y-ROWS/2;
   const auto sample=pcg.sample_surface(wx,wy);
@@ -161,9 +162,9 @@ bool save_world(){
  mkdir(SAVE_DIR,0777);
  const char* temp="/data/MINEPLUS/world.sav.tmp";
  FILE* f=std::fopen(temp,"wb");if(!f)return false;
- SaveHeader h{{'M','P','L','U','S','3','D','\0'},7,px,py,selected,faceX,faceY,{}};
+ SaveHeader h{{'M','P','L','U','S','3','D','\0'},8,px,py,selected,faceX,faceY,{}};
  for(int i=0;i<9;i++)h.stock[i]=stock[i];
- bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size()&&std::fwrite(&playerHealth,sizeof(playerHealth),1,f)==1&&std::fwrite(stock.data()+9,sizeof(int),13,f)==13;
+ bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(&worldSeed,sizeof(worldSeed),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size()&&std::fwrite(&playerHealth,sizeof(playerHealth),1,f)==1&&std::fwrite(stock.data()+9,sizeof(int),13,f)==13;
  if(std::fflush(f)!=0)ok=false;
  if(std::fclose(f)!=0)ok=false;
  if(ok&&std::rename(temp,SAVE_FILE)!=0)ok=false;
@@ -173,10 +174,12 @@ bool save_world(){
 bool load_world(){
   FILE* f=std::fopen(SAVE_FILE,"rb");if(!f)return false;
   SaveHeader h{};
-  bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version>=1&&h.version<=7);
+  bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version>=1&&h.version<=8);
   const bool legacy=h.version<5;
   auto &restored=loadWorldBuffer;
   restored.fill(0);
+  std::uint64_t restoredSeed=4839201ULL;
+  if(ok&&h.version>=8)ok=std::fread(&restoredSeed,sizeof(restoredSeed),1,f)==1;
   if(ok&&legacy){
    auto &oldWorld=legacyWorldBuffer;
    ok=std::fread(oldWorld.data(),1,oldWorld.size(),f)==oldWorld.size();
@@ -205,6 +208,7 @@ bool load_world(){
    creatures=restoredCreatures;
   }
   world=restored;
+  worldSeed=restoredSeed;
   playerHealth=std::clamp(restoredHealth,1,10);lastDamage=0;damageCooldown=0;
   px=std::clamp(legacy?h.x+COLS/2-LEGACY_COLS/2:h.x,1,COLS-2);
   py=std::clamp(legacy?h.y+ROWS/2-LEGACY_ROWS/2:h.y,1,ROWS-2);
