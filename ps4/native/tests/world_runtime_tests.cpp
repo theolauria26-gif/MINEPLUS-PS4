@@ -4,6 +4,9 @@
 #include <iostream>
 #include <vector>
 
+static_assert(sizeof(mineplus::ChunkCache) <= 512u * 1024u,
+              "PS4 streamed chunk cache exceeded its static memory budget");
+
 int main() {
     mineplus::WorldRuntime world(4839201ULL);
     assert(world.seed() == 4839201ULL);
@@ -33,6 +36,10 @@ int main() {
     std::uint8_t edited = 0;
     assert(world.get_tile(-1, -1, edited) && edited == 255);
     assert(world.saved_edits() == 1);
+    mineplus::VoxelSample voxel{};
+    assert(world.get_voxel(-1, -1, originalSample.height, voxel));
+    assert(voxel.material == mineplus::VoxelMaterial::Stone);
+
 
     // Moving far enough evicts the original chunk; edits and base metadata persist.
     world.update_center(4096, -4096, 4);
@@ -43,6 +50,9 @@ int main() {
     assert(reloadedSample.surface == 255);
     assert(reloadedSample.biome == originalSample.biome);
     assert(reloadedSample.height == originalSample.height);
+    assert(world.get_voxel(-1, -1, reloadedSample.height, voxel));
+    assert(voxel.material == mineplus::VoxelMaterial::Stone);
+
 
     mineplus::ChunkCache::Edit saved[4]{};
     assert(world.export_edits(saved, 4) == 1);
