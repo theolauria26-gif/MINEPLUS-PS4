@@ -90,8 +90,16 @@ int main() {
             assert(roof.material == VoxelMaterial::DarkStone && roof.solid);
             assert(room.material == repeatRoom.material);
 
-            const int offset = std::max(3, int(dungeon.radius) * 2 / 3);
-            const int wingRadius = std::max(2, int(dungeon.radius) / 5);
+            const int profile = int(dungeon.kind % 4u);
+            const int mainDivisor = profile == 1 ? 3 : (profile == 2 ? 5 : 4);
+            const int wingDivisor = profile == 2 ? 6 : (profile == 3 ? 4 : 5);
+            const int offsetNumerator = profile == 1 ? 3 : (profile == 2 ? 7 : 2);
+            const int offsetDenominator = profile == 1 ? 5 : (profile == 2 ? 10 : 3);
+            const int mainRadius = std::max(2, int(dungeon.radius) / mainDivisor);
+            const int offset = std::max(3, int(dungeon.radius) *
+                                           offsetNumerator / offsetDenominator);
+            const int wingRadius = std::max(2, int(dungeon.radius) / wingDivisor);
+            assert(mainRadius >= 2);
             const int wingX = dungeon.x + offset;
             const int wingY = dungeon.y;
             const auto eastSurface = worldA.sample_surface(wingX, wingY);
