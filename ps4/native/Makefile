@@ -6,7 +6,7 @@ TOOLCHAIN := $(OO_PS4_TOOLCHAIN)
 INTDIR := build
 CXX := clang++
 LD := ld.lld
-CXXFLAGS := --target=x86_64-pc-freebsd12-elf -std=c++17 -fPIC -funwind-tables -c -isysroot $(TOOLCHAIN) -isystem $(TOOLCHAIN)/include -isystem $(TOOLCHAIN)/include/c++/v1
+CXXFLAGS := --target=x86_64-pc-freebsd12-elf -std=c++17 -D_POSIX_C_SOURCE=200809L -fPIC -funwind-tables -c -isysroot $(TOOLCHAIN) -isystem $(TOOLCHAIN)/include -isystem $(TOOLCHAIN)/include/c++/v1
 LIBS := -lSDL2 -lSceUserService -lSceVideoOut -lScePad -lSceSysmodule -lkernel -lc++ -lc
 LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr -L$(TOOLCHAIN)/lib $(LIBS) $(TOOLCHAIN)/lib/crt1.o
 .PHONY: all clean
