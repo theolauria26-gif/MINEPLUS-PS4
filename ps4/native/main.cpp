@@ -46,31 +46,47 @@ case ' ':return "00000""00000""00000""00000""00000""00000""00000";
 default:return "00000""00000""00000""00000""00000""00000""00000";}}
 void draw_text(const char*s,int x,int y,int scale,Uint8 r=230,Uint8 g=240,Uint8 b=236){color(r,g,b);for(;*s;s++,x+=6*scale){const char*p=glyph(*s);for(int yy=0;yy<7;yy++)for(int xx=0;xx<5;xx++)if(p[yy*5+xx]=='1'){SDL_Rect q{x+xx*scale,y+yy*scale,scale,scale};SDL_RenderFillRect(renderer,&q);}}}
 void init_world(){for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){unsigned char t=Grass;if((x*13+y*7)%19==0)t=Stone;else if((x*5+y*11)%13==0)t=Dirt;if((x==5&&y==5)||(x==18&&y==9))t=Wood;world[y*COLS+x]=t;}world[py*COLS+px]=Air;}
-void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){case Grass:r=74;g=145;b=83;break;case Dirt:r=132;g=91;b=60;break;case Stone:r=116;g=124;b=133;break;case Wood:r=154;g=111;b=65;break;default:r=28;g=38;b=43;break;}}
+void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){case Grass:r=43;g=76;b=61;break;case Dirt:r=83;g=62;b=52;break;case Stone:r=79;g=86;b=94;break;case Wood:r=91;g=72;b=58;break;default:r=16;g=23;b=29;break;}}
 void move_player(int dx,int dy){if(!dx&&!dy)return;px=std::clamp(px+dx,0,COLS-1);py=std::clamp(py+dy,0,ROWS-1);faceX=dx;faceY=dy;}
 int target_index(){int x=px+faceX,y=py+faceY;if(x<0||x>=COLS||y<0||y>=ROWS)return -1;return y*COLS+x;}
 void place_block(){int i=target_index();if(i>=0&&world[i]==Air)world[i]=static_cast<unsigned char>(selected+1);}
 void mine_block(){int i=target_index();if(i>=0)world[i]=Air;}
 void draw_menu(){
- rect(0,0,W,H,8,13,18);for(int i=0;i<26;i++)rect((i*173)%W,(i*97)%H,3,3,22,73,57);
- rect(70,55,1140,610,14,23,27);outline(70,55,1140,610,43,91,68);
- rect(105,95,12,150,41,204,132);draw_text("MINEPLUS",150,105,8,235,249,241);
- draw_text("BLOCK WORLD",155,190,2,119,175,145);
- rect(130,270,600,275,19,32,35);outline(130,270,600,275,51,112,82);
- rect(165,310,92,92,25,42,43);outline(165,310,92,92,55,218,139);rect(181,326,60,60,55,157,103);rect(190,335,42,42,31,48,49);
- draw_text("READY TO PLAY",290,320,3,125,220,166);
- rect(290,420,300,70,38,150,91);outline(290,420,300,70,99,240,157);draw_text("START",390,445,4,255,255,255);
- rect(780,270,350,275,18,29,33);outline(780,270,350,275,45,104,74);draw_text("CONTROLS",820,305,3,132,221,167);
- draw_text("DPAD MOVE",820,355,2);draw_text("A PLACE X BREAK",820,390,2);draw_text("Y INVENTORY",820,425,2);draw_text("START PAUSE",820,460,2);
- draw_text("MINEPLUS PS4",105,610,2,104,150,128);
+ // Dark-fantasy title screen: moonlit ruins, distant towers and drifting embers.
+ rect(0,0,W,H,5,8,14);
+ for(int y=0;y<H;y+=4){Uint8 shade=static_cast<Uint8>(8+(y*13/H));rect(0,y,W,4,shade,shade+3,shade+9);}
+ rect(0,430,W,290,9,13,18);
+ // Broken skyline and black-stone spires.
+ polyline_dummy:
+ rect(0,455,1280,265,8,12,16);rect(95,350,58,180,12,18,24);rect(108,305,32,45,18,25,31);rect(1010,330,72,210,11,17,23);rect(1028,285,36,45,18,24,30);
+ rect(205,405,34,130,13,19,25);rect(222,375,8,30,29,36,40);rect(875,390,45,150,12,18,24);
+ // Moon and mist bands.
+ color(184,194,194,210);SDL_Rect moon{955,82,112,112};SDL_RenderFillRect(renderer,&moon);rect(980,68,110,120,5,8,14);
+ for(int i=0;i<7;i++)rect(0,510+i*19,W,2,static_cast<Uint8>(30+i*3),static_cast<Uint8>(39+i*2),static_cast<Uint8>(48+i*2),65);
+ for(int i=0;i<34;i++){int x=(i*173+37)%W,y=(i*97+61)%H;rect(x,y,2,2,static_cast<Uint8>(105+(i%3)*35),static_cast<Uint8>(83+(i%3)*25),static_cast<Uint8>(66+(i%3)*20),190);}
+ rect(70,55,1140,610,9,13,19,235);outline(70,55,1140,610,91,99,103);
+ rect(105,95,5,150,225,226,220);draw_text("MINEPLUS",145,100,8,245,246,239);
+ draw_text("DARKNESS FALLS  /  BUILD YOUR LEGEND",150,180,2,174,180,178);
+ rect(130,270,600,275,14,19,25,240);outline(130,270,600,275,95,103,108);
+ // Monochrome creeper-like sigil framed as carved stone.
+ rect(165,310,112,112,22,27,32);outline(165,310,112,112,196,199,194);rect(184,329,74,74,205,207,201);rect(197,344,15,17,16,20,25);rect(230,344,15,17,16,20,25);rect(211,361,19,25,16,20,25);rect(201,379,12,15,16,20,25);rect(228,379,12,15,16,20,25);
+ draw_text("ENTER THE WILDS",310,320,3,225,228,222);
+ draw_text("ANCIENT RUINS  -  FORGOTTEN LANDS",310,360,1,154,163,164);
+ rect(310,420,300,70,170,174,170);outline(310,420,300,70,245,245,238);draw_text("START",410,445,4,14,18,23);
+ rect(780,270,350,275,13,18,24,245);outline(780,270,350,275,91,99,104);draw_text("CONTROLS",820,305,3,220,223,218);
+ draw_text("DPAD MOVE",820,355,2,177,184,182);draw_text("A PLACE X BREAK",820,390,2,177,184,182);draw_text("Y INVENTORY",820,425,2,177,184,182);draw_text("START PAUSE",820,460,2,177,184,182);
+ draw_text("MINEPLUS PS4  /  DARK FANTASY EDITION",105,610,1,151,158,160);
 }
 void draw_world(){
- rect(0,0,W,H,13,19,22);int ox=(W-COLS*TILE)/2,oy=90;
- for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){Uint8 r,g,b;tile_color(world[y*COLS+x],r,g,b);int sx=ox+x*TILE,sy=oy+y*TILE;rect(sx+1,sy+1,TILE-2,TILE-2,r,g,b);outline(sx,sy,TILE,TILE,20,27,31);if(world[y*COLS+x]==Grass)rect(sx+3,sy+3,TILE-6,4,104,183,101);}
+ rect(0,0,W,H,7,11,17);for(int y=70;y<H;y+=6)rect(0,y,W,3,static_cast<Uint8>(9+y/90),static_cast<Uint8>(14+y/95),static_cast<Uint8>(21+y/80));
+ // Cold moonlight and low-contrast fog behind the block field.
+ rect(920,92,74,74,104,115,119,80);for(int i=0;i<5;i++)rect(0,555+i*23,W,7,26,34,41,35);
+ int ox=(W-COLS*TILE)/2,oy=90;
+ for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){Uint8 r,g,b;tile_color(world[y*COLS+x],r,g,b);int sx=ox+x*TILE,sy=oy+y*TILE;rect(sx+1,sy+1,TILE-2,TILE-2,r,g,b);outline(sx,sy,TILE,TILE,20,27,31);if(world[y*COLS+x]==Grass){rect(sx+3,sy+3,TILE-6,3,83,126,91);rect(sx+5,sy+9,4,3,111,143,106);}else if(world[y*COLS+x]==Stone){rect(sx+5,sy+7,8,2,119,128,134);rect(sx+21,sy+22,6,2,47,55,63);}else if(world[y*COLS+x]==Wood){rect(sx+8,sy+3,3,TILE-6,123,98,76);}}
  int tx=px+faceX,ty=py+faceY;if(tx>=0&&tx<COLS&&ty>=0&&ty<ROWS)outline(ox+tx*TILE+2,oy+ty*TILE+2,TILE-4,TILE-4,240,226,105);
  rect(ox+px*TILE+9,oy+py*TILE+5,18,26,224,224,231);rect(ox+px*TILE+11,oy+py*TILE+8,5,5,30,35,43);rect(ox+px*TILE+20,oy+py*TILE+8,5,5,30,35,43);
- rect(0,0,W,70,7,12,16,245);rect(20,16,8,38,52,212,132);draw_text("MINEPLUS",45,17,3);draw_text("WORLD 01",45,45,1,125,160,143);
- draw_text("DPAD MOVE  A PLACE  X BREAK",650,27,2,160,190,173);
+ rect(0,0,W,70,7,12,16,245);rect(20,16,8,38,52,212,132);draw_text("MINEPLUS",45,17,3);draw_text("THE FORGOTTEN WILDS",45,45,1,160,166,165);
+ draw_text("DPAD MOVE  A PLACE  X BREAK",650,27,2,190,194,190);
  int start=(W-5*62)/2;for(int i=0;i<5;i++){int x=start+i*62;rect(x,H-88,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-88,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-73,24,24,r,g,b);}
  if(inventory||paused){rect(250,150,780,430,8,14,18,245);outline(250,150,780,430,68,166,111);draw_text(inventory?"INVENTORY":"PAUSED",310,195,5,132,235,166);
  if(inventory){for(int i=0;i<5;i++){int x=320+i*125;rect(x,300,90,90,27,43,43);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+23,323,44,44,r,g,b);outline(x,300,90,90,75,145,98);}}
