@@ -39,6 +39,10 @@ int main() {
     mineplus::VoxelSample voxel{};
     assert(world.get_voxel(-1, -1, originalSample.height, voxel));
     assert(voxel.material == mineplus::VoxelMaterial::Stone);
+    const int editedDepth = originalSample.height - 2;
+    assert(world.set_voxel(-1, -1, editedDepth, mineplus::VoxelMaterial::Crystal));
+    assert(world.get_voxel(-1, -1, editedDepth, voxel));
+    assert(voxel.material == mineplus::VoxelMaterial::Crystal && voxel.solid);
 
 
     // Moving far enough evicts the original chunk; edits and base metadata persist.
@@ -52,6 +56,8 @@ int main() {
     assert(reloadedSample.height == originalSample.height);
     assert(world.get_voxel(-1, -1, reloadedSample.height, voxel));
     assert(voxel.material == mineplus::VoxelMaterial::Stone);
+    assert(world.get_voxel(-1, -1, editedDepth, voxel));
+    assert(voxel.material == mineplus::VoxelMaterial::Crystal);
 
 
     mineplus::ChunkCache::Edit saved[4]{};
@@ -67,6 +73,8 @@ int main() {
     assert(diskLoaded.seed() == world.seed());
     assert(diskLoaded.loaded_chunks() == 0);
     assert(diskLoaded.get_tile(-1, -1, edited) && edited == 255);
+    assert(diskLoaded.get_voxel(-1, -1, editedDepth, voxel));
+    assert(voxel.material == mineplus::VoxelMaterial::Crystal);
     auto corrupt = snapshot;
     corrupt.back() ^= 0x80;
     const auto previousSeed = diskLoaded.seed();
