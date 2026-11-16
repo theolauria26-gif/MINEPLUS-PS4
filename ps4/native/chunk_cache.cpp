@@ -6,6 +6,18 @@
 
 namespace mineplus {
 
+namespace {
+bool valid_voxel_material(VoxelMaterial material) {
+    const auto id = static_cast<std::uint8_t>(material);
+    return id <= 17 || id == 22 || id == 23;
+}
+VoxelSample make_voxel_sample(VoxelMaterial material) {
+    const bool liquid = material == VoxelMaterial::Water ||
+                        material == VoxelMaterial::Lava;
+    return VoxelSample{material, material != VoxelMaterial::Air && !liquid, liquid};
+}
+}
+
 ChunkCache::ChunkCache(std::uint64_t seed)
     : generator_(seed), generator_seed_(seed) {}
 
@@ -91,6 +103,12 @@ bool ChunkCache::get_voxel(std::int32_t wx, std::int32_t wy,
     const auto cy = ChunkGenerator::floor_div(wy, PcgWorld::CHUNK_SIZE);
     auto* entry = acquire_chunk(cx, cy);
     if (!entry) return false;
+    for (const auto& edit : voxel_deltas_) {
+        if (edit.valid && edit.x == wx && edit.y == wy && edit.z == z) {
+            out = make_voxel_sample(edit.material);
+            return true;
+        }
+    }
     const SurfaceSample& column = entry->data.cells[local_index(wx, wy)];
     // The editable surface is authoritative at its height: mining and placing
     // must be visible through both the 2D compatibility API and 3D voxel API.
@@ -122,9 +140,7 @@ bool ChunkCache::get_voxel(std::int32_t wx, std::int32_t wy,
             case 23: material = VoxelMaterial::Ore; break;
             default: material = VoxelMaterial::Stone; break;
         }
-        const bool liquid = material == VoxelMaterial::Water ||
-                            material == VoxelMaterial::Lava;
-        out = VoxelSample{material, material != VoxelMaterial::Air && !liquid, liquid};
+        out = make_voxel_sample(material);
         return true;
     }
     out = generator_.sample_voxel(wx, wy, z);
@@ -168,6 +184,26 @@ bool ChunkCache::set_surface(std::int32_t wx, std::int32_t wy,
     return true;
 }
 
+bool ChunkCache::set_voxel(std::int32_t wx, std::int32_t wy, std::int32_t z,
+                            VoxelMaterial material) {
+    if (z < 0 || z >= PcgWorld::WORLD_HEIGHT || !valid_voxel_material(material))
+        return false;
+    const auto cx = ChunkGenerator::floor_div(wx, PcgWorld::CHUNK_SIZE);
+    const auto cy = ChunkGenerator::floor_div(wy, PcgWorld::CHUNK_SIZE);
+    if (!acquire_chunk(cx, cy)) return false;
+    VoxelDelta* slot = nullptr;
+    for (auto& edit : voxel_deltas_) {
+        if (edit.valid && edit.x == wx && edit.y == wy && edit.z == z) {
+            slot = &edit;
+            break;
+        }
+        if (!edit.valid && !slot) slot = &edit;
+    }
+    if (!slot) return false; // Never silently discard a 3D player edit.
+    *slot = VoxelDelta{wx, wy, z, material, true};
+    return true;
+}
+
 std::size_t ChunkCache::export_edits(Edit* output, std::size_t capacity) const {
     const std::size_t required = delta_count();
     if (required == 0) return 0;
@@ -201,22 +237,59 @@ bool ChunkCache::import_edits(const Edit* edits, std::size_t count) {
     return true;
 }
 
-bool ChunkCache::restore(std::uint64_t seed, const Edit* edits, std::size_t count) {
+std::size_t ChunkCache::export_voxel_edits(VoxelEdit* output, std::size_t capacity) const {
+    std::size_t required = 0;
+    for (const auto& edit : voxel_deltas_) if (edit.valid) ++required;
+    if (required == 0) return 0;
+    if (!output || capacity < required) return 0;
+    std::size_t written = 0;
+    for (const auto& edit : voxel_deltas_) {
+        if (edit.valid) output[written++] = VoxelEdit{edit.x, edit.y, edit.z, edit.material};
+    }
+    return written;
+}
+
+bool ChunkCache::import_voxel_edits(const VoxelEdit* edits, std::size_t count) {
+    if ((count != 0 && !edits) || count > VOXEL_DELTA_CAPACITY) return false;
+    for (std::size_t i = 0; i < count; ++i) {
+        if (edits[i].z < 0 || edits[i].z >= PcgWorld::WORLD_HEIGHT ||
+            !valid_voxel_material(edits[i].material)) return false;
+        for (std::size_t j = i + 1; j < count; ++j)
+            if (edits[i].x == edits[j].x && edits[i].y == edits[j].y &&
+                edits[i].z == edits[j].z) return false;
+    }
+    for (auto& edit : voxel_deltas_) edit = VoxelDelta{};
+    for (std::size_t i = 0; i < count; ++i)
+        voxel_deltas_[i] = VoxelDelta{edits[i].x, edits[i].y, edits[i].z,
+                                      edits[i].material, true};
+    return true;
+}
+
+bool ChunkCache::restore(std::uint64_t seed, const Edit* edits, std::size_t count,
+                         const VoxelEdit* voxel_edits, std::size_t voxel_count) {
     // Validate before resetting any live state. No large temporary cache is
     // placed on the PS4 thread stack during load.
-    if ((count != 0 && !edits) || count > DELTA_CAPACITY) return false;
+    if ((count != 0 && !edits) || count > DELTA_CAPACITY ||
+        (voxel_count != 0 && !voxel_edits) || voxel_count > VOXEL_DELTA_CAPACITY) return false;
     for (std::size_t i = 0; i < count; ++i) {
-        for (std::size_t j = i + 1; j < count; ++j) {
-            if (edits[i].x == edits[j].x && edits[i].y == edits[j].y)
-                return false;
-        }
+        for (std::size_t j = i + 1; j < count; ++j)
+            if (edits[i].x == edits[j].x && edits[i].y == edits[j].y) return false;
+    }
+    for (std::size_t i = 0; i < voxel_count; ++i) {
+        if (voxel_edits[i].z < 0 || voxel_edits[i].z >= PcgWorld::WORLD_HEIGHT ||
+            !valid_voxel_material(voxel_edits[i].material)) return false;
+        for (std::size_t j = i + 1; j < voxel_count; ++j)
+            if (voxel_edits[i].x == voxel_edits[j].x &&
+                voxel_edits[i].y == voxel_edits[j].y &&
+                voxel_edits[i].z == voxel_edits[j].z) return false;
     }
     generator_ = ChunkGenerator(seed);
     generator_seed_ = seed;
     entries_ = {};
     deltas_ = {};
+    voxel_deltas_ = {};
     clock_ = 1;
-    return import_edits(edits, count);
+    return import_edits(edits, count) && import_voxel_edits(voxel_edits, voxel_count);
 }
 
 std::size_t ChunkCache::loaded_count() const {
