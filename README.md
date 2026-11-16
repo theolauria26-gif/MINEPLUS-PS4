@@ -79,3 +79,8 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 - Em 16/11/2026, o workflow GitHub Actions **Build MINEPLUS PS4 PKG** concluiu com sucesso para o commit `2e52caf8`: testes portáveis de mundo, compilação do EBOOT/PKG e upload do artefato `MINEPLUS-PS4-PKG`.
 - O PKG gerado é um artefato de CI; ainda precisa ser instalado e testado em um PS4 compatível. Build verde não comprova estabilidade em hardware real.
 - Execução: https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/43958492489
+
+
+## Direção visual: materiais pixel-art
+
+O renderer recebeu uma primeira camada de materiais procedurais com paletas mais vivas e padrões específicos por bloco (grama, terra, pedra, madeira, cristais, runas, gelo, água e lava). Os padrões são determinísticos em coordenadas do mundo para permanecerem estáveis durante o movimento. Ainda não é um atlas UV nem renderização 3D de chunks: a arquitetura atual continua sendo um renderer SDL2 de colunas em perspectiva, e a evolução para malhas voxel, modelos cúbicos e iluminação avançada segue como trabalho pendente.
