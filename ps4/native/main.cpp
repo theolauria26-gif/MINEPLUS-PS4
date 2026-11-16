@@ -433,20 +433,42 @@ void draw_world(){
  }
  // Distant silhouettes create scale and a recognizable horizon.
  for(int i=0;i<18;i++){int x=(i*173+91)%W;int base=300+(i%4)*13;rect(x,base-24-(i%5)*13,5+(i%3)*4,base>horizon?H-base:25,13,19,24,150);}
- // Project living creatures as perspective billboards.
+ // Project creatures with deterministic species silhouettes and time-based animation.
+ const float animTime=float(SDL_GetTicks())*0.006f;
  for(const auto &m:creatures)if(m.hp>0){
   float dx=float(m.x-px),dy=float(m.y-py),forward=dx*dirX+dy*dirY,side=dx*rightX+dy*rightY;
   if(forward<0.7f||forward>22.0f)continue;
   int sx=int(W*0.5f+(side/forward)*focal/fov);
   int size=int(430.0f/forward);
-  int sy=int(horizon+focal*0.65f/forward-size*0.8f);
-  if(sx>8&&sx<W-8&&size>3){static const int speciesColor[12]={75,105,61,130,150,92,112,83,158,67,137,98};
-  int rr=speciesColor[std::clamp(m.type,0,11)];
-  int bodyW=std::max(2,size*(m.type==8||m.type==10?4:2)/3);
-  int bodyH=std::max(2,size*(m.type==3||m.type==8?5:4)/4);
-  rect(sx-bodyW/2,sy,bodyW,bodyH,rr,rr-8,rr+5);
-  if(m.type==6||m.type==9)rect(sx-bodyW/2,sy+bodyH/3,bodyW,2,210,174,115);
-  if(m.type==8||m.type==10)rect(sx-bodyW/2,sy-std::max(2,size/5),bodyW,std::max(2,size/5),rr+25,rr+12,rr+8);rect(sx-size/5,sy+size/4,3,3,230,225,210);rect(sx+size/8,sy+size/4,3,3,230,225,210);}
+  const float phase=animTime+float(hash2(m.x,m.y)%628u)*0.01f;
+  const int bob=int(std::sin(phase*(m.type%3==0?1.8f:2.7f))*std::max(1,size/22));
+  int sy=int(horizon+focal*0.65f/forward-size*0.8f)+bob;
+  if(sx>8&&sx<W-8&&size>3){
+   static const int speciesColor[12]={75,105,61,130,150,92,112,83,158,67,137,98};
+   const int rr=speciesColor[std::clamp(m.type,0,11)];
+   const int bodyW=std::max(2,size*(m.type==8||m.type==10?4:2)/3);
+   const int bodyH=std::max(2,size*(m.type==3||m.type==8?5:4)/4);
+   const int legSwing=int(std::sin(phase*5.0f)*std::max(1,size/12));
+   // Ground shadow and alternating legs make movement readable at distance.
+   rect(sx-bodyW/2,sy+bodyH-1,bodyW, std::max(1,size/14),8,10,11,100);
+   rect(sx-bodyW/3,sy+bodyH-std::max(2,size/8),std::max(2,bodyW/4),std::max(2,size/7)+legSwing,rr-17,rr-15,rr-10);
+   rect(sx+bodyW/8,sy+bodyH-std::max(2,size/8),std::max(2,bodyW/4),std::max(2,size/7)-legSwing,rr-17,rr-15,rr-10);
+   rect(sx-bodyW/2,sy,bodyW,bodyH,rr,rr-8,rr+5);
+   // Species 6/9 carry glowing mineral plates; 8/10 have raised horns.
+   if(m.type==6||m.type==9){
+    const int glow=110+int((std::sin(phase*3.0f)+1.0f)*35.0f);
+    rect(sx-bodyW/2,sy+bodyH/3,bodyW, std::max(2,size/18),210,Uint8(glow),115,210);
+    rect(sx-1,sy-std::max(2,size/8),2,std::max(2,size/7),120,210,205,190);
+   }
+   if(m.type==8||m.type==10){
+    const int horn=std::max(2,size/5);
+    rect(sx-bodyW/2,sy-horn, std::max(2,bodyW/4),horn,rr+25,rr+12,rr+8);
+    rect(sx+bodyW/4,sy-horn, std::max(2,bodyW/4),horn,rr+25,rr+12,rr+8);
+   }
+   const int eye=std::max(2,size/18);
+   rect(sx-bodyW/5,sy+bodyH/4,eye,eye,235,226,190);
+   rect(sx+bodyW/8,sy+bodyH/4,eye,eye,235,226,190);
+  }
  }
  // First-person blocky arms and tool silhouette.
  rect(W/2+115,H-158,75,180,91,65,49);rect(W/2+125,H-166,58,28,155,119,82);
