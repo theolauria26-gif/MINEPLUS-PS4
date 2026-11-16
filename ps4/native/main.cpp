@@ -298,6 +298,12 @@ void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){case Grass:r=43;g=76;b=
 bool solid_tile(int t){return t==DarkStone||t==Stone||t==Wood||t==Bone||t==Crystal||t==IronOre||t==Obsidian||t==Rune;}
 bool creature_occupies(int x,int y,const Creature*skip=nullptr){for(const auto &m:creatures)if(&m!=skip&&m.hp>0&&m.x==x&&m.y==y)return true;return false;}
 void move_player(int dx,int dy){if(!dx&&!dy)return;int nx=std::clamp(px+dx,1,COLS-2),ny=std::clamp(py+dy,1,ROWS-2);if(solid_tile(tile_at(nx,ny)))return;px=nx;py=ny;faceX=dx;faceY=dy;}
+// Inventory counts are persisted as signed integers; cap every reward at the
+// same limit enforced by save loading and crafting to prevent overflow.
+void add_stock(int item,int amount=1){
+ if(item<0||item>=static_cast<int>(stock.size())||amount<=0)return;
+ stock[item]=std::clamp(stock[item],0,9999-std::min(amount,9999))+std::min(amount,9999);
+}
 void turn_player(int direction){if(direction>0){int old=faceX;faceX=-faceY;faceY=old;}else if(direction<0){int old=faceX;faceX=faceY;faceY=-old;}}
 Uint32 lastCreatureUpdate=0;
 void update_player_combat(){
@@ -363,7 +369,7 @@ void craft_item(){
   case 8: if(stock[Rune]>=2&&stock[Crystal]>=2&&stock[AncientRune]<=9998){stock[Rune]-=2;stock[Crystal]-=2;stock[AncientRune]+=1;}break;
  }
 }
-void mine_block(){int x=0,y=0;if(!target_tile(x,y))return;for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){lastCreatureHit=SDL_GetTicks();lastCreatureHitX=x;lastCreatureHitY=y;if(--m.hp<=0){if(m.type<4)stock[Bone]+=2;else if(m.type<8)stock[Crystal]+=1;else stock[DarkStone]+=1;m.x=-100;m.y=-100;}return;}int block=tile_at(x,y);if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)++stock[drop];else if(drop>=IronOre&&drop<=Rune)++stock[drop];set_tile_at(x,y,Air);}}
+void mine_block(){int x=0,y=0;if(!target_tile(x,y))return;for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){lastCreatureHit=SDL_GetTicks();lastCreatureHitX=x;lastCreatureHitY=y;if(--m.hp<=0){if(m.type<4)add_stock(Bone,2);else if(m.type<8)add_stock(Crystal);else add_stock(DarkStone);m.x=-100;m.y=-100;}return;}int block=tile_at(x,y);if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)add_stock(drop);else if(drop>=IronOre&&drop<=Rune)add_stock(drop);set_tile_at(x,y,Air);}}
 void draw_menu(){
  // Dark-fantasy title screen: moonlit ruins, distant towers and drifting embers.
  rect(0,0,W,H,5,8,14);
