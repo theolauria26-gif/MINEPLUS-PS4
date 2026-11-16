@@ -12,6 +12,7 @@ class ChunkCache {
 public:
     static constexpr std::size_t CAPACITY = 81;
     static constexpr std::size_t DELTA_CAPACITY = 2048;
+    static constexpr std::size_t VOXEL_DELTA_CAPACITY = 4096;
 
     explicit ChunkCache(std::uint64_t seed = 4839201ULL);
 
@@ -28,9 +29,15 @@ public:
                      std::uint8_t tile);
     // Compact edit journal transfer for durable save files.
     struct Edit { std::int32_t x, y; std::uint8_t tile; };
+    struct VoxelEdit { std::int32_t x, y, z; VoxelMaterial material; };
+    bool set_voxel(std::int32_t world_x, std::int32_t world_y, std::int32_t z,
+                   VoxelMaterial material);
     std::size_t export_edits(Edit* output, std::size_t capacity) const;
     bool import_edits(const Edit* edits, std::size_t count);
-    bool restore(std::uint64_t seed, const Edit* edits, std::size_t count);
+    std::size_t export_voxel_edits(VoxelEdit* output, std::size_t capacity) const;
+    bool import_voxel_edits(const VoxelEdit* edits, std::size_t count);
+    bool restore(std::uint64_t seed, const Edit* edits, std::size_t count,
+                 const VoxelEdit* voxel_edits = nullptr, std::size_t voxel_count = 0);
 
     std::size_t loaded_count() const;
     std::size_t delta_count() const;
@@ -47,11 +54,17 @@ private:
         std::uint8_t tile = 0;
         bool valid = false;
     };
+    struct VoxelDelta {
+        std::int32_t x = 0, y = 0, z = 0;
+        VoxelMaterial material = VoxelMaterial::Air;
+        bool valid = false;
+    };
 
     ChunkGenerator generator_;
     std::uint64_t generator_seed_;
     std::array<Entry, CAPACITY> entries_{};
     std::array<Delta, DELTA_CAPACITY> deltas_{};
+    std::array<VoxelDelta, VOXEL_DELTA_CAPACITY> voxel_deltas_{};
     std::uint64_t clock_ = 1;
 
     Entry* find_chunk(std::int32_t cx, std::int32_t cy);
