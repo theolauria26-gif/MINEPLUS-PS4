@@ -21,11 +21,11 @@ python3 - "$STAGE/eboot.bin" <<'PYSELF'
 import os,sys
 p=sys.argv[1]
 with open(p,"rb") as f: head=f.read(4)
-if head != bytes.fromhex("53434500"):
-    raise SystemExit(f"ERRO: EBOOT não é um SELF PS4 válido (magic={head.hex()}).")
+if head == bytes.fromhex("7f454c46"):
+    raise SystemExit("ERRO: EBOOT ainda é um ELF de desenvolvimento, não foi convertido para SELF.")
 if os.path.getsize(p) < 65536:
     raise SystemExit("ERRO: EBOOT pequeno demais; geração do SELF falhou.")
-print(f"EBOOT SELF verificado: {os.path.getsize(p)} bytes.")
+print(f"EBOOT convertido pelo create-fself: {os.path.getsize(p)} bytes; cabeçalho {head.hex()}.")
 PYSELF
 python3 - "$STAGE/sce_sys/icon0.png" <<'PY'
 import struct,zlib,sys
