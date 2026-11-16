@@ -9,6 +9,11 @@ namespace {
 inline float lerp(float a, float b, float t) { return a + (b-a)*t; }
 inline float smooth(float t) { return t*t*(3.0f-2.0f*t); }
 inline std::int32_t floor_i(float v) { return static_cast<std::int32_t>(std::floor(v)); }
+inline std::int32_t floor_div4(std::int32_t v) {
+    const std::int32_t q = v / 4;
+    const std::int32_t r = v % 4;
+    return (r < 0) ? q - 1 : q;
+}
 }
 
 std::uint32_t PcgWorld::hash(std::int32_t x, std::int32_t y, std::uint32_t salt) const {
@@ -123,8 +128,9 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
         return {soil, true, false};
     }
     if (z > 4) {
-        const std::int32_t cave_x = x / 4;
-        const std::int32_t cave_y = y / 4;
+        // Floor division keeps cave cells aligned across negative coordinates.
+        const std::int32_t cave_x = floor_div4(x);
+        const std::int32_t cave_y = floor_div4(y);
         const std::uint32_t cave = hash(cave_x, cave_y,
             0xCA000000u ^ static_cast<std::uint32_t>(z / 3));
         if ((cave % 100u) < 13u) return {};
