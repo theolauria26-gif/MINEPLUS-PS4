@@ -35,7 +35,9 @@ $(INTDIR)/voxel_mesh_vertices.o: voxel_mesh_vertices.cpp voxel_mesh_vertices.hpp
 	$(CXX) $(CXXFLAGS) -o $@ voxel_mesh_vertices.cpp
 $(INTDIR)/dungeon_graph.o: dungeon_graph.cpp dungeon_graph.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ dungeon_graph.cpp
-$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o $(INTDIR)/save_codec.o $(INTDIR)/world_runtime.o $(INTDIR)/voxel_mesher.o $(INTDIR)/material_atlas.o $(INTDIR)/voxel_face_uv.o $(INTDIR)/voxel_mesh_vertices.o $(INTDIR)/dungeon_graph.o
+$(INTDIR)/dungeon_voxel_builder.o: dungeon_voxel_builder.cpp dungeon_voxel_builder.hpp dungeon_graph.hpp voxel_mesher.hpp | $(INTDIR)
+	$(CXX) $(CXXFLAGS) -o $@ dungeon_voxel_builder.cpp
+$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o $(INTDIR)/save_codec.o $(INTDIR)/world_runtime.o $(INTDIR)/voxel_mesher.o $(INTDIR)/material_atlas.o $(INTDIR)/voxel_face_uv.o $(INTDIR)/voxel_mesh_vertices.o $(INTDIR)/dungeon_graph.o $(INTDIR)/dungeon_voxel_builder.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 eboot.bin: $(INTDIR)/mineplus.elf
 	$(TOOLCHAIN)/bin/linux/create-fself -in=$< -out=$(INTDIR)/mineplus.oelf --eboot "$@" --paid 0x3800000000000011
