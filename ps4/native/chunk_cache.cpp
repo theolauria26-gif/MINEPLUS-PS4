@@ -85,6 +85,15 @@ bool ChunkCache::get(std::int32_t wx, std::int32_t wy, SurfaceSample& out) {
     return true;
 }
 
+bool ChunkCache::get_voxel(std::int32_t wx, std::int32_t wy,
+                            std::int32_t z, VoxelSample& out) {
+    const auto cx = ChunkGenerator::floor_div(wx, PcgWorld::CHUNK_SIZE);
+    const auto cy = ChunkGenerator::floor_div(wy, PcgWorld::CHUNK_SIZE);
+    if (!acquire_chunk(cx, cy)) return false;
+    out = generator_.sample_voxel(wx, wy, z);
+    return true;
+}
+
 bool ChunkCache::get_structure(std::int32_t wx, std::int32_t wy,
                                  StructureAnchor& out) {
     const auto cx = ChunkGenerator::floor_div(wx, PcgWorld::CHUNK_SIZE);
