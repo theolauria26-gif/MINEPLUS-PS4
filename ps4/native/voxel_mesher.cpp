@@ -53,8 +53,10 @@ VoxelFace face_for(int axis, int sign) {
 }
 } // namespace
 
-void VoxelMesher::build(const VoxelChunk& chunk, std::vector<MeshQuad>& output) {
+bool VoxelMesher::build(const VoxelChunk& chunk, std::vector<MeshQuad>& output,
+                        std::size_t max_quads) {
     output.clear();
+    if (max_quads == 0) return false;
 
     // Each axis and direction gets a 2D material mask for a single voxel
     // plane. Greedy rectangle extraction turns the mask into compact quads.
@@ -124,6 +126,10 @@ void VoxelMesher::build(const VoxelChunk& chunk, std::vector<MeshQuad>& output) 
                         quad.height = static_cast<std::uint8_t>(height);
                         quad.material = material;
                         quad.face = face;
+                        if (output.size() >= max_quads) {
+                            output.clear();
+                            return false;
+                        }
                         output.push_back(quad);
 
                         for (int row = 0; row < height; ++row)
@@ -135,6 +141,7 @@ void VoxelMesher::build(const VoxelChunk& chunk, std::vector<MeshQuad>& output) 
             }
         }
     }
+    return true;
 }
 
 } // namespace mineplus
