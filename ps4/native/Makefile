@@ -27,7 +27,9 @@ $(INTDIR)/world_runtime.o: world_runtime.cpp world_runtime.hpp chunk_cache.hpp s
 	$(CXX) $(CXXFLAGS) -o $@ world_runtime.cpp
 $(INTDIR)/voxel_mesher.o: voxel_mesher.cpp voxel_mesher.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ voxel_mesher.cpp
-$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o $(INTDIR)/save_codec.o $(INTDIR)/world_runtime.o $(INTDIR)/voxel_mesher.o
+$(INTDIR)/material_atlas.o: material_atlas.cpp material_atlas.hpp | $(INTDIR)
+	$(CXX) $(CXXFLAGS) -o $@ material_atlas.cpp
+$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o $(INTDIR)/save_codec.o $(INTDIR)/world_runtime.o $(INTDIR)/voxel_mesher.o $(INTDIR)/material_atlas.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 eboot.bin: $(INTDIR)/mineplus.elf
 	$(TOOLCHAIN)/bin/linux/create-fself -in=$< -out=$(INTDIR)/mineplus.oelf --eboot "$@" --paid 0x3800000000000011
