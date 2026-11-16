@@ -36,9 +36,14 @@ int main() {
     assert(streamed.get_voxel(-17, 33, sample.height - 8, voxel));
     assert(streamed.get_voxel(-17, 33, -1, voxel));
     assert(!voxel.solid && voxel.material == mineplus::VoxelMaterial::Air);
+    assert(streamed.set_voxel(-17, 33, sample.height - 3, mineplus::VoxelMaterial::Obsidian));
+    assert(streamed.get_voxel(-17, 33, sample.height - 3, voxel));
+    assert(voxel.material == mineplus::VoxelMaterial::Obsidian && voxel.solid);
     runtime.update_center(4096, -4096, 4);
     assert(streamed.get(-17, 33, tile) && tile == 255);
     assert(streamed.get_sample(-17, 33, sample) && sample.surface == 255);
+    assert(streamed.get_voxel(-17, 33, sample.height - 3, voxel));
+    assert(voxel.material == mineplus::VoxelMaterial::Obsidian);
     // Surface mining/placement must also be reflected by the 3D query.
     assert(streamed.set(4, 5, 0));
     mineplus::SurfaceSample editedColumn{};
