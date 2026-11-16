@@ -68,3 +68,14 @@ Os testes não substituem teste de desempenho, controles e instalação no hardw
 - `ps4/build-native.sh`: geração e validação do PKG.
 
 Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e as limitações atuais.
+
+
+## Cavernas Primordiais
+- Marcos subterrâneos podem gerar complexos determinísticos de cinco câmaras (núcleo central + quatro alas), conectadas por corredores em cruz.
+- As salas têm piso e teto de DarkStone, com veios raros de cristal na área escavada; a geração usa seed e coordenadas globais para manter consistência entre chunks.
+- Os testes portáveis verificam as quatro alas e a continuidade da geração. Isso ainda é geometria voxel procedural, não uma implementação final de renderização 3D, iluminação volumétrica, chefes ou decoração avançada.
+
+## Último build automatizado
+- Em 16/11/2026, o workflow GitHub Actions **Build MINEPLUS PS4 PKG** concluiu com sucesso para o commit `2e52caf8`: testes portáveis de mundo, compilação do EBOOT/PKG e upload do artefato `MINEPLUS-PS4-PKG`.
+- O PKG gerado é um artefato de CI; ainda precisa ser instalado e testado em um PS4 compatível. Build verde não comprova estabilidade em hardware real.
+- Execução: https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/43958492489
