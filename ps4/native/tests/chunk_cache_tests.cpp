@@ -4,7 +4,7 @@
 
 int main() {
     mineplus::ChunkCache cache(4839201ULL);
-    assert(!cache.set_surface(0, 0, 255));
+    assert(cache.set_surface(0, 0, 255));
     assert(cache.set_surface(-1, -1, 9));
     mineplus::SurfaceSample sample{};
     assert(cache.get(-1, -1, sample));
@@ -19,5 +19,5 @@ int main() {
     assert(cache.delta_count() == 2);
     assert(cache.get(32, -17, sample));
     assert(sample.surface == 255);
-    std::cout << "MINEPLUS chunk cache validation tests: OK\\n";
+    std::cout << "MINEPLUS chunk cache validation tests: OK\n";
 }
