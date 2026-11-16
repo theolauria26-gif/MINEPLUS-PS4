@@ -16,6 +16,18 @@ struct SurfaceSample {
     std::uint8_t temperature;
 };
 
+enum class VoxelMaterial : std::uint8_t {
+    Air = 0, Grass = 1, Dirt = 2, Stone = 3, Sand = 4,
+    Moss = 5, Crystal = 6, Snow = 7, Water = 13,
+    VolcanicRock = 16, Ore = 17
+};
+
+struct VoxelSample {
+    VoxelMaterial material = VoxelMaterial::Air;
+    bool solid = false;
+    bool liquid = false;
+};
+
 struct StructureAnchor {
     std::int32_t x, y;
     std::uint16_t kind;
@@ -30,6 +42,9 @@ public:
 
     std::uint64_t seed() const { return seed_; }
     SurfaceSample sample_surface(std::int32_t world_x, std::int32_t world_y) const;
+    // Consulta voxel 3D sem armazenar uma coluna densa; z cresce para cima.
+    VoxelSample sample_voxel(std::int32_t world_x, std::int32_t world_y,
+                             std::int32_t z) const;
     // Retorna a âncora determinística mais próxima que pode afetar esta coluna.
     bool structure_at(std::int32_t world_x, std::int32_t world_y,
                       StructureAnchor& out) const;
