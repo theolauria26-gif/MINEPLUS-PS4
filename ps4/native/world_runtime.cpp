@@ -1,4 +1,6 @@
 #include "world_runtime.hpp"
+#include "save_codec.hpp"
+#include <array>
 
 namespace mineplus {
 
@@ -35,5 +37,24 @@ bool WorldRuntime::import_edits(const ChunkCache::Edit* edits,
 std::size_t WorldRuntime::loaded_chunks() const { return chunks_.loaded_count(); }
 std::size_t WorldRuntime::saved_edits() const { return chunks_.delta_count(); }
 std::uint64_t WorldRuntime::seed() const { return chunks_.seed(); }
+
+bool WorldRuntime::encode_save(std::vector<std::uint8_t>& bytes) const {
+    std::array<ChunkCache::Edit, ChunkCache::DELTA_CAPACITY> edits{};
+    const std::size_t count = chunks_.export_edits(edits.data(), edits.size());
+    if (count != chunks_.delta_count()) return false;
+    WorldArchive archive;
+    archive.seed = chunks_.seed();
+    archive.edits.assign(edits.begin(), edits.begin() + count);
+    return SaveCodec::encode(archive, bytes);
+}
+
+bool WorldRuntime::decode_save(const std::uint8_t* bytes, std::size_t size) {
+    WorldArchive archive;
+    if (!SaveCodec::decode(bytes, size, archive)) return false;
+    WorldRuntime candidate(archive.seed);
+    if (!candidate.import_edits(archive.edits.data(), archive.edits.size())) return false;
+    chunks_ = candidate.chunks_;
+    return true;
+}
 
 } // namespace mineplus
