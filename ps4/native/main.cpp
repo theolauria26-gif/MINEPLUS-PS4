@@ -224,7 +224,7 @@ void draw_world(){
   float rayX=dirX+rightX*cameraX,rayY=dirY+rightY*cameraX;
   float len=std::sqrt(rayX*rayX+rayY*rayY);rayX/=len;rayY/=len;
   int ceiling=int(horizon),lastY=H;
-  for(float dist=0.55f;dist<30.0f&&ceiling<lastY;dist+=0.22f+dist*0.003f){
+  for(float dist=0.48f;dist<38.0f&&ceiling<lastY;dist+=0.18f+dist*0.0025f){
    int wx=int(px+rayX*dist),wy=int(py+rayY*dist);
    if(wx<1||wy<1||wx>=COLS-1||wy>=ROWS-1)break;
    int t=world[wy*COLS+wx];
@@ -234,12 +234,26 @@ void draw_world(){
    if(sy<ceiling)sy=ceiling;
    if(sy<lastY){
     Uint8 r,g,b;tile_color(t,r,g,b);
-    float light=1.0f/(1.0f+dist*0.055f);
-    if(t==Lava)light=std::min(1.0f,light+0.35f);
-    r=Uint8(r*light);g=Uint8(g*light);b=Uint8(b*light);
+    // Procedural material pass: deterministic grain, mineral flecks and depth fog.
+    unsigned tex=hash2(unsigned(wx*31+int(dist*13.0f)),unsigned(wy*29-int(dist*9.0f)));
+    int grain=int(tex%29)-14;
+    float light=1.0f/(1.0f+dist*0.043f);
+    if(t==Lava)light=std::min(1.0f,light+0.48f);
+    if(t==Crystal)light=std::min(1.0f,light+0.16f);
+    int strata=((wx+wy*3)%7==0)?9:0;
+    int fleck=(tex%23==0)?22:0;
+    r=Uint8(std::clamp(int((int(r)+grain+strata+fleck)*light),0,255));
+    g=Uint8(std::clamp(int((int(g)+grain+strata+fleck)*light),0,255));
+    b=Uint8(std::clamp(int((int(b)+grain+strata+fleck)*light),0,255));
     color(r,g,b);SDL_RenderDrawLine(renderer,sx,sy,sx,lastY);
+    // Fine surface marks break up flat polygons and give each material a readable grain.
+    for(int ty=sy+4+(tex%5);ty<lastY;ty+=7){
+     unsigned mark=hash2(tex+unsigned(ty*13+sx*7));
+     if(mark%5==0){color(Uint8(std::min(255,int(r)+18)),Uint8(std::min(255,int(g)+18)),Uint8(std::min(255,int(b)+16)));SDL_RenderDrawPoint(renderer,sx,ty);}
+    }
     // Thin illuminated top edge gives the terrain a block-built silhouette.
-    if(sy<lastY-2){color(Uint8(std::min(255,int(r)+22)),Uint8(std::min(255,int(g)+24)),Uint8(std::min(255,int(b)+22)));SDL_RenderDrawLine(renderer,sx,sy,sx,sy+1);}
+    if(sy<lastY-2){color(Uint8(std::min(255,int(r)+28)),Uint8(std::min(255,int(g)+30)),Uint8(std::min(255,int(b)+27)));SDL_RenderDrawLine(renderer,sx,sy,sx,sy+1);}
+    if(t==Crystal&&sy<lastY-8){color(176,220,224,150);SDL_RenderDrawPoint(renderer,sx,sy+3);}
     lastY=sy;
    }
    if(t==Lava&&dist<12.0f){color(190,75,38,45);SDL_RenderDrawPoint(renderer,sx,int(horizon+70.0f/dist));}
