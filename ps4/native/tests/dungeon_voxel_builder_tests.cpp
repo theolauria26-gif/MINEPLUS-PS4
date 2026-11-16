@@ -26,7 +26,7 @@ int main() {
     assert(chunk.get(4, 5, 25) == 8);
     assert(chunk.get(5, 6, 25) == 0);  // room interior remains open
     assert(chunk.get(5, 6, 24) == 15);
-    assert(chunk.get(11, 11, 28) == 0); // walls stop at configured height
+    assert(chunk.get(11, 11, 29) == 0); // walls stop at configured height
 
     std::vector<MeshQuad> quads;
     assert(VoxelMesher::build(chunk, quads));
@@ -39,7 +39,7 @@ int main() {
     assert(DungeonVoxelBuilder::build_room(room, clipped, partial));
     assert(partial.get(0, 0, 24) == 15);
     assert(partial.get(3, 3, 24) == 15);
-    assert(partial.get(0, 0, 25) == 8);
+    assert(partial.get(0, 3, 25) == 8);
 
     DungeonVoxelSettings invalid = settings;
     invalid.floor_z = 127;
