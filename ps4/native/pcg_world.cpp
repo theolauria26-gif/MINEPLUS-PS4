@@ -63,7 +63,8 @@ SurfaceSample PcgWorld::sample_surface(std::int32_t x,std::int32_t y) const {
     const float detail=fbm(fx/75.0f,fy/75.0f,47,3,0.48f);
     const float continent=continent_mask(fx,fy);
     const float elevation=broad*0.34f+ridge*0.42f+detail*0.12f+continent*0.18f-0.32f;
-    const float temperature=fbm(fx/2300.0f,fy/2300.0f,71,3,0.5f)-std::min(0.8f,std::fabs(fy)/12000.0f);
+    const float latitudeCooling=static_cast<float>(std::fabs(fy)/12000.0f);
+    const float temperature=fbm(fx/2300.0f,fy/2300.0f,71,3,0.5f)-std::min(0.8f,latitudeCooling);
     const float moisture=fbm(fx/1250.0f,fy/1250.0f,97,4,0.53f);
     const Biome biome=choose_biome(temperature,moisture,elevation,continent);
     int height=static_cast<int>(34.0f+elevation*58.0f);
