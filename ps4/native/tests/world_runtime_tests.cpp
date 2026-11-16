@@ -41,6 +41,10 @@ int main() {
     assert(voxel.material == mineplus::VoxelMaterial::Stone);
     const int editedDepth = originalSample.height - 2;
     assert(world.set_voxel(-1, -1, editedDepth, mineplus::VoxelMaterial::Crystal));
+    assert(world.saved_edits() == 2); // Surface + 3D voxel journals are both counted.
+    assert(world.set_voxel(-1, -1, editedDepth, mineplus::VoxelMaterial::Obsidian));
+    assert(world.saved_edits() == 2); // Replacing one coordinate does not add a duplicate.
+    assert(world.set_voxel(-1, -1, editedDepth, mineplus::VoxelMaterial::Crystal));
     assert(world.get_voxel(-1, -1, editedDepth, voxel));
     assert(voxel.material == mineplus::VoxelMaterial::Crystal && voxel.solid);
 
