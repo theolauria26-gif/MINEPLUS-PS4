@@ -294,7 +294,63 @@ bool load_world(){
   for(int i=0;i<13;i++)stock[i+9]=std::clamp(extraStock[i],0,9999);
   return true;
 }
-void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){case Grass:r=43;g=76;b=61;break;case Dirt:r=83;g=62;b=52;break;case Stone:r=79;g=86;b=94;break;case Wood:r=65;g=58;b=54;break;case Moss:r=39;g=55;b=48;break;case Crystal:r=125;g=139;b=151;break;case Bone:r=137;g=133;b=119;break;case DarkStone:r=35;g=39;b=47;break;case Sand:r=133;g=119;b=85;break;case Snow:r=155;g=164;b=166;break;case Ice:r=95;g=132;b=145;break;case Lava:r=142;g=62;b=39;break;case Water:r=35;g=72;b=91;break;case IronOre:r=112;g=105;b=91;break;case Obsidian:r=39;g=34;b=57;break;case Ember:r=198;g=75;b=38;break;case Rune:r=94;g=164;b=155;break;case IronBar:r=164;g=171;b=177;break;case ObsidianCore:r=57;g=43;b=78;break;case EmberCatalyst:r=232;g=103;b=49;break;case AncientRune:r=116;g=206;b=185;break;default:r=16;g=23;b=29;break;}}
+void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){
+ case Grass:r=63;g=112;b=67;break;case Dirt:r=121;g=83;b=59;break;
+ case Stone:r=105;g=111;b=119;break;case Wood:r=112;g=76;b=49;break;
+ case Moss:r=65;g=100;b=61;break;case Crystal:r=103;g=177;b=190;break;
+ case Bone:r=179;g=164;b=128;break;case DarkStone:r=48;g=51;b=66;break;
+ case Sand:r=190;g=157;b=94;break;case Snow:r=208;g=222;b=225;break;
+ case Ice:r=105;g=171;b=190;break;case Lava:r=196;g=75;b=36;break;
+ case Water:r=44;g=112;b=148;break;case IronOre:r=139;g=112;b=86;break;
+ case Obsidian:r=53;g=43;b=82;break;case Ember:r=235;g=103;b=43;break;
+ case Rune:r=90;g=190;b=166;break;case IronBar:r=183;g=192;b=197;break;
+ case ObsidianCore:r=82;g=55;b=116;break;case EmberCatalyst:r=255;g=133;b=49;break;
+ case AncientRune:r=124;g=231;b=190;break;default:r=16;g=23;b=29;break;
+}}
+void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigned seed){
+ // Tiny deterministic pixel-art motifs: no external assets, no per-frame allocation.
+ // World-space anchoring keeps each material pattern stable while the camera moves.
+ const unsigned cellX=static_cast<unsigned>(wx)&7u;
+ const unsigned cellY=static_cast<unsigned>(wy)&7u;
+ for(int py=top+3;py<bottom;py+=4){
+  const unsigned v=static_cast<unsigned>((py-top)/4)&7u;
+  const unsigned pattern=hash2(int(cellX*37u+cellY*11u+unsigned(t)*97u+seed),
+                               int(v*53u+cellY*19u+unsigned(t)*31u));
+  Uint8 r=0,g=0,b=0;bool draw=false;
+  switch(t){
+   case Grass:
+    draw=(v==0u&&(pattern%3u)==0u);
+    r=126;g=178;b=86;break;
+   case Dirt:
+    draw=(pattern%7u)==0u;r=190;g=132;b=83;
+    if((pattern%11u)==0u){r=77;g=54;b=43;}break;
+   case Stone: case DarkStone:
+    draw=(v==3u&&(pattern%3u)!=0u);r= t==Stone?151:91;g=t==Stone?154:91;b=t==Stone?158:108;break;
+   case Wood:
+    draw=(cellX%3u==0u&&(pattern%2u)==0u);r=174;g=119;b=69;break;
+   case Moss:
+    draw=(pattern%4u)==0u;r=111;g=151;b=76;break;
+   case Crystal: case ObsidianCore:
+    draw=(pattern%3u)==0u;r= t==Crystal?190:145;g=t==Crystal?239:112;b=t==Crystal?246:207;break;
+   case Bone:
+    draw=(pattern%6u)==0u;r=222;g=206;b=164;break;
+   case Sand:
+    draw=(pattern%5u)==0u;r=224;g=191;b=125;break;
+   case Snow: case Ice:
+    draw=(pattern%5u)==0u;r=245;g=250;b=255;break;
+   case Lava: case Ember: case EmberCatalyst:
+    draw=(v%4u==0u&&(pattern%2u)==0u);r=255;g=t==Lava?170:204;b=75;break;
+   case Water:
+    draw=(v%3u==0u&&(pattern%3u)==0u);r=103;g=177;b=204;break;
+   case IronOre:
+    draw=(pattern%4u)==0u;r=207;g=164;b=111;break;
+   case Rune: case AncientRune:
+    draw=(pattern%3u)==0u;r=168;g=255;b=216;break;
+   default: break;
+  }
+  if(draw){color(r,g,b, t==Lava||t==Crystal||t==Rune||t==AncientRune?210:155);SDL_RenderDrawPoint(renderer,sx,py);}
+ }
+}
 bool solid_tile(int t){return t==DarkStone||t==Stone||t==Wood||t==Bone||t==Crystal||t==IronOre||t==Obsidian||t==Rune;}
 bool creature_occupies(int x,int y,const Creature*skip=nullptr){for(const auto &m:creatures)if(&m!=skip&&m.hp>0&&m.x==x&&m.y==y)return true;return false;}
 void move_player(int dx,int dy){if(!dx&&!dy)return;int nx=std::clamp(px+dx,1,COLS-2),ny=std::clamp(py+dy,1,ROWS-2);if(solid_tile(tile_at(nx,ny)))return;px=nx;py=ny;faceX=dx;faceY=dy;}
@@ -477,11 +533,9 @@ void draw_world(){
     g=Uint8(std::clamp(int((int(g)+grain+strata+fleck)*light),0,255));
     b=Uint8(std::clamp(int((int(b)+grain+strata+fleck)*light),0,255));
     color(r,g,b);SDL_RenderDrawLine(renderer,sx,sy,sx,lastY);
-    // Fine surface marks break up flat polygons and give each material a readable grain.
-    for(int ty=sy+4+(tex%5);ty<lastY;ty+=7){
-     unsigned mark=hash2(int(tex+unsigned(ty*13+sx*7)),int(sx+ty*3));
-     if(mark%5==0){color(Uint8(std::min(255,int(r)+18)),Uint8(std::min(255,int(g)+18)),Uint8(std::min(255,int(b)+16)));SDL_RenderDrawPoint(renderer,sx,ty);}
-    }
+    // Hand-painted-inspired pixel motifs are generated from world coordinates,
+    // so grain, mineral seams and foliage marks do not crawl while moving.
+    draw_material_texture(t,sx,sy,lastY,wx,wy,tex);
     // Thin illuminated top edge gives the terrain a block-built silhouette.
     if(sy<lastY-2){color(Uint8(std::min(255,int(r)+28)),Uint8(std::min(255,int(g)+30)),Uint8(std::min(255,int(b)+27)));SDL_RenderDrawLine(renderer,sx,sy,sx,sy+1);}
     if(t==Crystal&&sy<lastY-8){color(176,220,224,150);SDL_RenderDrawPoint(renderer,sx,sy+3);}
