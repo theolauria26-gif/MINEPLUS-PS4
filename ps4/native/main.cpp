@@ -295,8 +295,9 @@ float smooth_noise(float x,float y){
  return a*(1.0f-fy)+b*fy;
 }
 float terrain_height(int t,int x,int y){
- float h=0.0f;
- switch(t){case Grass:h=0.42f;break;case Dirt:h=0.34f;break;case Stone:h=0.72f;break;case Wood:h=1.15f;break;case Moss:h=0.48f;break;case Crystal:h=1.55f;break;case Bone:h=0.92f;break;case DarkStone:h=0.82f;break;case Sand:h=0.25f;break;case Snow:h=0.52f;break;case Ice:h=0.38f;break;case Lava:h=0.20f;break;case Water:h=0.08f;break;case IronOre:h=0.78f;break;case Obsidian:h=0.86f;break;case Ember:h=0.35f;break;case Rune:h=1.05f;break;case IronBar:h=0.7f;break;case ObsidianCore:h=1.0f;break;case EmberCatalyst:h=0.9f;break;case AncientRune:h=1.2f;break;default:h=0.0f;break;}
+ const auto pcgSample=pcgWorld.sample_surface(x-COLS/2,y-ROWS/2);
+ float h=float(pcgSample.height)/48.0f;
+ switch(t){case Grass:h+=0.12f;break;case Dirt:h+=0.04f;break;case Stone:h+=0.34f;break;case Wood:h+=0.72f;break;case Moss:h+=0.18f;break;case Crystal:h+=0.92f;break;case Bone:h+=0.48f;break;case DarkStone:h+=0.42f;break;case Sand:h-=0.08f;break;case Snow:h+=0.24f;break;case Ice:h+=0.12f;break;case Lava:h-=0.08f;break;case Water:h-=0.22f;break;case IronOre:h+=0.36f;break;case Obsidian:h+=0.46f;break;case Ember:h+=0.02f;break;case Rune:h+=0.58f;break;case IronBar:h+=0.3f;break;case ObsidianCore:h+=0.6f;break;case EmberCatalyst:h+=0.5f;break;case AncientRune:h+=0.8f;break;default:break;}
  // Multi-scale elevation creates broad mountain ranges, rolling foothills and rocky peaks.
  float continental=smooth_noise(x/310.0f,y/310.0f);
  float ridge=1.0f-std::fabs(2.0f*smooth_noise(x/118.0f+37.0f,y/118.0f-19.0f)-1.0f);
