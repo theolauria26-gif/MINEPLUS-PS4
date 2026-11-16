@@ -777,9 +777,7 @@ func _interact(place: bool) -> void:
 		_update_hotbar()
 	else:
 		if terrain_hit:
-			var terrain_type := chunk_streamer.mine_surface(cell)
-			if terrain_type < 0:
-				return
+			var terrain_type := chunk_streamer._block_type(cell.x, cell.z)
 			var drop_index := _terrain_drop_index(terrain_type)
 			if drop_index < 0:
 				return
@@ -787,10 +785,9 @@ func _interact(place: bool) -> void:
 				if status_label: status_label.text = "Pilha cheia: máximo de %d por material." % MAX_STACK_SIZE
 				return
 			if (drop_index == 2 or drop_index == 5) and pickaxe_durability <= 0:
-				chunk_streamer.terrain_edits.erase("%d,%d" % [cell.x, cell.z])
-				chunk_streamer._rebuild_chunk(chunk_streamer._chunk_of_world(Vector3(cell.x, 0, cell.z)))
 				if status_label: status_label.text = "Precisa de uma picareta para minerar este bloco."
 				return
+			chunk_streamer.mine_surface(cell)
 			if drop_index == 2 or drop_index == 5:
 				pickaxe_durability -= 1
 				_animate_pickaxe_swing()
