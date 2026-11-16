@@ -96,19 +96,28 @@ int main() {
             const int wingY = dungeon.y;
             const auto eastSurface = worldA.sample_surface(wingX, wingY);
             const auto northSurface = worldA.sample_surface(dungeon.x, dungeon.y - offset);
+            const auto southSurface = worldA.sample_surface(dungeon.x, dungeon.y + offset);
+            const auto westSurface = worldA.sample_surface(dungeon.x - offset, dungeon.y);
             const auto eastWing = worldA.sample_voxel(
                 wingX, wingY, eastSurface.height - 11);
             const auto northWing = worldA.sample_voxel(
                 dungeon.x, dungeon.y - offset, northSurface.height - 11);
-            assert(eastWing.material == VoxelMaterial::Air ||
-                   eastWing.material == VoxelMaterial::Crystal);
-            assert(northWing.material == VoxelMaterial::Air ||
-                   northWing.material == VoxelMaterial::Crystal);
+            const auto southWing = worldA.sample_voxel(
+                dungeon.x, dungeon.y + offset, southSurface.height - 11);
+            const auto westWing = worldA.sample_voxel(
+                dungeon.x - offset, dungeon.y, westSurface.height - 11);
+            const auto isWalkable = [](const VoxelSample& v) {
+                return v.material == VoxelMaterial::Air ||
+                       v.material == VoxelMaterial::Crystal;
+            };
+            assert(isWalkable(eastWing));
+            assert(isWalkable(northWing));
+            assert(isWalkable(southWing));
+            assert(isWalkable(westWing));
             const auto eastEdge = worldA.sample_voxel(
                 wingX + wingRadius, wingY,
                 worldA.sample_surface(wingX + wingRadius, wingY).height - 11);
-            assert(eastEdge.material == VoxelMaterial::Air ||
-                   eastEdge.material == VoxelMaterial::Crystal);
+            assert(isWalkable(eastEdge));
             checkedDungeon = true;
         }
     }
