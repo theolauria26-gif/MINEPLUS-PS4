@@ -68,9 +68,9 @@ jobs:
             ps4/native/dungeon_graph.cpp ps4/native/tests/dungeon_graph_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-dungeon-graph-tests"
           "$RUNNER_TEMP/mineplus-dungeon-graph-tests"
-          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \\
-            ps4/native/voxel_mesher.cpp ps4/native/dungeon_graph.cpp \\
-            ps4/native/dungeon_voxel_builder.cpp ps4/native/tests/dungeon_voxel_builder_tests.cpp \\
+          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
+            ps4/native/voxel_mesher.cpp ps4/native/dungeon_graph.cpp \
+            ps4/native/dungeon_voxel_builder.cpp ps4/native/tests/dungeon_voxel_builder_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-dungeon-voxel-builder-tests"
           "$RUNNER_TEMP/mineplus-dungeon-voxel-builder-tests"
           clang++ -std=c++17 -O2 -Wall -Wextra -I ps4/native \
