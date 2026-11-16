@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "pcg_world.hpp"
 #include "world_grid.hpp"
 namespace {
