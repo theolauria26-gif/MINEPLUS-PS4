@@ -51,10 +51,8 @@ bool WorldRuntime::encode_save(std::vector<std::uint8_t>& bytes) const {
 bool WorldRuntime::decode_save(const std::uint8_t* bytes, std::size_t size) {
     WorldArchive archive;
     if (!SaveCodec::decode(bytes, size, archive)) return false;
-    WorldRuntime candidate(archive.seed);
-    if (!candidate.import_edits(archive.edits.data(), archive.edits.size())) return false;
-    chunks_ = candidate.chunks_;
-    return true;
+    return chunks_.restore(archive.seed, archive.edits.data(),
+                           archive.edits.size());
 }
 
 } // namespace mineplus
