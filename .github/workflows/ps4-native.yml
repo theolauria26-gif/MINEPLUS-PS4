@@ -35,6 +35,10 @@ jobs:
           echo "OO_PS4_TOOLCHAIN=$TOOLCHAIN_DIR" >> "$GITHUB_ENV"
           echo "OpenOrbis root: $TOOLCHAIN_DIR"
           find "$TOOLCHAIN_DIR/bin/linux" -maxdepth 1 -type f -printf '%f\n' | sort | head -40
+      - name: Fetch OpenOrbis compatibility module sources
+        run: |
+          git clone --depth 1 https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain.git "$RUNNER_TEMP/openorbis-source"
+          echo "OO_PS4_MODULE_SOURCE_ROOT=$RUNNER_TEMP/openorbis-source" >> "$GITHUB_ENV"
       - name: Build native EBOOT and PKG
         run: |
           set -euxo pipefail
