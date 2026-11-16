@@ -19,7 +19,9 @@ public:
     void update_center(std::int32_t world_x, std::int32_t world_y,
                        std::int32_t radius_chunks = 4);
     bool get(std::int32_t world_x, std::int32_t world_y,
-             SurfaceSample& out);\n    bool get_structure(std::int32_t world_x, std::int32_t world_y,\n                       StructureAnchor& out);
+             SurfaceSample& out);
+    bool get_structure(std::int32_t world_x, std::int32_t world_y,
+                       StructureAnchor& out);
     bool set_surface(std::int32_t world_x, std::int32_t world_y,
                      std::uint8_t tile);
     // Compact edit journal transfer for durable save files.
