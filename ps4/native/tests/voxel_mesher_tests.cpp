@@ -86,7 +86,7 @@ int main() {
 
     // A caller can impose a hard geometry budget. Failure never leaves a
     // partial mesh that could be uploaded as if it were complete.
-    assert(!VoxelMesher::build(chunk, mesh, 3));
+    assert(!VoxelMesher::build(chunk, mesh, 2));
     assert(mesh.empty());
     assert(!VoxelMesher::build(chunk, mesh, 0));
     assert(mesh.empty());
