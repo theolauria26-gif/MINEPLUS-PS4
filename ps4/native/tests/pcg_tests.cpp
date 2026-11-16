@@ -124,7 +124,22 @@ int main() {
     assert(cache.get(-1, -1, cached) && cached.surface == 77);
     assert(cache.delta_count() == 1);
 
-    // Edit journal export/import supports compact durable-save integration.\n    ChunkCache persisted(4839201ULL);\n    persisted.set_surface(-33, 48, 91);\n    persisted.set_surface(700, -900, 92);\n    ChunkCache restored(4839201ULL);\n    ChunkCache::Edit saved[ChunkCache::DELTA_CAPACITY]{};\n    const auto savedCount = persisted.export_edits(saved, ChunkCache::DELTA_CAPACITY);\n    assert(savedCount == 2);\n    assert(restored.import_edits(saved, savedCount));\n    assert(restored.get(-33, 48, cached) && cached.surface == 91);\n    assert(restored.get(700, -900, cached) && cached.surface == 92);\n    const ChunkCache::Edit duplicate[] = {{1, 2, 3}, {1, 2, 4}};\n    assert(!restored.import_edits(duplicate, 2));\n    assert(restored.delta_count() == 2);\n\n    // The bounded edit journal must reject a new edit when full, but still
+    // Edit journal export/import supports compact durable-save integration.
+    ChunkCache persisted(4839201ULL);
+    persisted.set_surface(-33, 48, 91);
+    persisted.set_surface(700, -900, 92);
+    ChunkCache restored(4839201ULL);
+    ChunkCache::Edit saved[ChunkCache::DELTA_CAPACITY]{};
+    const auto savedCount = persisted.export_edits(saved, ChunkCache::DELTA_CAPACITY);
+    assert(savedCount == 2);
+    assert(restored.import_edits(saved, savedCount));
+    assert(restored.get(-33, 48, cached) && cached.surface == 91);
+    assert(restored.get(700, -900, cached) && cached.surface == 92);
+    const ChunkCache::Edit duplicate[] = {{1, 2, 3}, {1, 2, 4}};
+    assert(!restored.import_edits(duplicate, 2));
+    assert(restored.delta_count() == 2);
+
+    // The bounded edit journal must reject a new edit when full, but still
     // allow updating an existing coordinate without losing its old record.
     ChunkCache fullJournal(4839201ULL);
     for (std::int32_t i = 0; i < static_cast<std::int32_t>(ChunkCache::DELTA_CAPACITY); ++i) {
