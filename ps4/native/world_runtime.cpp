@@ -82,7 +82,7 @@ bool WorldRuntime::encode_save(std::vector<std::uint8_t>& bytes) const {
     archive.edits.swap(edits);
     std::vector<ChunkCache::VoxelEdit> voxel_edits(ChunkCache::VOXEL_DELTA_CAPACITY);
     const std::size_t voxel_count = chunks_.export_voxel_edits(voxel_edits.data(), voxel_edits.size());
-    if (voxel_count > voxel_edits.size()) return false;
+    if (voxel_count != chunks_.voxel_delta_count()) return false;
     voxel_edits.resize(voxel_count);
     archive.voxel_edits.swap(voxel_edits);
     return SaveCodec::encode(archive, bytes);
