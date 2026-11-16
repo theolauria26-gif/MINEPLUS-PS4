@@ -60,3 +60,10 @@ As âncoras de marcos agora definem complexos subterrâneos determinísticos de 
 O renderer nativo agora usa uma paleta mais saturada e motivos pixel-art determinísticos por material. Grama recebe pequenos traços de vegetação; terra, pontos minerais; pedra, estratos; madeira, veios; musgo, manchas; cristal e runas, brilhos; areia, neve, gelo, água e lava recebem padrões próprios. As marcas são ancoradas em coordenadas do mundo para evitar que a textura deslize com a câmera.
 
 **Limite atual:** estes são detalhes procedurais desenhados pelo renderer de colunas SDL2, não um atlas de texturas 3D pintadas nem um renderer de malhas voxel com iluminação por face. O próximo salto visual exige chunks 3D renderizados, atlas UV, modelos cúbicos, sombras/oclusão e efeitos com orçamento de GPU/CPU medido no PS4.
+
+
+## Malhador de chunks voxel (base 3D)
+
+O módulo `voxel_mesher.hpp/.cpp` converte dados de um chunk 16×16×128 em retângulos de faces expostas. Ele percorre os seis sentidos, usa uma máscara 2D por plano e mescla faces coplanares de mesmo material; o halo de um voxel permite ocultar faces compartilhadas com chunks vizinhos. O resultado é geometria compacta em coordenadas locais, ainda sem upload para GPU ou integração no renderer SDL do gameplay.
+
+A API aceita um limite `max_quads` (padrão 65.536). Se o limite for excedido, retorna falha e limpa a saída, evitando que o chamador use uma malha parcial. O limite pode ser reduzido conforme o orçamento de memória medido no PS4. O CI compila o módulo com `-Werror` e executa testes de faces isoladas, fusão de blocos, materiais diferentes, volumes sólidos e halo de fronteira.
