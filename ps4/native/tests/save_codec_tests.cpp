@@ -26,7 +26,10 @@ int main() {
     assert(!SaveCodec::decode(trailing.data(),trailing.size(),restored));
     WorldArchive duplicate; duplicate.edits={{1,2,3},{1,2,4}};
     assert(!SaveCodec::encode(duplicate,damaged));
-    WorldArchive invalidTile; invalidTile.edits={{1,2,255}};
-    assert(!SaveCodec::encode(invalidTile,damaged));
+    WorldArchive extendedTile; extendedTile.edits={{1,2,255}};
+    assert(SaveCodec::encode(extendedTile,damaged));
+    WorldArchive extendedRestored;
+    assert(SaveCodec::decode(damaged.data(),damaged.size(),extendedRestored));
+    assert(extendedRestored.edits[0].tile==255);
     std::cout << "MINEPLUS save codec tests: OK\n";
 }
