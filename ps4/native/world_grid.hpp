@@ -62,6 +62,12 @@ public:
     bool set(std::int32_t x, std::int32_t y, std::uint8_t tile) override {
         return runtime_.set_tile(x, y, tile);
     }
+    bool get_sample(std::int32_t x, std::int32_t y, SurfaceSample& sample) {
+        return runtime_.get_sample(x, y, sample);
+    }
+    bool get_structure(std::int32_t x, std::int32_t y, StructureAnchor& anchor) {
+        return runtime_.get_structure(x, y, anchor);
+    }
 private:
     WorldRuntime& runtime_;
 };
