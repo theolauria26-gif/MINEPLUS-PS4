@@ -24,6 +24,11 @@ bool WorldRuntime::get_sample(std::int32_t world_x, std::int32_t world_y,
     return chunks_.get(world_x, world_y, sample);
 }
 
+bool WorldRuntime::get_voxel(std::int32_t world_x, std::int32_t world_y,
+                              std::int32_t z, VoxelSample& voxel) {
+    return chunks_.get_voxel(world_x, world_y, z, voxel);
+}
+
 bool WorldRuntime::get_structure(std::int32_t world_x, std::int32_t world_y,
                                  StructureAnchor& anchor) {
     return chunks_.get_structure(world_x, world_y, anchor);
