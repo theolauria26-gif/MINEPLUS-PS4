@@ -158,10 +158,26 @@ if [[ -n "$RIGHT_SPRX" ]]; then
  mkdir -p "$STAGE/sce_sys/about"
  cp "$RIGHT_SPRX" "$STAGE/sce_sys/about/right.sprx"
 fi
-# Bundle runtime modules shipped by the toolchain, if present.
-for module in libc.prx libSceFios2.prx; do
- [[ ! -f "$TOOLCHAIN/bin/data/modules/$module" ]] || cp "$TOOLCHAIN/bin/data/modules/$module" "$STAGE/sce_module/$module"
+# Bundle the OpenOrbis compatibility modules required by Mira-based setups.
+# Some v0.5.x archives omit the prebuilt PRXs, so build them from the toolchain's
+# matching source instead of silently producing a package without them.
+for module in libc libSceFios2; do
+  source_dir="$TOOLCHAIN/src/modules/$module"
+  prebuilt="$TOOLCHAIN/bin/data/modules/$module.prx"
+  if [[ -s "$prebuilt" ]]; then
+    cp "$prebuilt" "$STAGE/sce_module/$module.prx"
+  else
+    [[ -f "$source_dir/Makefile" ]] || fail "Fonte do módulo $module não encontrada em $source_dir."
+    make -C "$source_dir" clean all
+    [[ -s "$source_dir/$module.prx" ]] || fail "Falha ao gerar $module.prx."
+    cp "$source_dir/$module.prx" "$STAGE/sce_module/$module.prx"
+  fi
 done
+for module in libc.prx libSceFios2.prx; do
+  [[ -s "$STAGE/sce_module/$module" ]] || fail "Módulo obrigatório ausente no PKG: $module."
+done
+echo "Módulos PS4 incluídos:"
+ls -lh "$STAGE/sce_module"
 cd "$STAGE"
 "$PKG" sfo_new sce_sys/param.sfo
 "$PKG" sfo_setentry sce_sys/param.sfo APP_TYPE --type Integer --maxsize 4 --value 1
