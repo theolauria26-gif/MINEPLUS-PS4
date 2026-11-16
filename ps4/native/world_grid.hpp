@@ -69,6 +69,10 @@ public:
                    VoxelSample& voxel) {
         return runtime_.get_voxel(x, y, z, voxel);
     }
+    bool set_voxel(std::int32_t x, std::int32_t y, std::int32_t z,
+                   VoxelMaterial material) {
+        return runtime_.set_voxel(x, y, z, material);
+    }
     bool get_structure(std::int32_t x, std::int32_t y, StructureAnchor& anchor) {
         return runtime_.get_structure(x, y, anchor);
     }
