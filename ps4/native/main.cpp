@@ -158,6 +158,24 @@ float terrain_height(int t,int x,int y){
  if(t==Wood||t==Crystal||t==Bone)h+=0.45f;
  return h;
 }
+void draw_minimap(){
+ // Compact local map: nearby terrain, ruins and the player's exact position.
+ const int ox=W-178,oy=82,cell=9,radius=8;
+ rect(ox-5,oy-5,cell*17+10,cell*17+10,5,9,13,225);
+ outline(ox-5,oy-5,cell*17+10,cell*17+10,91,113,105);
+ for(int my=-radius;my<=radius;my++)for(int mx=-radius;mx<=radius;mx++){
+  int wx=px+mx,wy=py+my;Uint8 r=13,g=18,b=22;
+  if(wx>=0&&wy>=0&&wx<COLS&&wy<ROWS)tile_color(world[wy*COLS+wx],r,g,b);
+  float shade=(mx==0&&my==0)?1.35f:0.72f;
+  rect(ox+(mx+radius)*cell,oy+(my+radius)*cell,cell-1,cell-1,
+       Uint8(std::min(255,int(r*shade))),Uint8(std::min(255,int(g*shade))),Uint8(std::min(255,int(b*shade))));
+ }
+ // Player marker remains visible over every terrain type.
+ rect(ox+radius*cell+2,oy+radius*cell+2,5,5,245,240,210);
+ draw_text("MAP",ox,oy+cell*17+7,1,190,204,190);
+ char coords[32];std::snprintf(coords,sizeof(coords),"%d %d",px,py);
+ draw_text(coords,ox+35,oy+cell*17+7,1,190,204,190);
+}
 void draw_world(){
  // Perspective height-field renderer for the native PS4 build.
  rect(0,0,W,H,8,13,22);
@@ -214,6 +232,7 @@ void draw_world(){
  color(225,232,222);SDL_RenderDrawLine(renderer,W/2-9,H/2,W/2+9,H/2);SDL_RenderDrawLine(renderer,W/2,H/2-9,W/2,H/2+9);
  rect(0,0,W,64,7,12,16,235);rect(20,13,7,38,52,212,132);draw_text("MINEPLUS  /  THE FORGOTTEN WILDS",44,15,3);draw_text("3D VOXEL SURVIVAL",45,43,1,160,190,174);
  draw_text("WASD MOVE  F BREAK  SPACE PLACE  E INVENTORY",650,25,2,190,198,192);
+ draw_minimap();
  int start=(W-8*62)/2;for(int i=0;i<8;i++){int x=start+i*62;rect(x,H-72,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-72,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-57,24,24,r,g,b);char qty[8];std::snprintf(qty,sizeof(qty),"%d",stock[i+1]);draw_text(qty,x+17,H-20,1,225,230,220);}
  if(inventory||paused){rect(250,150,780,430,8,14,18,245);outline(250,150,780,430,68,166,111);draw_text(inventory?"INVENTORY":"PAUSED",310,195,5,132,235,166);
   if(inventory){for(int i=0;i<8;i++){int x=300+(i%4)*170,y=275+(i/4)*105;rect(x,y,125,80,27,43,43);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+12,y+15,38,38,r,g,b);outline(x,y,125,80,75,145,98);draw_text(i==0?"GRASS":i==1?"DIRT":i==2?"STONE":i==3?"WOOD":i==4?"MOSS":i==5?"CRYSTAL":i==6?"BONE":"DARKSTONE",x+57,y+18,1,208,215,208);char amount[12];std::snprintf(amount,sizeof(amount),"%d",stock[i+1]);draw_text(amount,x+57,y+43,2,160,220,174);}draw_text("3D WORLD  /  BUILD AND EXPLORE",420,535,2,140,175,150);}
