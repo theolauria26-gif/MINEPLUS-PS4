@@ -38,6 +38,38 @@ ChunkCache::Entry* ChunkCache::find_chunk(std::int32_t cx, std::int32_t cy) {
     return nullptr;
 }
 
+ChunkCache::VoxelDelta* ChunkCache::find_voxel_delta(std::int32_t x,
+                                                                  std::int32_t y,
+                                                                  std::int32_t z) {
+    const std::uint32_t hash = static_cast<std::uint32_t>(x) * 0x8da6b343u ^
+                               static_cast<std::uint32_t>(y) * 0xd8163841u ^
+                               static_cast<std::uint32_t>(z) * 0xcb1ab31fu;
+    std::size_t index = hash % VOXEL_DELTA_CAPACITY;
+    for (std::size_t probe = 0; probe < VOXEL_DELTA_CAPACITY; ++probe) {
+        auto& edit = voxel_deltas_[index];
+        if (!edit.valid) return nullptr;
+        if (edit.x == x && edit.y == y && edit.z == z) return &edit;
+        index = (index + 1) % VOXEL_DELTA_CAPACITY;
+    }
+    return nullptr;
+}
+
+ChunkCache::VoxelDelta* ChunkCache::find_voxel_slot(std::int32_t x,
+                                                     std::int32_t y,
+                                                     std::int32_t z) {
+    const std::uint32_t hash = static_cast<std::uint32_t>(x) * 0x8da6b343u ^
+                               static_cast<std::uint32_t>(y) * 0xd8163841u ^
+                               static_cast<std::uint32_t>(z) * 0xcb1ab31fu;
+    std::size_t index = hash % VOXEL_DELTA_CAPACITY;
+    for (std::size_t probe = 0; probe < VOXEL_DELTA_CAPACITY; ++probe) {
+        auto& edit = voxel_deltas_[index];
+        if (!edit.valid || (edit.x == x && edit.y == y && edit.z == z))
+            return &edit;
+        index = (index + 1) % VOXEL_DELTA_CAPACITY;
+    }
+    return nullptr;
+}
+
 void ChunkCache::apply_deltas(ChunkData& chunk) {
     for (const auto& delta : deltas_) {
         if (!delta.valid) continue;
@@ -103,11 +135,9 @@ bool ChunkCache::get_voxel(std::int32_t wx, std::int32_t wy,
     const auto cy = ChunkGenerator::floor_div(wy, PcgWorld::CHUNK_SIZE);
     auto* entry = acquire_chunk(cx, cy);
     if (!entry) return false;
-    for (const auto& edit : voxel_deltas_) {
-        if (edit.valid && edit.x == wx && edit.y == wy && edit.z == z) {
-            out = make_voxel_sample(edit.material);
-            return true;
-        }
+    if (auto* edit = find_voxel_delta(wx, wy, z)) {
+        out = make_voxel_sample(edit->material);
+        return true;
     }
     const SurfaceSample& column = entry->data.cells[local_index(wx, wy)];
     // The editable surface is authoritative at its height: mining and placing
@@ -191,14 +221,7 @@ bool ChunkCache::set_voxel(std::int32_t wx, std::int32_t wy, std::int32_t z,
     const auto cx = ChunkGenerator::floor_div(wx, PcgWorld::CHUNK_SIZE);
     const auto cy = ChunkGenerator::floor_div(wy, PcgWorld::CHUNK_SIZE);
     if (!acquire_chunk(cx, cy)) return false;
-    VoxelDelta* slot = nullptr;
-    for (auto& edit : voxel_deltas_) {
-        if (edit.valid && edit.x == wx && edit.y == wy && edit.z == z) {
-            slot = &edit;
-            break;
-        }
-        if (!edit.valid && !slot) slot = &edit;
-    }
+    VoxelDelta* slot = find_voxel_slot(wx, wy, z);
     if (!slot) return false; // Never silently discard a 3D player edit.
     *slot = VoxelDelta{wx, wy, z, material, true};
     return true;
@@ -259,9 +282,12 @@ bool ChunkCache::import_voxel_edits(const VoxelEdit* edits, std::size_t count) {
                 edits[i].z == edits[j].z) return false;
     }
     for (auto& edit : voxel_deltas_) edit = VoxelDelta{};
-    for (std::size_t i = 0; i < count; ++i)
-        voxel_deltas_[i] = VoxelDelta{edits[i].x, edits[i].y, edits[i].z,
-                                      edits[i].material, true};
+    for (std::size_t i = 0; i < count; ++i) {
+        auto* slot = find_voxel_slot(edits[i].x, edits[i].y, edits[i].z);
+        if (!slot) return false;
+        *slot = VoxelDelta{edits[i].x, edits[i].y, edits[i].z,
+                           edits[i].material, true};
+    }
     return true;
 }
 
