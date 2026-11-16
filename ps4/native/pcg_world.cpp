@@ -109,9 +109,19 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
         structure_at(x, y, dungeon)) {
         const std::int32_t dx = x - dungeon.x;
         const std::int32_t dy = y - dungeon.y;
-        const std::int32_t main_radius = std::max(2, int(dungeon.radius) / 4);
-        const std::int32_t side_radius = std::max(2, int(dungeon.radius) / 5);
-        const std::int32_t offset = std::max(3, int(dungeon.radius) * 2 / 3);
+        // The anchor kind selects one of four room profiles. All profiles
+        // retain the five-room topology, but vary chamber proportions and
+        // corridor width so exploration landmarks do not feel interchangeable.
+        const std::uint16_t profile = static_cast<std::uint16_t>(dungeon.kind % 4u);
+        const std::int32_t main_divisor = profile == 1u ? 3 : (profile == 2u ? 5 : 4);
+        const std::int32_t wing_divisor = profile == 2u ? 6 : (profile == 3u ? 4 : 5);
+        const std::int32_t offset_numerator = profile == 1u ? 3 : (profile == 2u ? 7 : 2);
+        const std::int32_t offset_denominator = profile == 1u ? 5 : (profile == 2u ? 10 : 3);
+        const std::int32_t main_radius = std::max(2, int(dungeon.radius) / main_divisor);
+        const std::int32_t side_radius = std::max(2, int(dungeon.radius) / wing_divisor);
+        const std::int32_t offset = std::max(3, int(dungeon.radius) *
+                                                offset_numerator / offset_denominator);
+        const std::int32_t corridor_half_width = profile == 3u ? 2 : 1;
         const std::int64_t main_d2 = std::int64_t(dx) * dx + std::int64_t(dy) * dy;
         // Five chambers (central + four cardinal wings) form a cross-shaped
         // primordial complex. The orthogonal corridors remain inside the anchor
@@ -127,8 +137,8 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
             std::int64_t(dy) * dy;
         const bool chamber = main_d2 <= std::int64_t(main_radius) * main_radius ||
             north <= side2 || south <= side2 || west <= side2 || east <= side2;
-        const bool corridor = (std::abs(dx) <= 1 && std::abs(dy) <= offset) ||
-                              (std::abs(dy) <= 1 && std::abs(dx) <= offset);
+        const bool corridor = (std::abs(dx) <= corridor_half_width && std::abs(dy) <= offset) ||
+                              (std::abs(dy) <= corridor_half_width && std::abs(dx) <= offset);
         const bool inside = chamber || corridor;
         if (inside && (depth == 8 || depth == 14))
             return {VoxelMaterial::DarkStone, true, false};
