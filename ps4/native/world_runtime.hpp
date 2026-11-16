@@ -2,6 +2,7 @@
 #include "chunk_cache.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 namespace mineplus {
 
@@ -25,6 +26,10 @@ public:
     std::size_t loaded_chunks() const;
     std::size_t saved_edits() const;
     std::uint64_t seed() const;
+
+    // Portable, checksummed snapshot of the seed and player-made terrain edits.
+    bool encode_save(std::vector<std::uint8_t>& bytes) const;
+    bool decode_save(const std::uint8_t* bytes, std::size_t size);
 
 private:
     ChunkCache chunks_;
