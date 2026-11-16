@@ -194,6 +194,9 @@ bool load_world(){
   std::array<int,13> extraStock{};if(ok&&h.version>=6){size_t extraCount=h.version>=7?13:9;ok=std::fread(extraStock.data(),sizeof(int),extraCount,f)==extraCount;}
   if(ok&&std::fgetc(f)!=EOF)ok=false;
   std::fclose(f);if(!ok)return false;
+  // Reject impossible tile IDs before they reach rendering, collision or inventory.
+  // This protects the live world from structurally valid but semantically corrupt saves.
+  for(const auto tile:restored)if(tile>AncientRune)return false;
   if(h.version>=2){
    for(auto &m:restoredCreatures){
     if(m.type<0||m.type>(h.version>=4?11:5)||m.hp<0||m.hp>3||m.x< -100||m.x>=(legacy?LEGACY_COLS:COLS)||m.y< -100||m.y>=(legacy?LEGACY_ROWS:ROWS))return false;
