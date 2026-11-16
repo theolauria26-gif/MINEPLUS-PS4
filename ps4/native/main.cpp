@@ -256,7 +256,7 @@ void update_creatures(){
    if(abs(dx)<abs(dy)){sx=passive?(dy>0?-1:1):(dy>0?1:-1);}else{sy=passive?(dx>0?-1:1):(dx>0?1:-1);}
    nx=m.x+sx;ny=m.y+sy;
   }
-  if((nx!=px||ny!=py)&&nx>=1&&nx<COLS-1&&ny>=1&&ny<ROWS-1&&!solid_tile(world[ny*COLS+nx])&&!creature_occupies(nx,ny,&m)){m.x=nx;m.y=ny;}
+  if((nx!=px||ny!=py)&&nx>=1&&nx<COLS-1&&ny>=1&&ny<ROWS-1&&!solid_tile(tile_at(nx,ny))&&!creature_occupies(nx,ny,&m)){m.x=nx;m.y=ny;}
  }
 }
 bool target_tile(int& x,int& y){x=px+faceX;y=py+faceY;return worldGrid.contains(x,y);}
