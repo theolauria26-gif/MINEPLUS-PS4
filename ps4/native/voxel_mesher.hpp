@@ -45,7 +45,10 @@ class VoxelMesher {
 public:
     // Clears output and emits only faces adjacent to air. Equal-material
     // coplanar faces are merged into rectangles to reduce draw-call geometry.
-    static void build(const VoxelChunk& chunk, std::vector<MeshQuad>& output);
+    // Returns false and clears output if max_quads would be exceeded, allowing
+    // callers to enforce a predictable per-chunk memory budget on PS4.
+    static bool build(const VoxelChunk& chunk, std::vector<MeshQuad>& output,
+                      std::size_t max_quads = 65536);
 };
 
 } // namespace mineplus
