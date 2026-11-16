@@ -253,9 +253,25 @@ void draw_menu(){
  draw_text("DPAD MOVE",820,355,2,177,184,182);draw_text("A PLACE X BREAK",820,390,2,177,184,182);draw_text("Y INVENTORY",820,425,2,177,184,182);draw_text("START PAUSE",820,460,2,177,184,182);
  draw_text("MINEPLUS PS4  /  DARK FANTASY EDITION",105,610,1,151,158,160);
 }
+float smooth_noise(float x,float y){
+ int ix=int(std::floor(x)),iy=int(std::floor(y));
+ float fx=x-ix,fy=y-iy;
+ fx=fx*fx*(3.0f-2.0f*fx);fy=fy*fy*(3.0f-2.0f*fy);
+ auto sample=[](int ax,int ay){return float(hash2(ax,ay)&0xffffu)/65535.0f;};
+ float a=sample(ix,iy)*(1.0f-fx)+sample(ix+1,iy)*fx;
+ float b=sample(ix,iy+1)*(1.0f-fx)+sample(ix+1,iy+1)*fx;
+ return a*(1.0f-fy)+b*fy;
+}
 float terrain_height(int t,int x,int y){
  float h=0.0f;
  switch(t){case Grass:h=0.42f;break;case Dirt:h=0.34f;break;case Stone:h=0.72f;break;case Wood:h=1.15f;break;case Moss:h=0.48f;break;case Crystal:h=1.55f;break;case Bone:h=0.92f;break;case DarkStone:h=0.82f;break;case Sand:h=0.25f;break;case Snow:h=0.52f;break;case Ice:h=0.38f;break;case Lava:h=0.20f;break;case Water:h=0.08f;break;default:h=0.0f;break;}
+ // Multi-scale elevation creates broad mountain ranges, rolling foothills and rocky peaks.
+ float continental=smooth_noise(x/310.0f,y/310.0f);
+ float ridge=1.0f-std::fabs(2.0f*smooth_noise(x/118.0f+37.0f,y/118.0f-19.0f)-1.0f);
+ float detail=smooth_noise(x/27.0f+11.0f,y/27.0f+53.0f);
+ float mountain=std::max(0.0f,(continental-0.48f)*2.25f);
+ mountain=mountain*mountain*(0.65f+ridge*0.85f);
+ h+=mountain*2.25f+detail*0.16f;
  unsigned n=hash2(x/3,y/3);h+=float(n%17)/100.0f;
  if(t==Wood||t==Crystal||t==Bone)h+=0.45f;
  return h;
