@@ -20,6 +20,8 @@ public:
                        std::int32_t radius_chunks = 4);
     bool get(std::int32_t world_x, std::int32_t world_y,
              SurfaceSample& out);
+    bool get_voxel(std::int32_t world_x, std::int32_t world_y,
+                   std::int32_t z, VoxelSample& out);
     bool get_structure(std::int32_t world_x, std::int32_t world_y,
                        StructureAnchor& out);
     bool set_surface(std::int32_t world_x, std::int32_t world_y,
