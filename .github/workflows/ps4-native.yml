@@ -46,6 +46,11 @@ jobs:
             ps4/native/pcg_world.cpp ps4/native/chunk_generator.cpp \
             ps4/native/chunk_cache.cpp ps4/native/tests/pcg_tests.cpp -o "$RUNNER_TEMP/mineplus-pcg-tests"
           "$RUNNER_TEMP/mineplus-pcg-tests"
+          clang++ -std=c++17 -O2 -Wall -Wextra -I ps4/native \
+            ps4/native/pcg_world.cpp ps4/native/chunk_generator.cpp \
+            ps4/native/chunk_cache.cpp ps4/native/save_codec.cpp \
+            ps4/native/tests/save_codec_tests.cpp -o "$RUNNER_TEMP/mineplus-save-tests"
+          "$RUNNER_TEMP/mineplus-save-tests"
       - name: Build native EBOOT and PKG
         run: |
           set -euxo pipefail
