@@ -81,20 +81,46 @@ void init_world(){
   world[y*COLS+x]=tile;
   heightMap[y*COLS+x]=static_cast<unsigned char>(std::clamp<int>(sample.height,0,255));
  }
- // Resolve each 96x96 structure cell once, then rasterize only its small footprint.
- // This replaces millions of repeated neighboring-cell hash queries during startup.
+ // Resolve each 96x96 structure cell once, then rasterize a distinct
+ // landmark silhouette. Every pattern is seed/coordinate deterministic.
  for(int cy=-13;cy<=13;++cy)for(int cx=-13;cx<=13;++cx){
   mineplus::StructureAnchor anchor{};
   if(!pcg.structure_anchor_for_cell(cx,cy,anchor))continue;
-  const int radius=anchor.radius;
+  const int radius=anchor.radius,r2=radius*radius;
   for(int oy=-radius;oy<=radius;++oy)for(int ox=-radius;ox<=radius;++ox){
    const int d=ox*ox+oy*oy;
-   if(d>radius*radius)continue;
+   if(d>r2)continue;
    const int lx=anchor.x+ox+COLS/2,ly=anchor.y+oy+ROWS/2;
    if(lx<0||ly<0||lx>=COLS||ly>=ROWS)continue;
-   if(d>=radius*radius-4)world[ly*COLS+lx]=DarkStone;
-   else if(d<radius*radius/4)world[ly*COLS+lx]=(anchor.kind==4?Crystal:Bone);
+   unsigned char tile=Air;
+   const bool cardinal=(ox==0||oy==0);
+   switch(anchor.kind){
+    case 1: // Standing-stone circle with four rune pillars.
+     if(d>=r2-2)tile=DarkStone;
+     else if(cardinal&&d>r2/3)tile=Bone;
+     else if(d<4)tile=Rune;
+     break;
+    case 2: // Ruined shrine: broken wall, corner crystals and a gate.
+     if(d>=r2-3)tile=DarkStone;
+     if((abs(ox)==radius||abs(oy)==radius)&&d<r2)tile=DarkStone;
+     if(abs(ox)>=radius-2&&abs(oy)>=radius-2)tile=Crystal;
+     if(oy==-radius&&abs(ox)<=1)tile=Air;
+     if(d<9&&tile==Air)tile=Rune;
+     break;
+    case 3: // Crystal grove with mineral spires radiating from its core.
+     if(d>=r2-3)tile=Moss;
+     else if((abs(ox)<=1&&abs(oy)>2)||(abs(oy)<=1&&abs(ox)>2))tile=Crystal;
+     else if(d<4)tile=ObsidianCore;
+     break;
+    default: // Bone altar, dark ring and central ancient relic.
+     if(d>=r2-2)tile=Bone;
+     else if(cardinal&&d>r2/4)tile=DarkStone;
+     else if(d<5)tile=AncientRune;
+     break;
+   }
+   if(tile!=Air)world[ly*COLS+lx]=tile;
   }
+ }
  }
  // Large ancient keeps, watchtowers, shrines and circular ruins.
  for(int cy=24;cy<ROWS-24;cy+=61)for(int cx=24;cx<COLS-24;cx+=73){
