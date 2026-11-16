@@ -69,6 +69,8 @@ private:
 
     Entry* find_chunk(std::int32_t cx, std::int32_t cy);
     Entry* acquire_chunk(std::int32_t cx, std::int32_t cy);
+    VoxelDelta* find_voxel_delta(std::int32_t x, std::int32_t y, std::int32_t z);
+    VoxelDelta* find_voxel_slot(std::int32_t x, std::int32_t y, std::int32_t z);
     void apply_deltas(ChunkData& chunk);
     static std::size_t local_index(std::int32_t x, std::int32_t y);
 };
