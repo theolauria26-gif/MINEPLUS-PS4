@@ -13,6 +13,7 @@ enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bon
 std::array<unsigned char,COLS*ROWS> world{};
 // Large save buffers live in static storage, not on the PS4 main-thread stack.
 // A 2048x2048 byte world is 4 MiB and can overflow the small homebrew thread stack.
+// Keep migration and restore scratch space out of stack frames on every save version.
 std::array<unsigned char,COLS*ROWS> loadWorldBuffer{};
 std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> legacyWorldBuffer{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0;
