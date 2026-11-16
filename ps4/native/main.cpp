@@ -197,6 +197,7 @@ bool save_world(){
  for(int i=0;i<9;i++)h.stock[i]=stock[i];
  bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(&worldSeed,sizeof(worldSeed),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size()&&std::fwrite(&playerHealth,sizeof(playerHealth),1,f)==1&&std::fwrite(stock.data()+9,sizeof(int),13,f)==13;
  if(std::fflush(f)!=0)ok=false;
+ if(ok&&::fsync(::fileno(f))!=0)ok=false;
  if(std::fclose(f)!=0)ok=false;
  if(ok&&std::rename(temp,SAVE_FILE)!=0)ok=false;
  if(!ok)std::remove(temp);
