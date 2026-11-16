@@ -41,4 +41,9 @@ void ChunkGenerator::generate(std::int32_t cx, std::int32_t cy, ChunkData& out) 
     }
 }
 
+VoxelSample ChunkGenerator::sample_voxel(std::int32_t x, std::int32_t y,
+                                          std::int32_t z) const {
+    return world_.sample_voxel(x, y, z);
+}
+
 } // namespace mineplus
