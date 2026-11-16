@@ -42,3 +42,8 @@ Before using these meshes in the PS4 frame loop, the renderer still needs:
 
 Until those steps land and are exercised on a real console, the mesher is
 foundational geometry code rather than a playable 3D rendering upgrade.
+
+
+## Material atlas follow-up
+
+The CPU-side material-to-UV contract is documented in [MATERIAL_ATLAS.md](MATERIAL_ATLAS.md). It maps current solid material IDs to an 8 × 4 grid of 16 × 16 cells and reserves the remaining cells. This is only UV metadata: an actual atlas image, GPU texture upload, sampler configuration, and per-face UV emission are still integration work.
