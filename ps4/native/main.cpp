@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <sys/stat.h>
+#include "pcg_world.hpp"
 namespace {
 constexpr int W=1280,H=720,COLS=2048,ROWS=2048,LEGACY_COLS=1024,LEGACY_ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
 enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21};
@@ -59,18 +60,25 @@ case ' ':return "00000""00000""00000""00000""00000""00000""00000";
 default:return "00000""00000""00000""00000""00000""00000""00000";}}
 void draw_text(const char*s,int x,int y,int scale,Uint8 r=230,Uint8 g=240,Uint8 b=236){color(r,g,b);for(;*s;s++,x+=6*scale){const char*p=glyph(*s);for(int yy=0;yy<7;yy++)for(int xx=0;xx<5;xx++)if(p[yy*5+xx]=='1'){SDL_Rect q{x+xx*scale,y+yy*scale,scale,scale};SDL_RenderFillRect(renderer,&q);}}}
 void init_world(){
- // Deterministic 2048 x 2048 world: four times the previous explorable area.
+ // PS4-native PCG sampling. Every coordinate is reproducible from one seed;
+ // this 2048x2048 resident window is a transitional cache, not the final world limit.
+ mineplus::PcgWorld pcg(4839201ULL);
  for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){
-  unsigned h=hash2(x,y),region=hash2(x/96,y/96)%6;
-  unsigned char t=Grass;
-  if(region==0){if(h%100<24)t=Stone;if(h%100<8)t=Moss;}
-  else if(region==1){t=Sand;if(h%100<8)t=Stone;}
-  else if(region==2){t=Snow;if(h%100<14)t=Ice;if(h%100<5)t=Stone;}
-  else if(region==3){t=DarkStone;if(h%100<20)t=Bone;if(h%100<7)t=Crystal;}
-  else if(region==4){t=Grass;if(h%100<22)t=Wood;if(h%100<6)t=Moss;}
-  else {t=Stone;if(h%100<12)t=Lava;if(h%100<4)t=Crystal;}
-  if(h%997<3)t=Crystal;
-  world[y*COLS+x]=t;
+  const int wx=x-COLS/2, wy=y-ROWS/2;
+  const auto sample=pcg.sample_surface(wx,wy);
+  unsigned char tile=sample.surface;
+  const unsigned h=hash2(x,y);
+  // Sparse resources are coordinate-hashed, so revisiting an area never rerolls it.
+  if(tile==Stone && h%389u==0u) tile=IronOre;
+  else if((tile==Stone||tile==DarkStone)&&h%12007u==0u) tile=Rune;
+  mineplus::StructureAnchor anchor{};
+  if(pcg.structure_at(wx,wy,anchor)){
+   const int dx=wx-anchor.x,dy=wy-anchor.y;
+   const int d=dx*dx+dy*dy;
+   if(d>=int(anchor.radius*anchor.radius)-4 && d<=int(anchor.radius*anchor.radius)+4) tile=DarkStone;
+   else if(d<int(anchor.radius*anchor.radius/4)) tile=(anchor.kind==4?Crystal:Bone);
+  }
+  world[y*COLS+x]=tile;
  }
  // Large ancient keeps, watchtowers, shrines and circular ruins.
  for(int cy=24;cy<ROWS-24;cy+=61)for(int cx=24;cx<COLS-24;cx+=73){
