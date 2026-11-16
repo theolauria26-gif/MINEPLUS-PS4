@@ -73,15 +73,23 @@ void init_world(){
   // Sparse resources are coordinate-hashed, so revisiting an area never rerolls it.
   if(tile==Stone && h%389u==0u) tile=IronOre;
   else if((tile==Stone||tile==DarkStone)&&h%12007u==0u) tile=Rune;
-  mineplus::StructureAnchor anchor{};
-  if(pcg.structure_at(wx,wy,anchor)){
-   const int dx=wx-anchor.x,dy=wy-anchor.y;
-   const int d=dx*dx+dy*dy;
-   if(d>=int(anchor.radius*anchor.radius)-4 && d<=int(anchor.radius*anchor.radius)+4) tile=DarkStone;
-   else if(d<int(anchor.radius*anchor.radius/4)) tile=(anchor.kind==4?Crystal:Bone);
-  }
   world[y*COLS+x]=tile;
   heightMap[y*COLS+x]=static_cast<unsigned char>(std::clamp<int>(sample.height,0,255));
+ }
+ // Resolve each 96x96 structure cell once, then rasterize only its small footprint.
+ // This replaces millions of repeated neighboring-cell hash queries during startup.
+ for(int cy=-13;cy<=13;++cy)for(int cx=-13;cx<=13;++cx){
+  mineplus::StructureAnchor anchor{};
+  if(!pcg.structure_anchor_for_cell(cx,cy,anchor))continue;
+  const int radius=anchor.radius;
+  for(int oy=-radius;oy<=radius;++oy)for(int ox=-radius;ox<=radius;++ox){
+   const int d=ox*ox+oy*oy;
+   if(d>radius*radius)continue;
+   const int lx=anchor.x+ox+COLS/2,ly=anchor.y+oy+ROWS/2;
+   if(lx<0||ly<0||lx>=COLS||ly>=ROWS)continue;
+   if(d>=radius*radius-4)world[ly*COLS+lx]=DarkStone;
+   else if(d<radius*radius/4)world[ly*COLS+lx]=(anchor.kind==4?Crystal:Bone);
+  }
  }
  // Large ancient keeps, watchtowers, shrines and circular ruins.
  for(int cy=24;cy<ROWS-24;cy+=61)for(int cx=24;cx<COLS-24;cx+=73){
