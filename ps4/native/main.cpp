@@ -11,6 +11,10 @@ namespace {
 constexpr int W=1280,H=720,COLS=2048,ROWS=2048,LEGACY_COLS=1024,LEGACY_ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
 enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21};
 std::array<unsigned char,COLS*ROWS> world{};
+// Large save buffers live in static storage, not on the PS4 main-thread stack.
+// A 2048x2048 byte world is 4 MiB and can overflow the small homebrew thread stack.
+std::array<unsigned char,COLS*ROWS> loadWorldBuffer{};
+std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> legacyWorldBuffer{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0;
 Uint32 lastDamage=0,damageCooldown=0;
 struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};std::array<int,22> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
@@ -151,9 +155,10 @@ bool load_world(){
   SaveHeader h{};
   bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version>=1&&h.version<=7);
   const bool legacy=h.version<5;
-  std::array<unsigned char,COLS*ROWS> restored{};
+  auto &restored=loadWorldBuffer;
+  restored.fill(0);
   if(ok&&legacy){
-   std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> oldWorld{};
+   auto &oldWorld=legacyWorldBuffer;
    ok=std::fread(oldWorld.data(),1,oldWorld.size(),f)==oldWorld.size();
    if(ok)for(int y=0;y<LEGACY_ROWS;y++)
     std::copy_n(oldWorld.data()+size_t(y)*LEGACY_COLS,LEGACY_COLS,
