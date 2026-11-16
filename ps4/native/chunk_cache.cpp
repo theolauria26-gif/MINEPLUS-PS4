@@ -1,5 +1,7 @@
 #include "chunk_cache.hpp"
 #include <algorithm>
+#include <climits>
+#include <cstdlib>
 #include <cstddef>
 
 namespace mineplus {
@@ -25,9 +27,6 @@ ChunkCache::Entry* ChunkCache::find_chunk(std::int32_t cx, std::int32_t cy) {
 }
 
 void ChunkCache::apply_deltas(ChunkData& chunk) {
-    constexpr std::int64_t S = PcgWorld::CHUNK_SIZE;
-    const std::int64_t ox = std::int64_t(chunk.chunk_x) * S;
-    const std::int64_t oy = std::int64_t(chunk.chunk_y) * S;
     for (const auto& delta : deltas_) {
         if (!delta.valid) continue;
         if (ChunkGenerator::floor_div(delta.x, PcgWorld::CHUNK_SIZE) != chunk.chunk_x ||
@@ -36,8 +35,6 @@ void ChunkCache::apply_deltas(ChunkData& chunk) {
         const auto index = local_index(delta.x, delta.y);
         chunk.cells[index].surface = delta.tile;
     }
-    (void)ox;
-    (void)oy;
 }
 
 ChunkCache::Entry* ChunkCache::acquire_chunk(std::int32_t cx, std::int32_t cy) {
