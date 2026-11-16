@@ -163,14 +163,14 @@ void draw_world(){
  for(int sx=0;sx<W;sx+=2){
   float cameraX=(2.0f*(sx+1)/float(W)-1.0f)*fov;
   float rayX=dirX+rightX*cameraX,rayY=dirY+rightY*cameraX;
-  float len=sqrtf(rayX*rayX+rayY*rayY);rayX/=len;rayY/=len;
+  float len=std::sqrt(rayX*rayX+rayY*rayY);rayX/=len;rayY/=len;
   int ceiling=int(horizon),lastY=H;
   for(float dist=0.55f;dist<30.0f&&ceiling<lastY;dist+=0.22f+dist*0.003f){
    int wx=int(px+rayX*dist),wy=int(py+rayY*dist);
    if(wx<1||wy<1||wx>=COLS-1||wy>=ROWS-1)break;
    int t=world[wy*COLS+wx];
    float height=terrain_height(t,wx,wy);
-   float corrected=dist*(0.82f+0.18f*(1.0f-fabsf(cameraX)));
+   float corrected=dist*(0.82f+0.18f*(1.0f-std::fabs(cameraX)));
    int sy=int(horizon-(height-cameraH)*focal/corrected);
    if(sy<ceiling)sy=ceiling;
    if(sy<lastY){
