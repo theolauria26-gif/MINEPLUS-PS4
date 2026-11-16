@@ -40,6 +40,25 @@ int main() {
     }
     assert(seedChangesTerrain);
 
+    // 3D voxel queries are deterministic and bounded to the world height.
+    for (const auto& p : coords) {
+        const auto column = worldA.sample_surface(p[0], p[1]);
+        const auto top1 = worldA.sample_voxel(p[0], p[1], column.height);
+        const auto top2 = worldB.sample_voxel(p[0], p[1], column.height);
+        assert(top1.solid && !top1.liquid && top1.material != VoxelMaterial::Air);
+        assert(top1.material == top2.material);
+        const auto soil = worldA.sample_voxel(p[0], p[1], column.height - 1);
+        assert(soil.solid);
+        const auto belowWorld = worldA.sample_voxel(p[0], p[1], -1);
+        const auto aboveWorld = worldA.sample_voxel(p[0], p[1], PcgWorld::WORLD_HEIGHT);
+        assert(belowWorld.material == VoxelMaterial::Air && !belowWorld.solid);
+        assert(aboveWorld.material == VoxelMaterial::Air && !aboveWorld.solid);
+    }
+    const auto plainsColumn = worldA.sample_surface(0, 0);
+    const auto deepA = worldA.sample_voxel(0, 0, plainsColumn.height - 8);
+    const auto deepB = worldB.sample_voxel(0, 0, plainsColumn.height - 8);
+    assert(deepA.material == deepB.material && deepA.solid == deepB.solid);
+
     StructureAnchor a{}, b{};
     const bool hasA = worldA.structure_anchor_for_cell(-7, 12, a);
     const bool hasB = worldB.structure_anchor_for_cell(-7, 12, b);
