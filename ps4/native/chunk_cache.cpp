@@ -85,6 +85,18 @@ bool ChunkCache::get(std::int32_t wx, std::int32_t wy, SurfaceSample& out) {
     return true;
 }
 
+bool ChunkCache::get_structure(std::int32_t wx, std::int32_t wy,
+                                 StructureAnchor& out) {
+    const auto cx = ChunkGenerator::floor_div(wx, PcgWorld::CHUNK_SIZE);
+    const auto cy = ChunkGenerator::floor_div(wy, PcgWorld::CHUNK_SIZE);
+    auto* entry = acquire_chunk(cx, cy);
+    if (!entry) return false;
+    const auto index = local_index(wx, wy);
+    if (!entry->data.has_structure[index]) return false;
+    out = entry->data.structures[index];
+    return true;
+}
+
 bool ChunkCache::set_surface(std::int32_t wx, std::int32_t wy,
                              std::uint8_t tile) {
     const auto cx = ChunkGenerator::floor_div(wx, PcgWorld::CHUNK_SIZE);
