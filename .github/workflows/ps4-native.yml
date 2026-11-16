@@ -64,8 +64,8 @@ jobs:
             ps4/native/tests/voxel_mesh_vertices_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-voxel-mesh-vertices-tests"
           "$RUNNER_TEMP/mineplus-voxel-mesh-vertices-tests"
-          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \\
-            ps4/native/dungeon_graph.cpp ps4/native/tests/dungeon_graph_tests.cpp \\
+          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
+            ps4/native/dungeon_graph.cpp ps4/native/tests/dungeon_graph_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-dungeon-graph-tests"
           "$RUNNER_TEMP/mineplus-dungeon-graph-tests"
           clang++ -std=c++17 -O2 -Wall -Wextra -I ps4/native \
