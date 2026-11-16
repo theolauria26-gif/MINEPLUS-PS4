@@ -68,6 +68,32 @@ int main() {
                a.kind == b.kind && a.radius == b.radius);
     }
 
+    // Landmark anchors also create a deterministic underground dungeon:
+    // three rooms connected by a corridor, with a solid roof and floor.
+    bool checkedDungeon = false;
+    for (int cy = -30; cy <= 30 && !checkedDungeon; ++cy) {
+        for (int cx = -30; cx <= 30 && !checkedDungeon; ++cx) {
+            StructureAnchor dungeon{};
+            if (!worldA.structure_anchor_for_cell(cx, cy, dungeon)) continue;
+            const auto surface = worldA.sample_surface(dungeon.x, dungeon.y);
+            if (surface.height < 15) continue;
+            const auto room = worldA.sample_voxel(dungeon.x, dungeon.y,
+                                                   surface.height - 11);
+            const auto floor = worldA.sample_voxel(dungeon.x, dungeon.y,
+                                                   surface.height - 14);
+            const auto roof = worldA.sample_voxel(dungeon.x, dungeon.y,
+                                                   surface.height - 8);
+            const auto repeatRoom = worldB.sample_voxel(dungeon.x, dungeon.y,
+                                                         surface.height - 11);
+            assert(room.material == VoxelMaterial::Air && !room.solid);
+            assert(floor.material == VoxelMaterial::DarkStone && floor.solid);
+            assert(roof.material == VoxelMaterial::DarkStone && roof.solid);
+            assert(room.material == repeatRoom.material);
+            checkedDungeon = true;
+        }
+    }
+    assert(checkedDungeon);
+
     ChunkGenerator genA(4839201ULL), genB(4839201ULL);
     ChunkData left{}, repeat{}, right{};
     genA.generate(-1, -1, left);
