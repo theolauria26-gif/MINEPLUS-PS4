@@ -72,6 +72,8 @@ int main() {
     // occasional trees, while deserts and oceans remain free of tree spawns.
     std::uint32_t forestTrees = 0;
     std::uint32_t plainsTrees = 0;
+    std::uint32_t tundraTrees = 0;
+    std::uint32_t alpineTrees = 0;
     bool checkedTreeRepeat = false;
     for (int y = -4096; y <= 4096; y += 16) {
         for (int x = -4096; x <= 4096; x += 16) {
@@ -81,16 +83,22 @@ int main() {
             const auto biome = static_cast<Biome>(column.biome);
             if (tree && biome == Biome::Forest) ++forestTrees;
             if (tree && biome == Biome::Plains) ++plainsTrees;
+            if (tree && biome == Biome::Tundra) ++tundraTrees;
+            if (tree && biome == Biome::Highlands) ++alpineTrees;
             if (tree) {
-                assert(column.surface == 1 || column.surface == 5);
+                assert(column.surface == 1 || column.surface == 5 ||
+                       column.surface == 3 || column.surface == 10);
                 checkedTreeRepeat = true;
             }
-            if (biome == Biome::Desert || biome == Biome::Ocean)
+            if (biome == Biome::Desert || biome == Biome::Ocean ||
+                biome == Biome::Volcanic || biome == Biome::CrystalWastes)
                 assert(!tree);
         }
     }
     assert(checkedTreeRepeat);
     assert(forestTrees > plainsTrees);
+    assert(tundraTrees > 0);
+    assert(alpineTrees > 0);
 
     // Inland lakes form broad, deterministic pools rather than thin river
     // channels. A five-point cross verifies a stable liquid basin core.
