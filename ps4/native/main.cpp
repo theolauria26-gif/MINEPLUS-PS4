@@ -992,13 +992,46 @@ void draw_surface_event_effects(){
 }
 void draw_world(){
  // Perspective height-field renderer for the native PS4 build.
- // One inexpensive frame-wide pulse drives emissive materials without per-ray trig.
- const float glowPulse=0.92f+0.08f*std::sin(float(SDL_GetTicks())*0.004f);
- rect(0,0,W,H,8,13,22);
- for(int y=0;y<330;y+=3){Uint8 v=static_cast<Uint8>(13+y/28);rect(0,y,W,3,v,v+7,v+15);}
- // Moon, distant haze and layered atmospheric fog.
- rect(930,82,82,82,145,157,157,175);rect(950,70,82,82,8,13,22,255);
- for(int i=0;i<6;i++)rect(0,285+i*19,W,4,38,52,58,25);
+ // A complete day/night cycle drives sky palette, celestial bodies and material emission.
+ const Uint32 worldTicks=SDL_GetTicks();
+ const float dayPhase=float(worldTicks%480000u)/480000.0f*6.2831853f;
+ const float daylight=std::clamp(0.5f+0.5f*std::sin(dayPhase-1.5707963f),0.0f,1.0f);
+ const float dawn=std::max(0.0f,1.0f-std::fabs(daylight-0.5f)*3.4f);
+ const float glowPulse=0.92f+0.08f*std::sin(float(worldTicks)*0.004f);
+ const int skyR=int(7+daylight*67+dawn*65),skyG=int(12+daylight*112+dawn*37),skyB=int(24+daylight*157+dawn*20);
+ rect(0,0,W,H,skyR,skyG,skyB);
+ for(int y=0;y<330;y+=3){
+  const float blend=float(y)/330.0f;
+  const int r=int(skyR+(31+daylight*118-skyR)*blend);
+  const int g=int(skyG+(42+daylight*119-skyG)*blend);
+  const int b=int(skyB+(53+daylight*105-skyB)*blend);
+  rect(0,y,W,3,r,g,b);
+ }
+ // Sun and moon travel in opposite halves of the same sky path.
+ const float celestial=dayPhase;
+ const int celestialX=int(W*0.5f+std::cos(celestial)*W*0.39f);
+ const int celestialY=115+int((1.0f-std::sin(celestial))*62.0f);
+ const bool sunVisible=daylight>0.08f;
+ const Uint8 bodyAlpha=static_cast<Uint8>(150+int(daylight*105.0f));
+ for(int ring=4;ring>=1;--ring){
+  const int radius=ring*5;
+  for(int yy=-radius;yy<=radius;yy+=2)for(int xx=-radius;xx<=radius;xx+=2)
+   if(xx*xx+yy*yy<=radius*radius){
+    if(sunVisible)color(255,static_cast<Uint8>(150+ring*13),static_cast<Uint8>(75+ring*8),static_cast<Uint8>(16+ring*7));
+    else color(115,150,178,static_cast<Uint8>(18+ring*9));
+    SDL_RenderDrawPoint(renderer,celestialX+xx,celestialY+yy);
+   }
+ }
+ for(int yy=-11;yy<=11;yy++)for(int xx=-11;xx<=11;xx++)if(xx*xx+yy*yy<=121){
+  if(sunVisible)color(255,218,151,bodyAlpha);
+  else color(207,220,225,bodyAlpha);
+  SDL_RenderDrawPoint(renderer,celestialX+xx,celestialY+yy);
+ }
+ // Layered horizon haze becomes brighter at sunrise and sunset.
+ for(int i=0;i<7;i++){
+  const int warm=int(dawn*28.0f);
+  rect(0,278+i*17,W,4,Uint8(27+warm),Uint8(42+warm/2),Uint8(52+int(daylight*12)),Uint8(18+int(daylight*9)));
+ }
  const float dirX=float(faceX),dirY=float(faceY);
  const float rightX=-dirY,rightY=dirX;
  const float focal=720.0f, horizon=H*0.48f, cameraH=1.48f;
