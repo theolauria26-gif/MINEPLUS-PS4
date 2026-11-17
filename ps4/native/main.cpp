@@ -1158,6 +1158,28 @@ void draw_world(){
   const int b=int(skyB+(53+daylight*105-skyB)*blend);
   rect(0,y,W,3,r,g,b);
  }
+ // Moving voxel-style cloud banks add parallax and soften the horizon.
+ // Their positions are seed-stable; only the wind offset changes over time.
+ const Uint8 cloudAlpha=static_cast<Uint8>(28.0f+daylight*54.0f);
+ for(unsigned i=0;i<22u;++i){
+  const unsigned cloudSeed=hash2(static_cast<int>(i*131u+47u),
+                                 static_cast<int>(worldSeed>>7));
+  const unsigned travel=worldTicks/95u*(1u+(i%3u));
+  const int cloudX=static_cast<int>((cloudSeed+travel)%
+      static_cast<unsigned>(W+360))-180;
+  const int cloudY=28+static_cast<int>((cloudSeed>>11)%178u);
+  const int cloudW=72+static_cast<int>((cloudSeed>>19)%126u);
+  const int cloudH=10+static_cast<int>((cloudSeed>>25)%17u);
+  const Uint8 cloudR=static_cast<Uint8>(daylight>0.55f?118:45);
+  const Uint8 cloudG=static_cast<Uint8>(daylight>0.55f?139:58);
+  const Uint8 cloudB=static_cast<Uint8>(daylight>0.55f?157:83);
+  rect(cloudX,cloudY,cloudW,cloudH,cloudR,cloudG,cloudB,cloudAlpha);
+  rect(cloudX+cloudW/5,cloudY-cloudH/2,cloudW/2,cloudH/2+2,
+       static_cast<Uint8>(cloudR+12u),static_cast<Uint8>(cloudG+12u),
+       static_cast<Uint8>(cloudB+12u),static_cast<Uint8>(cloudAlpha+12u));
+  rect(cloudX+cloudW/3,cloudY+cloudH-2,cloudW/2,3,
+       22,31,43,static_cast<Uint8>(cloudAlpha/2u));
+ }
  // A deterministic star field fades in as the daylight falls.
  const float night=1.0f-daylight;
  for(unsigned i=0;i<72u;++i){
@@ -1196,8 +1218,10 @@ void draw_world(){
  const float rightX=-dirY,rightY=dirX;
  const float focal=720.0f, horizon=H*0.48f, cameraH=1.48f;
  const float fov=0.92f;
- for(int sx=0;sx<W;sx+=2){
-  float cameraX=(2.0f*(sx+1)/float(W)-1.0f)*fov;
+ // Full horizontal sampling removes the alternating-column gaps of the
+ // previous half-resolution ray pass. The PS4 build is intentionally sharper.
+ for(int sx=0;sx<W;++sx){
+  float cameraX=(2.0f*(sx+0.5f)/float(W)-1.0f)*fov;
   float rayX=dirX+rightX*cameraX,rayY=dirY+rightY*cameraX;
   float len=std::sqrt(rayX*rayX+rayY*rayY);rayX/=len;rayY/=len;
   int ceiling=int(horizon),lastY=H;
