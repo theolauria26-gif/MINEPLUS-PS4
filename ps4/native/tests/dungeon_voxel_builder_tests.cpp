@@ -69,6 +69,7 @@ int main() {
     assert(DungeonVoxelBuilder::build_layout_chunk(layout, far_chunk, corridor_chunk));
     assert(corridor_chunk.get(0, 5, 24) == 3);
     assert(corridor_chunk.get(1, 5, 24) == 3);
+    assert(corridor_chunk.get(2, 5, 25) == 0); // doorway at global x=18
     assert(corridor_chunk.get(4, 5, 24) == 14); // treasure room floor
 
     DungeonLayout invalid_layout = layout;
