@@ -1149,6 +1149,7 @@ void draw_world(){
  const float daylight=std::clamp(static_cast<float>(0.5+0.5*std::sin(static_cast<double>(dayPhase)-1.5707963)),0.0f,1.0f);
  const float dawn=std::max(0.0f,static_cast<float>(1.0-std::fabs(static_cast<double>(daylight)-0.5)*3.4));
  const float glowPulse=0.92f+0.08f*std::sin(float(worldTicks)*0.004f);
+ const float sunDirX=std::cos(dayPhase),sunDirY=std::sin(dayPhase);
  const int skyR=int(7+daylight*67+dawn*65),skyG=int(12+daylight*112+dawn*37),skyB=int(24+daylight*157+dawn*20);
  rect(0,0,W,H,skyR,skyG,skyB);
  for(int y=0;y<330;y+=3){
@@ -1239,6 +1240,13 @@ void draw_world(){
     unsigned tex=hash2(unsigned(wx*31+int(dist*13.0f)),unsigned(wy*29-int(dist*9.0f)));
     int grain=int(tex%29)-14;
     float light=1.0f/(1.0f+dist*0.043f);
+    // Height gradients provide cheap directional terrain lighting without
+    // requiring a full 3D GPU pipeline; slopes catch the moving sun naturally.
+    const int heightDx=int(heightMap[wy*COLS+wx+1])-int(heightMap[wy*COLS+wx-1]);
+    const int heightDy=int(heightMap[(wy+1)*COLS+wx])-int(heightMap[(wy-1)*COLS+wx]);
+    const float slopeLight=std::clamp(1.0f+
+        (float(heightDx)*sunDirX+float(heightDy)*sunDirY)*0.006f,0.72f,1.18f);
+    light*=slopeLight;
     if(t==Lava)light=std::min(1.0f,light+0.48f);
     if(t==Crystal)light=std::min(1.0f,light+0.16f);
     int strata=((wx+wy*3)%7==0)?9:0;
@@ -1254,6 +1262,12 @@ void draw_world(){
      else if(t==Crystal||t==ObsidianCore){rr+=emission/2;gg+=emission;bb+=emission;}
      else{rr+=emission/3;gg+=emission;bb+=emission*3/4;}
     }
+    // Distance haze blends the far terrain into the current sky palette.
+    // This avoids a hard black horizon and makes valleys feel deeper.
+    const float fog=std::clamp((dist-10.0f)/28.0f,0.0f,0.52f);
+    rr=int(float(rr)*(1.0f-fog)+float(skyR)*fog);
+    gg=int(float(gg)*(1.0f-fog)+float(skyG)*fog);
+    bb=int(float(bb)*(1.0f-fog)+float(skyB)*fog);
     r=Uint8(std::clamp(rr,0,255));
     g=Uint8(std::clamp(gg,0,255));
     b=Uint8(std::clamp(bb,0,255));
