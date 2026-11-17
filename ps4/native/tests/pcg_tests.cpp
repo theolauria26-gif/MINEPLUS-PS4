@@ -91,6 +91,37 @@ int main() {
     assert(checkedTreeRepeat);
     assert(forestTrees > plainsTrees);
 
+    // Inland lakes form broad, deterministic pools rather than thin river
+    // channels. Their 3x3 water neighborhood also verifies liquid voxel data.
+    bool foundLakePool = false;
+    for (int y = -4096; y <= 4096 && !foundLakePool; y += 16) {
+        for (int x = -4096; x <= 4096 && !foundLakePool; x += 16) {
+            const auto center = worldA.sample_surface(x, y);
+            if (center.surface != 13 ||
+                center.biome == static_cast<std::uint8_t>(Biome::Ocean))
+                continue;
+            bool pool = true;
+            for (int oy = -8; oy <= 8 && pool; oy += 8) {
+                for (int ox = -8; ox <= 8; ox += 8) {
+                    const auto neighbor = worldA.sample_surface(x + ox, y + oy);
+                    if (neighbor.surface != 13 ||
+                        neighbor.biome == static_cast<std::uint8_t>(Biome::Ocean)) {
+                        pool = false;
+                        break;
+                    }
+                    const auto voxel = worldA.sample_voxel(
+                        x + ox, y + oy, neighbor.height);
+                    assert(voxel.material == VoxelMaterial::Water);
+                    assert(voxel.liquid && !voxel.solid);
+                    assert(same_sample(neighbor,
+                        worldB.sample_surface(x + ox, y + oy)));
+                }
+            }
+            if (pool) foundLakePool = true;
+        }
+    }
+    assert(foundLakePool);
+
     // 3D voxel queries are deterministic and bounded to the world height.
     for (const auto& p : coords) {
         const auto column = worldA.sample_surface(p[0], p[1]);
