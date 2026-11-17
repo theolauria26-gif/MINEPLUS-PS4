@@ -881,7 +881,27 @@ void update_creatures(){
    // Distant creatures patrol instead of freezing; no mutable RNG state is needed.
    const unsigned roam=hash2(m.x+int(tick*17u),m.y-int(tick*11u)+m.type*31);
    if((roam&3u)!=0u)continue;
-   switch((roam>>4)&3u){case 0:sx=1;break;case 1:sx=-1;break;case 2:sy=1;break;default:sy=-1;break;}
+   bool movedWithHerd=false;
+   if(species&&species->behavior==mineplus::SurfaceBehavior::Grazer){
+    // Grazers loosely regroup with nearby members of their own species.
+    // A small local neighborhood avoids global flock scans and keeps the
+    // behavior deterministic; predators and skittish species do not herd.
+    int herdX=0,herdY=0,herdCount=0;
+    for(const auto& other:creatures){
+     if(&other==&m||other.hp<=0||other.type!=m.type)continue;
+     const int ox=other.x-m.x,oy=other.y-m.y;
+     if(abs(ox)+abs(oy)>7)continue;
+     herdX+=ox;herdY+=oy;++herdCount;
+    }
+    if(herdCount>=2&&(herdX!=0||herdY!=0)){
+     if(abs(herdX)>=abs(herdY))sx=(herdX>0)-(herdX<0);
+     else sy=(herdY>0)-(herdY<0);
+     movedWithHerd=true;
+    }
+   }
+   if(!movedWithHerd){
+    switch((roam>>4)&3u){case 0:sx=1;break;case 1:sx=-1;break;case 2:sy=1;break;default:sy=-1;break;}
+   }
   }else if(passive){
    // Skittish wildlife flees when approached instead of attacking the player.
    if(abs(dx)>=abs(dy))sx=dx>0?-1:1;else sy=dy>0?-1:1;
