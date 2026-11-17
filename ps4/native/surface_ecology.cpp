@@ -36,8 +36,8 @@ bool surface_species_can_spawn(std::uint8_t id, Biome biome,
                                std::uint8_t temperature,
                                std::uint8_t surface) {
     const SurfaceSpecies* entry = surface_species(id);
-    if (!entry || surface == 9u || surface == 13u ||
-        biome == Biome::Ocean) return false;
+    if (!entry || surface == 13u || biome == Biome::Ocean ||
+        (surface == 9u && biome != Biome::Desert)) return false;
     const std::uint8_t biomeBit = bit(biome);
     return (entry->biome_mask & biomeBit) != 0u &&
            moisture >= entry->min_moisture &&
@@ -48,6 +48,7 @@ bool surface_species_can_spawn(std::uint8_t id, Biome biome,
 
 std::uint8_t choose_surface_species(Biome biome, std::uint8_t moisture,
                                     std::uint8_t temperature,
+                                    std::uint8_t surface,
                                     std::uint32_t variant) {
     const std::uint8_t first = biome == Biome::Desert || biome == Biome::Tundra
         ? 4u : (biome == Biome::Highlands || biome == Biome::Volcanic ||
@@ -56,7 +57,7 @@ std::uint8_t choose_surface_species(Biome biome, std::uint8_t moisture,
     for (std::uint8_t offset = 0; offset < count; ++offset) {
         const std::uint8_t id = static_cast<std::uint8_t>(
             first + ((variant + offset) % count));
-        if (surface_species_can_spawn(id, biome, moisture, temperature, 1u))
+        if (surface_species_can_spawn(id, biome, moisture, temperature, surface))
             return id;
     }
     return 255u;
