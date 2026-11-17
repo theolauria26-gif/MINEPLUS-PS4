@@ -12,12 +12,17 @@ constexpr SurfaceTradeOffer offers[5][SURFACE_TRADE_OFFERS]={
 SurfaceTradeOffer surface_trade_offer(std::uint8_t role,std::uint8_t offer){
  return offers[role%5u][offer%SURFACE_TRADE_OFFERS];
 }
-bool surface_trade_buy(std::uint8_t role,std::uint8_t offer,int* inventory,std::size_t count){
+std::uint16_t surface_trade_price(const SurfaceTradeOffer& offer,std::uint8_t discount_percent){
+ const unsigned discount=discount_percent>75u?75u:discount_percent;
+ return static_cast<std::uint16_t>((unsigned(offer.coin_cost)*(100u-discount)+99u)/100u);
+}
+bool surface_trade_buy(std::uint8_t role,std::uint8_t offer,int* inventory,std::size_t count,std::uint8_t discount_percent){
  if(!inventory||count<31u||offer>=SURFACE_TRADE_OFFERS)return false;
  const auto item=surface_trade_offer(role,offer);
  constexpr int COINS=22;
- if(inventory[COINS]<item.coin_cost||inventory[item.item_id]<0||inventory[item.item_id]>=9999)return false;
- inventory[COINS]-=item.coin_cost;
+ const auto price=surface_trade_price(item,discount_percent);
+ if(inventory[COINS]<price||inventory[item.item_id]<0||inventory[item.item_id]>=9999)return false;
+ inventory[COINS]-=price;
  ++inventory[item.item_id];
  return true;
 }
