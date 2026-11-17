@@ -61,3 +61,8 @@ Nenhum sistema é considerado pronto apenas porque compila. Cada etapa precisa d
 - [ ] Streaming, colisão, edição e saves conectados ao mundo 3D jogável.
 
 Esses módulos são fundação técnica, não uma mudança visual já disponível no jogo. A próxima etapa de maior impacto é a integração de GPU/renderização; em paralelo, o conteúdo precisa evoluir para uma aventura com progressão e mundo vivo.
+
+
+## Contrato de integração do renderer
+
+A especificação de backend, formato de vértices, ciclo de vida de recursos, fila de uploads e critérios de aceite está em [docs/RENDERER_GPU_CONTRACT.md](RENDERER_GPU_CONTRACT.md). Ela descreve o trabalho pendente e não altera o estado real do renderer ativo.
