@@ -90,6 +90,11 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Rain uses slanted droplets and rare, brief lightning flashes; snow uses drifting flakes; volcanic ash uses warm embers. Particle positions are derived from stable hashes and the game clock, with no per-frame particle allocation.
 - This is a screen-space weather presentation layer. It does not yet change moisture, crop growth, visibility, movement, water levels, or world simulation, and it is not volumetric weather or a GPU particle system.
 
+## Surface grass detail pass
+
+- Grass material pixels now combine short two-pixel blade tufts, four restrained green palettes and occasional warm/cool wildflower flecks. Tuft positions are hash-derived from the tile texture coordinates so the pattern is repeatable and requires no particle/entity allocation.
+- This is a material-detail pass in the existing SDL height-field renderer. It does not add collectible plant entities, new collision, a foliage mesh, wind simulation or imported texture assets.
+
 ## Dynamic surface sky cycle
 
 - The current SDL height-field presentation now has a 480-second visual day/night cycle.
