@@ -145,7 +145,30 @@ void init_world(){
    if(ground==Grass||ground==Moss)world[ny*COLS+nx]=Leaves;
   }
  }
- // Resolve each 96x96 structure cell once, then rasterize a distinct
+   // Undergrowth fills the forest floor in small, irregular shrub clusters.
+  // Leaves remain walk-through, and the hash makes every patch stable on reload.
+  for(int y=2;y<ROWS-2;++y)for(int x=2;x<COLS-2;++x){
+   const int wx=x-COLS/2,wy=y-ROWS/2;
+   const auto ground=world[y*COLS+x];
+   if(ground!=Grass&&ground!=Moss)continue;
+   const auto sample=pcg.sample_surface(wx,wy);
+   const auto biome=static_cast<mineplus::Biome>(sample.biome);
+   if(biome!=mineplus::Biome::Forest&&
+      !(biome==mineplus::Biome::Plains&&sample.moisture>164u))continue;
+   const unsigned shrub=hash2(wx+0x2B1,wy-0x517);
+   const unsigned chance=biome==mineplus::Biome::Forest?83u:211u;
+   if(shrub%chance!=0u)continue;
+   const int radius=1+static_cast<int>((shrub>>9)%2u);
+   for(int oy=-radius;oy<=radius;++oy)for(int ox=-radius;ox<=radius;++ox){
+    if((ox==0&&oy==0)||std::abs(ox)+std::abs(oy)>radius+1)continue;
+    const unsigned shape=hash2(wx+ox*17,wy+oy*23);
+    if((shape&3u)==0u)continue;
+    const int nx=x+ox,ny=y+oy;
+    const auto under=world[ny*COLS+nx];
+    if(under==Grass||under==Moss)world[ny*COLS+nx]=Leaves;
+   }
+  }
+  // Resolve each 96x96 structure cell once, then rasterize a distinct
  // landmark silhouette. Every pattern is seed/coordinate deterministic.
  for(int cy=-13;cy<=13;++cy)for(int cx=-13;cx<=13;++cx){
   mineplus::StructureAnchor anchor{};
