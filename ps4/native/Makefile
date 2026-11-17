@@ -37,7 +37,7 @@ $(INTDIR)/dungeon_graph.o: dungeon_graph.cpp dungeon_graph.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ dungeon_graph.cpp
 $(INTDIR)/dungeon_voxel_builder.o: dungeon_voxel_builder.cpp dungeon_voxel_builder.hpp dungeon_graph.hpp voxel_mesher.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ dungeon_voxel_builder.cpp
-$(INTDIR)/procedural_voxel_chunk.o: procedural_voxel_chunk.cpp procedural_voxel_chunk.hpp pcg_world.hpp voxel_mesher.hpp | $(INTDIR)
+$(INTDIR)/procedural_voxel_chunk.o: procedural_voxel_chunk.cpp procedural_voxel_chunk.hpp pcg_world.hpp voxel_mesher.hpp world_runtime.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ procedural_voxel_chunk.cpp
 $(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o $(INTDIR)/save_codec.o $(INTDIR)/world_runtime.o $(INTDIR)/voxel_mesher.o $(INTDIR)/material_atlas.o $(INTDIR)/voxel_face_uv.o $(INTDIR)/voxel_mesh_vertices.o $(INTDIR)/dungeon_graph.o $(INTDIR)/dungeon_voxel_builder.o $(INTDIR)/procedural_voxel_chunk.o
 	$(LD) $^ -o $@ $(LDFLAGS)
