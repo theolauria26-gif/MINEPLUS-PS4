@@ -95,6 +95,11 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Grass material pixels now combine short two-pixel blade tufts, four restrained green palettes and occasional warm/cool wildflower flecks. Tuft positions are hash-derived from the tile texture coordinates so the pattern is repeatable and requires no particle/entity allocation.
 - This is a material-detail pass in the existing SDL height-field renderer. It does not add collectible plant entities, new collision, a foliage mesh, wind simulation or imported texture assets.
 
+## Forest-floor undergrowth
+
+- World initialization now places deterministic irregular shrub clusters in forest biomes and in especially moist plains. The clusters reuse the existing walk-through leaf material, so they add visible undergrowth without introducing new item IDs, collision rules or save-format changes.
+- Patches are generated from global tile coordinates and the world seed, keeping their placement stable when the same world is regenerated. This remains a 2D surface-tile representation, not a 3D shrub mesh or wind animation.
+
 ## Surface water shimmer
 
 - Water material pixels now include a subtle time-shifted ripple crest, using the shared frame clock and tile texture coordinates. The highlight moves across visible river and lake columns without allocating particle objects.
