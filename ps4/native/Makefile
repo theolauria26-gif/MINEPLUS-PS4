@@ -13,7 +13,7 @@ LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr -L$(TO
 all: eboot.bin
 $(INTDIR):
 	mkdir -p $(INTDIR)
-$(INTDIR)/main.o: main.cpp pcg_world.hpp world_grid.hpp world_runtime.hpp | $(INTDIR)
+$(INTDIR)/main.o: main.cpp pcg_world.hpp world_grid.hpp world_runtime.hpp dungeon_loot.hpp dungeon_graph.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ main.cpp
 $(INTDIR)/pcg_world.o: pcg_world.cpp pcg_world.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ pcg_world.cpp
