@@ -67,6 +67,30 @@ int main() {
     assert(foundRiver);
     assert(foundRiverBank);
 
+    // Forests grow in broad deterministic groves; wet plains may contain
+    // occasional trees, while deserts and oceans remain free of tree spawns.
+    std::uint32_t forestTrees = 0;
+    std::uint32_t plainsTrees = 0;
+    bool checkedTreeRepeat = false;
+    for (int y = -4096; y <= 4096; y += 16) {
+        for (int x = -4096; x <= 4096; x += 16) {
+            const auto column = worldA.sample_surface(x, y);
+            const bool tree = worldA.surface_tree_at(x, y, column);
+            assert(tree == worldB.surface_tree_at(x, y, column));
+            const auto biome = static_cast<Biome>(column.biome);
+            if (tree && biome == Biome::Forest) ++forestTrees;
+            if (tree && biome == Biome::Plains) ++plainsTrees;
+            if (tree) {
+                assert(column.surface == 1 || column.surface == 5);
+                checkedTreeRepeat = true;
+            }
+            if (biome == Biome::Desert || biome == Biome::Ocean)
+                assert(!tree);
+        }
+    }
+    assert(checkedTreeRepeat);
+    assert(forestTrees > plainsTrees);
+
     // 3D voxel queries are deterministic and bounded to the world height.
     for (const auto& p : coords) {
         const auto column = worldA.sample_surface(p[0], p[1]);
