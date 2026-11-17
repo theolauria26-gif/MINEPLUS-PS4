@@ -1,0 +1,23 @@
+name: Equipment progression tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ps4/native/equipment.*"
+      - "ps4/native/tests/equipment_tests.cpp"
+      - "ps4/native/tests/run_equipment_tests.sh"
+      - ".github/workflows/equipment-tests.yml"
+  pull_request:
+    paths:
+      - "ps4/native/equipment.*"
+      - "ps4/native/tests/equipment_tests.cpp"
+      - "ps4/native/tests/run_equipment_tests.sh"
+      - ".github/workflows/equipment-tests.yml"
+  workflow_dispatch:
+jobs:
+  equipment-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run equipment progression tests
+        run: sh ps4/native/tests/run_equipment_tests.sh
