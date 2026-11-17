@@ -730,6 +730,39 @@ void draw_world(){
  int start=(W-8*62)/2;for(int i=0;i<8;i++){int x=start+i*62;rect(x,H-72,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-72,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-57,24,24,r,g,b);char qty[8];std::snprintf(qty,sizeof(qty),"%d",stock[i+1]);draw_text(qty,x+17,H-20,1,225,230,220);}
  if(inventory||paused){rect(240,130,1000,480,8,14,18,245);outline(240,130,1000,480,68,166,111);draw_text(inventory?"INVENTORY":"PAUSED",310,195,5,132,235,166);
   if(inventory){
+   if(equipmentPage){
+    static const char* equipmentNames[25]={"STONE AXE","BONE CAP","HIDE VEST","TRAIL LEGS","MOSS BOOTS","IRON SWORD","IRON HELM","IRON CHEST","IRON LEGS","IRON BOOTS","OBSIDIAN BLADE","OBS HELM","OBS CHEST","OBS LEGS","OBS BOOTS","RUNE SWORD","RUNE HELM","RUNE CHEST","RUNE LEGS","RUNE BOOTS","PRIM BLADE","PRIM HELM","PRIM CHEST","PRIM LEGS","PRIM BOOTS"};
+    for(int i=0;i<25;++i){
+     const int x=265+(i%5)*137,y=245+(i/5)*49;
+     const bool owned=equipmentState.owned[static_cast<std::size_t>(i+1)]!=0;
+     const bool equipped=std::find(equipmentState.equipped.begin(),equipmentState.equipped.end(),static_cast<mineplus::EquipmentId>(i+1))!=equipmentState.equipped.end();
+     rect(x,y,128,41,owned?35:22,owned?58:31,owned?48:36);
+     outline(x,y,128,41,i==selectedEquipment?232:70,i==selectedEquipment?206:105,i==selectedEquipment?119:83);
+     draw_text(equipmentNames[i],x+5,y+7,1,owned?220:125,owned?225:135,owned?205:140);
+     if(equipped)draw_text("ON",x+93,y+26,1,130,235,166);
+     else if(owned)draw_text("OWNED",x+65,y+26,1,165,205,170);
+    }
+    const auto id=selected_equipment_id();
+    const auto* def=mineplus::EquipmentCatalog::find(id);
+    const auto totals=mineplus::EquipmentCatalog::calculate(equipmentState);
+    draw_text("EQUIPMENT",965,218,2,132,235,166);
+    draw_text(equipmentNames[selectedEquipment],965,250,1,230,220,180);
+    static const char* slots[5]={"WEAPON","HEAD","CHEST","LEGS","BOOTS"};
+    if(def){
+     draw_text(slots[static_cast<std::size_t>(def->slot)],965,272,1,165,195,180);
+     char line[48];
+     std::snprintf(line,sizeof(line),"DMG %u  DEF %u",unsigned(def->stats.damage),unsigned(def->stats.defense));draw_text(line,965,296,1,215,220,205);
+     std::snprintf(line,sizeof(line),"HP %u  ARC %u",unsigned(def->stats.vitality),unsigned(def->stats.arcane));draw_text(line,965,316,1,215,220,205);
+     std::snprintf(line,sizeof(line),"RES %u",unsigned(def->stats.resistance));draw_text(line,965,336,1,215,220,205);
+     std::snprintf(line,sizeof(line),"DUR %u/%u",unsigned(equipmentState.durability[static_cast<std::size_t>(id)]),unsigned(def->durability));draw_text(line,965,356,1,215,220,205);
+     const auto* recipe=mineplus::EquipmentCatalog::recipe(id);
+     if(recipe){draw_text("RECIPE",965,386,1,132,235,166);for(unsigned ri=0;ri<recipe->ingredient_count;++ri){char cost[40];std::snprintf(cost,sizeof(cost),"ITEM %u X %u",unsigned(recipe->ingredients[ri].inventory_index),unsigned(recipe->ingredients[ri].count));draw_text(cost,965,405+int(ri)*17,1,175,190,180);}}
+    }
+    char totalsLine[64];std::snprintf(totalsLine,sizeof(totalsLine),"TOTAL DMG %u DEF %u",unsigned(totals.damage),unsigned(totals.defense));draw_text(totalsLine,265,510,1,170,220,185);
+    std::snprintf(totalsLine,sizeof(totalsLine),"MAX HP %u ARC %u RES %u",unsigned(totals.max_health),unsigned(totals.arcane),unsigned(totals.resistance));draw_text(totalsLine,265,530,1,170,220,185);
+    draw_text("LEFT/RIGHT SELECT  A CRAFT  RIGHT STICK EQUIP",265,565,1,184,205,184);
+    draw_text("V PAGE  /  U EQUIP  /  BACK CLOSE",650,585,1,184,205,184);
+   }else{
     static const int itemIds[25]={Grass,Dirt,Stone,Wood,Moss,Crystal,Bone,DarkStone,IronOre,Obsidian,Ember,Rune,IronBar,ObsidianCore,EmberCatalyst,AncientRune,22,23,24,25,26,27,28,29,30};
     static const char* itemNames[25]={"GRASS","DIRT","STONE","WOOD","MOSS","CRYSTAL","BONE","DARKSTONE","IRON ORE","OBSIDIAN","EMBER","RUNE","IRON BARS","OBSIDIAN CORE","EMBER CATALYST","ANCIENT RUNE","COINS","HERBS","BONE SHARDS","DUNGEON ORE","CRYSTAL SHARDS","RUNE FRAGMENTS","EMBER CORES","ANCIENT RELICS","BOSS SIGILS"};
     for(int i=0;i<25;i++){int x=265+(i%4)*188,y=245+(i/4)*40,id=itemIds[i];rect(x,y,170,36,27,43,43);Uint8 r,g,b;if(id>=22)inventory_item_color(id,r,g,b);else tile_color(id,r,g,b);rect(x+7,y+4,27,27,r,g,b);outline(x,y,170,36,75,145,98);draw_text(itemNames[i],x+41,y+5,1,208,215,208);char amount[12];std::snprintf(amount,sizeof(amount),"%d",stock[id]);draw_text(amount,x+41,y+21,1,160,220,174);}
@@ -738,6 +771,7 @@ void draw_world(){
     for(int ri=0;ri<9;ri++)draw_text(recipes[ri],1010,245+ri*25,1,ri==selectedRecipe?245:145,ri==selectedRecipe?220:165,ri==selectedRecipe?145:160);
     draw_text("L/R SELECT  /  A CRAFT",1010,485,1,184,205,184);
     draw_text("F OPENS TREASURE CHESTS  /  BACK CLOSE",650,565,1,184,205,184);
+   }
   }
   else{draw_text("A / ENTER  CONTINUE",350,310,3);draw_text("X / F5  SAVE WORLD",350,375,3);draw_text("B / ESC  BACK TO WORLD",350,440,2);}
  }
