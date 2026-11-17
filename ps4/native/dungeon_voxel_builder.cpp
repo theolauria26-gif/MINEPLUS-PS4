@@ -63,7 +63,6 @@ bool build_corridor(const DungeonRoom& a, const DungeonRoom& b,
                           (a.grid_y + 1 == b.grid_y || b.grid_y + 1 == a.grid_y);
     if (!horizontal && !vertical) return false;
 
-    const std::int32_t half_width = edge.corridor_width / 2;
     if (horizontal) {
         const DungeonRoom& left = a.x < b.x ? a : b;
         const DungeonRoom& right = a.x < b.x ? b : a;
