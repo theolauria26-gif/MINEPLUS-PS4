@@ -140,3 +140,10 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Grass material now mixes the existing small flower flecks with sparse fern-like fronds. Flower pixels use a distinct stem/bloom palette so they read as tiny plants rather than isolated color noise.
 - Moss receives rare cool cyan mycelium glints in addition to its green patch variations, reinforcing the damp/arcane forest-floor identity.
 - All details are generated from the existing deterministic material hash and current SDL pixel pass. They add no tile IDs, entities, collision, inventory items, save fields, per-frame allocations or imported assets; they are visual micro-details, not collectible flora or a simulated ecosystem.
+
+## Cold-biome and alpine tree silhouettes
+
+- Surface tree placement now includes sparse conifers in sufficiently moist tundra pockets and sheltered highland ledges. Forest groves and occasional moist-plains trees retain their existing densities; desert, ocean, volcanic and crystal-waste biomes remain excluded.
+- The active SDL world initialization uses narrow, layered crown silhouettes for tundra/highland trees and the broader randomized crowns for temperate forest trees. Existing snow and stone ground tiles can host these trunks/canopies without adding material IDs.
+- Portable PCG regression coverage now checks deterministic placement and confirms that tundra and highlands both contain tree candidates while the excluded biomes remain tree-free.
+- This is still a 2D tile-map representation with billboard/column projection. It does not yet create species-specific 3D tree meshes, branches, roots, collision volumes or seasonal growth.
