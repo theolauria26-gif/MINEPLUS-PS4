@@ -9,8 +9,13 @@ int main(){
  }
  int inventory[31]={};inventory[22]=20;
  const auto offer=surface_trade_offer(1,0);
+ assert(surface_trade_price(offer,25)==(offer.coin_cost*75u+99u)/100u);
+ assert(surface_trade_price(offer,100)==(offer.coin_cost*25u+99u)/100u);
  assert(surface_trade_buy(1,0,inventory,31u));
  assert(inventory[22]==20-int(offer.coin_cost)&&inventory[offer.item_id]==1);
+ inventory[22]=20;
+ assert(surface_trade_buy(1,0,inventory,31u,25u));
+ assert(inventory[22]==20-int(surface_trade_price(offer,25)));
  const int items=inventory[offer.item_id];
  assert(!surface_trade_buy(1,0,inventory,30u));
  inventory[22]=0;
