@@ -111,7 +111,8 @@ void init_world(){
   const auto sample=pcg.sample_surface(wx,wy);
   unsigned char tile=sample.surface;
   // Trees form clustered groves with open clearings instead of uniform noise.
-  if((tile==Grass||tile==Moss)&&pcg.surface_tree_at(wx,wy,sample))
+  if((tile==Grass||tile==Moss||tile==Snow||tile==Stone)&&
+     pcg.surface_tree_at(wx,wy,sample))
    tile=Wood;
   const unsigned h=hash2(x,y);
   // Sparse resources are coordinate-hashed, so revisiting an area never rerolls it.
@@ -130,19 +131,25 @@ void init_world(){
   const auto column=pcg.sample_surface(wx,wy);
   if(!pcg.surface_tree_at(wx,wy,column))continue;
   const unsigned crownSeed=hash2(wx,wy);
-  const int radiusX=1+static_cast<int>(crownSeed%3u);
-  const int radiusY=1+static_cast<int>((crownSeed>>5)%2u);
+  const auto biome=static_cast<mineplus::Biome>(column.biome);
+  const bool conifer=biome==mineplus::Biome::Tundra||
+                     biome==mineplus::Biome::Highlands;
+  const int radiusX=conifer?1:1+static_cast<int>(crownSeed%3u);
+  const int radiusY=conifer?2:1+static_cast<int>((crownSeed>>5)%2u);
   const int crownStyle=static_cast<int>((crownSeed>>9)%3u);
   for(int oy=-3;oy<=3;++oy)for(int ox=-3;ox<=3;++ox){
-   if((ox==0&&oy==0)||std::abs(ox)>radiusX||std::abs(oy)>radiusY)continue;
+   if((ox==0&&oy==0)||std::abs(oy)>radiusY)continue;
+   const int rowWidth=conifer?std::max(1,radiusX+radiusY-std::abs(oy)-1):radiusX;
+   if(std::abs(ox)>rowWidth)continue;
    const int nx=x+ox,ny=y+oy;
    const int ellipse=ox*ox*radiusY*radiusY+oy*oy*radiusX*radiusX;
    const int limit=radiusX*radiusX*radiusY*radiusY;
-   if(ellipse>limit+(crownStyle==0?0:radiusX*radiusY))continue;
-   if(crownStyle==1&&((ox+oy+crownSeed)%5u)==0u)continue;
-   if(crownStyle==2&&std::abs(ox)==radiusX&&std::abs(oy)==radiusY)continue;
+   if(!conifer&&ellipse>limit+(crownStyle==0?0:radiusX*radiusY))continue;
+   if(!conifer&&crownStyle==1&&((ox+oy+crownSeed)%5u)==0u)continue;
+   if(!conifer&&crownStyle==2&&std::abs(ox)==radiusX&&std::abs(oy)==radiusY)continue;
    const auto ground=world[ny*COLS+nx];
-   if(ground==Grass||ground==Moss)world[ny*COLS+nx]=Leaves;
+   if(ground==Grass||ground==Moss||ground==Snow||
+      (conifer&&ground==Stone))world[ny*COLS+nx]=Leaves;
   }
  }
    // Undergrowth fills the forest floor in small, irregular shrub clusters.
