@@ -95,6 +95,11 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Grass material pixels now combine short two-pixel blade tufts, four restrained green palettes and occasional warm/cool wildflower flecks. Tuft positions are hash-derived from the tile texture coordinates so the pattern is repeatable and requires no particle/entity allocation.
 - This is a material-detail pass in the existing SDL height-field renderer. It does not add collectible plant entities, new collision, a foliage mesh, wind simulation or imported texture assets.
 
+## Surface water shimmer
+
+- Water material pixels now include a subtle time-shifted ripple crest, using the shared frame clock and tile texture coordinates. The highlight moves across visible river and lake columns without allocating particle objects.
+- This is a lightweight screen-space material shimmer, not wave geometry, flow simulation, reflections, refraction or shoreline interaction.
+
 ## Dynamic surface sky cycle
 
 - The current SDL height-field presentation now has a 480-second visual day/night cycle.
