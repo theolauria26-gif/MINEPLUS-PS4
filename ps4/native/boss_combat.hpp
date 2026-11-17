@@ -62,6 +62,8 @@ public:
                             BossTuning tuning = {});
     static bool claim_reward(BossEncounter& boss);
     static BossAttackProfile attack_profile(BossAttack attack, std::uint8_t phase);
+    static bool attack_hits_player(const BossAttackProfile& profile,
+                                   std::uint16_t dx, std::uint16_t dy);
     static std::uint8_t phase_for_health(std::uint32_t health,
                                          std::uint32_t max_health);
 };
