@@ -105,6 +105,8 @@ EquipmentTotals EquipmentCatalog::calculate(const EquipmentLoadout& loadout){
  unsigned best=0;
  for(unsigned id=1;id<sets.size();++id)if(sets[id]>best){best=sets[id];total.active_set=static_cast<std::uint8_t>(id);}
  total.set_piece_count=static_cast<std::uint8_t>(best);
+ // A partial set does not activate a set identity or bonus.
+ if(best<3){total.active_set=0;return total;}
  // Bonuses require three pieces; a complete five-piece set grants a stronger bonus.
  if(best>=3){
   switch(total.active_set){
