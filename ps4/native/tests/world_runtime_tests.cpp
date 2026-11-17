@@ -94,14 +94,14 @@ int main() {
     assert(restored.import_edits(saved, 1));
     assert(restored.get_tile(-1, -1, edited) && edited == 255);
 
-    DungeonChestState chest{123,false,{{DungeonLootItem::CrystalShard,5},{DungeonLootItem::RuneFragment,2}}};
+    mineplus::DungeonChestState chest{123,false,{{mineplus::DungeonLootItem::CrystalShard,5},{mineplus::DungeonLootItem::RuneFragment,2}}};
     assert(world.set_dungeon_chest(chest));
-    DungeonChestState fetchedChest{};
+    mineplus::DungeonChestState fetchedChest{};
     assert(world.get_dungeon_chest(123,fetchedChest));
     assert(!fetchedChest.opened && fetchedChest.contents.size()==2);
     auto openedChest=fetchedChest; openedChest.opened=true;
     assert(world.set_dungeon_chest(openedChest));
-    assert(!world.set_dungeon_chest(DungeonChestState{124,false,{{DungeonLootItem::BossSigil,0}}}));
+    assert(!world.set_dungeon_chest(mineplus::DungeonChestState{124,false,{{mineplus::DungeonLootItem::BossSigil,0}}}));
 
     std::vector<std::uint8_t> snapshot;
     assert(world.encode_save(snapshot));
@@ -112,10 +112,10 @@ int main() {
     assert(diskLoaded.get_tile(-1, -1, edited) && edited == 255);
     assert(diskLoaded.get_voxel(-1, -1, editedDepth, voxel));
     assert(voxel.material == mineplus::VoxelMaterial::Crystal);
-    mineplus::DungeonChestState restoredChest{};
+    mineplus::mineplus::DungeonChestState restoredChest{};
     assert(diskLoaded.get_dungeon_chest(123,restoredChest));
     assert(restoredChest.opened && restoredChest.contents.size()==2);
-    assert(restoredChest.contents[0].item==mineplus::DungeonLootItem::CrystalShard &&
+    assert(restoredChest.contents[0].item==mineplus::mineplus::DungeonLootItem::CrystalShard &&
            restoredChest.contents[0].count==5);
     auto corrupt = snapshot;
     corrupt.back() ^= 0x80;
