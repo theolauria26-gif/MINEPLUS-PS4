@@ -93,14 +93,14 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 
 ## Direção visual: materiais pixel-art
 
-A direção visual usa pixel-art voxel dark fantasy, com materiais distinguíveis em vez de blocos de cor chapada. O renderer SDL2 ativo recebeu padrões ancorados nas coordenadas do mundo: grama com tufos e flores, terra em grânulos, pedra com juntas e fissuras, madeira com veios, folhagem em camadas, musgo com esporos, cristais facetados, osso estriado, areia ondulada, neve, gelo, lava, água animada, minério, obsidiana, metal e runas luminosas. O atlas procedural tem 32×32 pixels por material e 21 materiais definidos.
+A direção visual usa pixel-art voxel dark fantasy, com materiais distinguíveis em vez de blocos de cor chapada. O renderer SDL2 ativo recebeu padrões ancorados nas coordenadas do mundo: grama com tufos e flores, terra em grânulos, pedra com juntas e fissuras, madeira com veios, folhagem em camadas, musgo com esporos, cristais facetados, osso estriado, areia ondulada, neve, gelo, lava, água animada, minério, obsidiana, metal e runas luminosas. O atlas de coordenadas atual reserva 21 materiais em uma grade de 8×4 células de 16×16 pixels (128×64 no total); ele ainda é um mapeamento CPU, não uma textura enviada à GPU.
 
 O céu agora tem bancos de nuvens pixeladas que se deslocam com o vento, estrelas e ciclo solar/lunar. A amostragem horizontal do ray marcher passou de uma coluna a cada dois pixels para uma coluna por pixel. A superfície também recebe iluminação direcional aproximada pelas diferenças de altura, seguindo a posição do sol, e névoa de distância que mistura o terreno distante com a cor atual do céu.
 
 **Limite visual importante:** a partida ainda usa o renderer SDL2 de colunas em perspectiva, não um renderer voxel 3D completo com shaders, iluminação dinâmica por voxel e malhas de chunks na GPU. As melhorias deixam o exterior mais definido e atmosférico, mas não significam que o MINEPLUS já alcançou a qualidade gráfica de Hytale. A próxima etapa estrutural é integrar o mundo em chunks, meshing, atlas e iluminação a um renderer 3D real, e depois avançar modelos, animações, áudio e comportamento de criaturas.
 
 
-O atlas procedural de materiais foi elevado para 32×32 pixels por material (256×128 no total), com 21 materiais e padrões determinísticos específicos por família. Os testes verificam determinismo, transparência das células vazias e variação de cor em cada tile.
+O atlas de coordenadas de materiais mede 128×64 pixels, com células de 16×16 (8×4) e 21 IDs sólidos mapeados. Ele ainda não é uma imagem de textura: a geração da imagem, o upload e a amostragem GPU permanecem pendentes. Os padrões visíveis atuais são desenhados proceduralmente pelo renderer SDL2.
 
 **Limite visual importante:** a partida ainda usa o renderer SDL2 de colunas em perspectiva, não um renderer voxel 3D completo com shaders, iluminação dinâmica e malhas de chunks na GPU. Portanto, os novos padrões melhoram a leitura visual do renderer atual, mas não significam que o MINEPLUS já alcançou a qualidade gráfica de Hytale. A próxima etapa é evoluir para superfícies 3D reais, atlas com gutters, luz ambiente/direcional e modelos animados sem quebrar o jogo atual.
 
