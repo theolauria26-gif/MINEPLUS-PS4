@@ -13,6 +13,7 @@
 #include "surface_settlements.hpp"
 #include "surface_npcs.hpp"
 #include "surface_trade.hpp"
+#include "surface_quests.hpp"
 #include "world_grid.hpp"
 #include "dungeon_loot.hpp"
 #include "equipment.hpp"
@@ -46,6 +47,7 @@ Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0,lastBossHitAt=0,lastSaveA
 Uint32 bossClockMs=0,lastBossClockTick=0;bool lastSaveSucceeded=true;int lastCreatureHitX=-100,lastCreatureHitY=-100;
 struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};
 std::array<mineplus::SettlementNpc,64> settlementNpcs{};std::size_t settlementNpcCount=0;
+std::array<mineplus::SurfaceQuestProgress,mineplus::SURFACE_QUEST_ROLES> surfaceQuestProgress{};
 Uint32 lastNpcUpdate=0,npcDialogueUntil=0;const char* activeNpcName=nullptr;const char* activeNpcLine=nullptr;
 bool tradeOpen=false;std::uint8_t tradeRole=0,selectedTradeOffer=0;
 std::array<int,31> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
@@ -99,7 +101,7 @@ void init_world(){
  // PS4-native PCG sampling. Every coordinate is reproducible from one seed;
  // this 2048x2048 resident window is a transitional cache, not the final world limit.
  mineplus::PcgWorld pcg(worldSeed);
- settlementNpcCount=0;activeNpcName=nullptr;activeNpcLine=nullptr;npcDialogueUntil=0;
+ settlementNpcCount=0;surfaceQuestProgress.fill({});activeNpcName=nullptr;activeNpcLine=nullptr;npcDialogueUntil=0;
  for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){
   const int wx=x-COLS/2, wy=y-ROWS/2;
   const auto sample=pcg.sample_surface(wx,wy);
@@ -427,10 +429,10 @@ bool save_world(bool feedback=true){
  mkdir(SAVE_DIR,0777);
  const char* temp="/data/MINEPLUS/world.sav.tmp";
  FILE* f=std::fopen(temp,"wb");if(!f){if(feedback){lastSaveSucceeded=false;lastSaveAt=SDL_GetTicks();}return false;}
- SaveHeader h{{'M','P','L','U','S','3','D','\0'},11,px,py,selected,faceX,faceY,{}};
+ SaveHeader h{{'M','P','L','U','S','3','D','\0'},12,px,py,selected,faceX,faceY,{}};
  for(int i=0;i<9;i++)h.stock[i]=stock[i];
  bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(&worldSeed,sizeof(worldSeed),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size()&&std::fwrite(&playerHealth,sizeof(playerHealth),1,f)==1&&std::fwrite(stock.data()+9,sizeof(int),13,f)==13&&std::fwrite(stock.data()+22,sizeof(int),9,f)==9&&std::fwrite(equipmentState.owned.data(),sizeof(std::uint8_t),equipmentState.owned.size(),f)==equipmentState.owned.size()&&std::fwrite(equipmentState.equipped.data(),sizeof(mineplus::EquipmentId),equipmentState.equipped.size(),f)==equipmentState.equipped.size()&&std::fwrite(equipmentState.durability.data(),sizeof(std::uint16_t),equipmentState.durability.size(),f)==equipmentState.durability.size()&&
-   std::fwrite(&primordialBoss.max_health,sizeof(primordialBoss.max_health),1,f)==1&&std::fwrite(&primordialBoss.health,sizeof(primordialBoss.health),1,f)==1&&std::fwrite(&primordialBoss.state_started_at,sizeof(primordialBoss.state_started_at),1,f)==1&&std::fwrite(&primordialBoss.state_duration_ms,sizeof(primordialBoss.state_duration_ms),1,f)==1&&std::fwrite(&primordialBoss.attack_index,sizeof(primordialBoss.attack_index),1,f)==1&&std::fwrite(&primordialBoss.phase,sizeof(primordialBoss.phase),1,f)==1&&std::fwrite(&primordialBoss.state,sizeof(primordialBoss.state),1,f)==1&&std::fwrite(&primordialBoss.pending_attack,sizeof(primordialBoss.pending_attack),1,f)==1&&[&](){const std::uint8_t claimed=primordialBoss.reward_claimed?1u:0u;return std::fwrite(&claimed,sizeof(claimed),1,f)==1;}();
+   std::fwrite(&primordialBoss.max_health,sizeof(primordialBoss.max_health),1,f)==1&&std::fwrite(&primordialBoss.health,sizeof(primordialBoss.health),1,f)==1&&std::fwrite(&primordialBoss.state_started_at,sizeof(primordialBoss.state_started_at),1,f)==1&&std::fwrite(&primordialBoss.state_duration_ms,sizeof(primordialBoss.state_duration_ms),1,f)==1&&std::fwrite(&primordialBoss.attack_index,sizeof(primordialBoss.attack_index),1,f)==1&&std::fwrite(&primordialBoss.phase,sizeof(primordialBoss.phase),1,f)==1&&std::fwrite(&primordialBoss.state,sizeof(primordialBoss.state),1,f)==1&&std::fwrite(&primordialBoss.pending_attack,sizeof(primordialBoss.pending_attack),1,f)==1&&[&](){const std::uint8_t claimed=primordialBoss.reward_claimed?1u:0u;if(std::fwrite(&claimed,sizeof(claimed),1,f)!=1)return false;for(const auto& q:surfaceQuestProgress)if(std::fwrite(&q.state,sizeof(q.state),1,f)!=1||std::fwrite(&q.gathered,sizeof(q.gathered),1,f)!=1)return false;return true;}();
  if(std::fflush(f)!=0)ok=false;
  if(ok&&::fsync(::fileno(f))!=0)ok=false;
  if(std::fclose(f)!=0)ok=false;
@@ -442,7 +444,7 @@ bool save_world(bool feedback=true){
 bool load_world(){
   FILE* f=std::fopen(SAVE_FILE,"rb");if(!f)return false;
   SaveHeader h{};
-  bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version>=1&&h.version<=11);
+  bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version>=1&&h.version<=12);
   const bool legacy=h.version<5;
   auto &restored=loadWorldBuffer;
   restored.fill(0);
@@ -472,12 +474,14 @@ bool load_world(){
   }
   mineplus::BossEncounter restoredBoss{};std::uint8_t restoredRewardClaimed=0;
   if(ok&&h.version>=11){ok=std::fread(&restoredBoss.max_health,sizeof(restoredBoss.max_health),1,f)==1&&std::fread(&restoredBoss.health,sizeof(restoredBoss.health),1,f)==1&&std::fread(&restoredBoss.state_started_at,sizeof(restoredBoss.state_started_at),1,f)==1&&std::fread(&restoredBoss.state_duration_ms,sizeof(restoredBoss.state_duration_ms),1,f)==1&&std::fread(&restoredBoss.attack_index,sizeof(restoredBoss.attack_index),1,f)==1&&std::fread(&restoredBoss.phase,sizeof(restoredBoss.phase),1,f)==1&&std::fread(&restoredBoss.state,sizeof(restoredBoss.state),1,f)==1&&std::fread(&restoredBoss.pending_attack,sizeof(restoredBoss.pending_attack),1,f)==1&&std::fread(&restoredRewardClaimed,sizeof(restoredRewardClaimed),1,f)==1;restoredBoss.reward_claimed=restoredRewardClaimed!=0;}
+  std::array<mineplus::SurfaceQuestProgress,mineplus::SURFACE_QUEST_ROLES> restoredQuests{};
+  if(ok&&h.version>=12)for(auto& q:restoredQuests)if(std::fread(&q.state,sizeof(q.state),1,f)!=1||std::fread(&q.gathered,sizeof(q.gathered),1,f)!=1){ok=false;break;}
   if(ok&&std::fgetc(f)!=EOF)ok=false;
   std::fclose(f);if(!ok)return false;
   // Reject impossible tile IDs before they reach rendering, collision or inventory.
   // This protects the live world from structurally valid but semantically corrupt saves.
   for(const auto tile:restored)if(tile>Leaves)return false;
-  if(restoredRewardClaimed>1||restoredBoss.max_health==0||restoredBoss.max_health>100000000u||restoredBoss.health>restoredBoss.max_health||restoredBoss.phase<1||restoredBoss.phase>3||static_cast<unsigned>(restoredBoss.state)>static_cast<unsigned>(mineplus::BossState::Defeated)||static_cast<unsigned>(restoredBoss.pending_attack)>static_cast<unsigned>(mineplus::BossAttack::RiftCharge)||(restoredBoss.state==mineplus::BossState::Defeated&&restoredBoss.health!=0)||(restoredBoss.health==0&&restoredBoss.state!=mineplus::BossState::Defeated))return false;
+  if((h.version>=12&&!mineplus::surface_quest_progress_valid(restoredQuests))||restoredRewardClaimed>1||restoredBoss.max_health==0||restoredBoss.max_health>100000000u||restoredBoss.health>restoredBoss.max_health||restoredBoss.phase<1||restoredBoss.phase>3||static_cast<unsigned>(restoredBoss.state)>static_cast<unsigned>(mineplus::BossState::Defeated)||static_cast<unsigned>(restoredBoss.pending_attack)>static_cast<unsigned>(mineplus::BossAttack::RiftCharge)||(restoredBoss.state==mineplus::BossState::Defeated&&restoredBoss.health!=0)||(restoredBoss.health==0&&restoredBoss.state!=mineplus::BossState::Defeated))return false;
   for(std::size_t i=0;i<restoredEquipment.owned.size();++i){
    if(restoredEquipment.owned[i]>1)return false;
    const auto* def=mineplus::EquipmentCatalog::find(static_cast<mineplus::EquipmentId>(i));
@@ -509,7 +513,7 @@ bool load_world(){
   for(int i=0;i<9;i++)stock[i]=std::clamp(h.stock[i],0,9999);
   for(int i=0;i<13;i++)stock[i+9]=std::clamp(extraStock[i],0,9999);
    for(int i=0;i<9;i++)stock[i+22]=std::clamp(extraLoot[i],0,9999);
-  equipmentState=restoredEquipment;primordialBoss=restoredBoss;primordialBoss.state_started_at=SDL_GetTicks();
+  equipmentState=restoredEquipment;primordialBoss=restoredBoss;surfaceQuestProgress=restoredQuests;primordialBoss.state_started_at=SDL_GetTicks();
   playerHealth=std::clamp(playerHealth,1,static_cast<int>(mineplus::EquipmentCatalog::calculate(equipmentState).max_health));
   return true;
 }
@@ -627,6 +631,7 @@ void move_player(int dx,int dy){if(!dx&&!dy)return;int nx=std::clamp(px+dx,1,COL
 void add_stock(int item,int amount=1){
  if(item<0||item>=static_cast<int>(stock.size())||amount<=0)return;
  stock[item]=std::clamp(stock[item],0,9999-std::min(amount,9999))+std::min(amount,9999);
+ if(item>=0&&item<=255){bool questChanged=false;for(std::size_t i=0;i<surfaceQuestProgress.size();++i){const auto q=mineplus::surface_quest_definition(static_cast<std::uint8_t>(i));if(surfaceQuestProgress[i].state==static_cast<std::uint8_t>(mineplus::SurfaceQuestState::Active)&&q.item_id==item)questChanged=true;}mineplus::surface_quest_add_progress(surfaceQuestProgress,static_cast<std::uint8_t>(item),static_cast<std::uint16_t>(std::min(amount,65535)));if(questChanged)save_world(false);}
 }
 void turn_player(int direction){if(direction>0){int old=faceX;faceX=-faceY;faceY=old;}else if(direction<0){int old=faceX;faceX=faceY;faceY=-old;}}
 Uint32 lastCreatureUpdate=0;
@@ -696,11 +701,22 @@ void buy_selected_trade_offer(){
  }else{activeNpcName="NOT ENOUGH COINS";activeNpcLine="OR INVENTORY SLOT IS FULL";npcDialogueUntil=SDL_GetTicks()+2600u;}
 }
 void talk_to_nearest_npc(){
- std::size_t nearest=settlementNpcCount;int best=3;
- for(std::size_t i=0;i<settlementNpcCount;++i){const int d=std::abs(settlementNpcs[i].x-px)+std::abs(settlementNpcs[i].y-py);if(d<best){best=d;nearest=i;}}
+ const auto nearest=nearest_settlement_npc();
  if(nearest==settlementNpcCount){activeNpcName="NO RESIDENT";activeNpcLine="COME CLOSER TO A VILLAGER";}
- else{auto& npc=settlementNpcs[nearest];const auto line=mineplus::settlement_npc_dialogue(npc.role,npc.dialogue_stage);activeNpcName=line.name;activeNpcLine=line.line;npc.dialogue_stage=static_cast<std::uint8_t>((npc.dialogue_stage+1u)%3u);}
- npcDialogueUntil=SDL_GetTicks()+4200u;
+ else{
+  const auto role=settlementNpcs[nearest].role;
+  const auto def=mineplus::surface_quest_definition(role);
+  const auto action=mineplus::surface_quest_interact(role,surfaceQuestProgress,stock.data(),stock.size());
+  auto& progress=surfaceQuestProgress[role];
+  activeNpcName=def.title;
+  if(action==mineplus::SurfaceQuestAction::Accepted)activeNpcLine=def.description;
+  else if(action==mineplus::SurfaceQuestAction::Progress){static char status[48];std::snprintf(status,sizeof(status),"GATHERED %u OF %u",unsigned(progress.gathered),unsigned(def.required));activeNpcLine=status;}
+  else if(action==mineplus::SurfaceQuestAction::Claimed){activeNpcLine="QUEST COMPLETE  /  REWARD RECEIVED";save_world(false);}
+  else if(action==mineplus::SurfaceQuestAction::AlreadyClaimed)activeNpcLine="THANK YOU  /  THIS TASK IS COMPLETE";
+  else activeNpcLine="QUEST UNAVAILABLE";
+  if(action==mineplus::SurfaceQuestAction::Accepted)save_world(false);
+ }
+ npcDialogueUntil=SDL_GetTicks()+5200u;
 }
 void update_creatures(){
  Uint32 now=SDL_GetTicks();if(now-lastCreatureUpdate<650)return;lastCreatureUpdate=now;
