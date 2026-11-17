@@ -112,3 +112,10 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Horizon haze responds to the transition, while existing material emission remains animated.
 - A deterministic field of small stars fades in as daylight falls; star positions are stable for the world seed and opacity follows the night level.
 - This is a screen-space atmosphere pass for the current renderer, not a physically based sky, volumetric atmosphere, dynamic shadow system, or true 3D lighting solution.
+
+
+## Layered surface canopy materials
+
+- Leaf and shrub pixels now select among four restrained deterministic palettes (deep woodland, emerald, olive and muted bronze), with scattered brighter leaf tips and denser cluster patterns.
+- Palette and highlight placement are hash-derived from the existing material texture pattern, so the pass adds canopy depth without extra entities, tile IDs, collision or save changes.
+- This remains procedural SDL material detail on the existing height-field renderer; it is not imported foliage art, individual 3D leaves, seasonal simulation or wind animation.
