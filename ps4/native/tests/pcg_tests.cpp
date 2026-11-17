@@ -92,30 +92,24 @@ int main() {
     assert(forestTrees > plainsTrees);
 
     // Inland lakes form broad, deterministic pools rather than thin river
-    // channels. Their 3x3 water neighborhood also verifies liquid voxel data.
+    // channels. A five-point cross verifies a stable liquid basin core.
     bool foundLakePool = false;
-    for (int y = -4096; y <= 4096 && !foundLakePool; y += 16) {
-        for (int x = -4096; x <= 4096 && !foundLakePool; x += 16) {
-            const auto center = worldA.sample_surface(x, y);
-            if (center.surface != 13 ||
-                center.biome == static_cast<std::uint8_t>(Biome::Ocean))
-                continue;
+    for (int y = -4096; y <= 4096 && !foundLakePool; y += 8) {
+        for (int x = -4096; x <= 4096 && !foundLakePool; x += 8) {
+            const int offsets[][2] = {{0,0},{-4,0},{4,0},{0,-4},{0,4}};
             bool pool = true;
-            for (int oy = -8; oy <= 8 && pool; oy += 8) {
-                for (int ox = -8; ox <= 8; ox += 8) {
-                    const auto neighbor = worldA.sample_surface(x + ox, y + oy);
-                    if (neighbor.surface != 13 ||
-                        neighbor.biome == static_cast<std::uint8_t>(Biome::Ocean)) {
-                        pool = false;
-                        break;
-                    }
-                    const auto voxel = worldA.sample_voxel(
-                        x + ox, y + oy, neighbor.height);
-                    assert(voxel.material == VoxelMaterial::Water);
-                    assert(voxel.liquid && !voxel.solid);
-                    assert(same_sample(neighbor,
-                        worldB.sample_surface(x + ox, y + oy)));
+            for (const auto& offset : offsets) {
+                const int wx = x + offset[0], wy = y + offset[1];
+                const auto sample = worldA.sample_surface(wx, wy);
+                if (sample.surface != 13 ||
+                    sample.biome == static_cast<std::uint8_t>(Biome::Ocean)) {
+                    pool = false;
+                    break;
                 }
+                const auto voxel = worldA.sample_voxel(wx, wy, sample.height);
+                assert(voxel.material == VoxelMaterial::Water);
+                assert(voxel.liquid && !voxel.solid);
+                assert(same_sample(sample, worldB.sample_surface(wx, wy)));
             }
             if (pool) foundLakePool = true;
         }
