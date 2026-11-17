@@ -990,6 +990,53 @@ void draw_surface_event_effects(){
   }
  }
 }
+void draw_surface_weather(){
+ // Weather is selected in deterministic 90-second windows from local climate.
+ // This is a screen-space pass for the current SDL renderer, not simulated fluid.
+ const Uint32 now=SDL_GetTicks();
+ const mineplus::PcgWorld climateWorld(worldSeed);
+ const auto climate=climateWorld.sample_surface(px-COLS/2,py-ROWS/2);
+ const unsigned window=now/90000u;
+ const unsigned roll=hash2(static_cast<int>(window),static_cast<int>(worldSeed));
+ const auto biome=static_cast<mineplus::Biome>(climate.biome);
+ enum class Weather{Clear,Rain,Snow,Ash};
+ Weather weather=Weather::Clear;
+ if(biome==mineplus::Biome::Volcanic){
+  if(roll%100u<62u)weather=Weather::Ash;
+ }else if(biome==mineplus::Biome::Tundra ||
+          (biome==mineplus::Biome::Highlands&&climate.temperature<105u)){
+  if(roll%100u<58u)weather=Weather::Snow;
+ }else if(biome==mineplus::Biome::Plains||biome==mineplus::Biome::Forest||
+          biome==mineplus::Biome::Highlands){
+  if(roll%100u<43u)weather=Weather::Rain;
+ }
+ if(weather==Weather::Rain){
+  for(unsigned i=0;i<76u;++i){
+   const unsigned seed=hash2(static_cast<int>(i*61u+window*17u),static_cast<int>(worldSeed>>3));
+   const int x=static_cast<int>((seed+now/3u*(2u+i%3u))%static_cast<unsigned>(W));
+   const int y=static_cast<int>((hash2(static_cast<int>(seed>>2),static_cast<int>(i*13u))+now/2u*(3u+i%2u))%static_cast<unsigned>(H-70));
+   color(116,165,190,static_cast<Uint8>(55u+seed%75u));
+   SDL_RenderDrawLine(renderer,x,y,x-3,y+9+static_cast<int>(seed%7u));
+  }
+  if((now/11000u)%13u==static_cast<Uint32>(roll%13u)&&now%11000u<75u)
+   rect(0,64,W,H-64,190,211,225,24);
+ }else if(weather==Weather::Snow){
+  for(unsigned i=0;i<42u;++i){
+   const unsigned seed=hash2(static_cast<int>(i*47u+window*29u),static_cast<int>(worldSeed>>5));
+   const int drift=static_cast<int>(std::sin(static_cast<double>(now)*0.0012+static_cast<double>(i))*5.0);
+   const int x=static_cast<int>((seed+now/18u*(1u+i%2u))%static_cast<unsigned>(W))+drift;
+   const int y=static_cast<int>((hash2(static_cast<int>(seed),static_cast<int>(i*19u))+now/12u*(1u+i%3u))%static_cast<unsigned>(H-72));
+   rect(x,y,1+(seed%4u==0u),1+(seed%5u==0u),205,220,226,static_cast<Uint8>(95u+seed%100u));
+  }
+ }else if(weather==Weather::Ash){
+  for(unsigned i=0;i<34u;++i){
+   const unsigned seed=hash2(static_cast<int>(i*83u+window*11u),static_cast<int>(worldSeed>>7));
+   const int x=static_cast<int>((seed+now/15u*(1u+i%2u))%static_cast<unsigned>(W));
+   const int y=static_cast<int>((hash2(static_cast<int>(seed>>1),static_cast<int>(i*23u))+now/9u*(1u+i%3u))%static_cast<unsigned>(H-72));
+   rect(x,y,2,2,static_cast<Uint8>(165u+seed%75u),static_cast<Uint8>(75u+seed%55u),48,static_cast<Uint8>(90u+seed%100u));
+  }
+ }
+}
 void draw_world(){
  // Perspective height-field renderer for the native PS4 build.
  // A complete day/night cycle drives sky palette, celestial bodies and material emission.
@@ -1174,6 +1221,7 @@ void draw_world(){
  if(primordialBoss.state!=mineplus::BossState::Defeated&&boss_visible_from_player()){const float dx=float(BOSS_X-px),dy=float(BOSS_Y-py),forward=dx*dirX+dy*dirY,side=dx*rightX+dy*rightY;if(forward>0.7f&&forward<28.0f){const int sx=int(W*0.5f+(side/forward)*focal/fov),size=int(1050.0f/forward),sy=int(horizon+focal*0.72f/forward-size*0.78f);if(sx>12&&sx<W-12&&size>5){const int pulse=int((std::sin(float(SDL_GetTicks())*0.004f)+1.0f)*18.0f);const bool struck=SDL_GetTicks()-lastBossHitAt<180u;const int body= struck?130:53;rect(sx-size/3,sy+size/2,size*2/3,size/2,25,19,34);rect(sx-size/2,sy+size/5,size,size/2,body,43,67);rect(sx-size/3,sy-size/4,size*2/3,size/2,struck?185:74,60,89);rect(sx-size/2,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx+size/2-size/7,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx-size/5,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);rect(sx+size/10,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);}}}
  // Event-specific weather and ambience overlays sit behind the first-person tools and HUD.
  draw_surface_event_effects();
+  draw_surface_weather();
  // First-person blocky arms and tool silhouette.
  rect(W/2+115,H-158,75,180,91,65,49);rect(W/2+125,H-166,58,28,155,119,82);
  rect(W/2+164,H-190,12,95,151,159,163);rect(W/2+132,H-198,75,13,181,190,190);
