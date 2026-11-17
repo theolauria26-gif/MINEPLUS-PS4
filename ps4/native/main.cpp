@@ -83,6 +83,8 @@ void draw_text(const char*s,int x,int y,int scale,Uint8 r=230,Uint8 g=240,Uint8 
 void build_boss_arena(){
  for(int oy=-8;oy<=8;++oy)for(int ox=-8;ox<=8;++ox){const int d=ox*ox+oy*oy,x=BOSS_X+ox,y=BOSS_Y+oy;if(d>64||x<2||y<2||x>=COLS-2||y>=ROWS-2)continue;if(d>=49){if(!(ox==-7&&oy==0))world[y*COLS+x]=DarkStone;}else if(d<=4)world[y*COLS+x]=(d==0)?AncientRune:ObsidianCore;else if((ox==0||oy==0)&&d<49)world[y*COLS+x]=AncientRune;else world[y*COLS+x]=Moss;}
  world[BOSS_Y*COLS+BOSS_X]=AncientRune;
+ // Guarantee a traversable causeway from the spawn clearing to the arena gate.
+ for(int x=COLS/2;x<=BOSS_X-7;++x)world[BOSS_Y*COLS+x]=AncientRune;
 }
 void init_world(){
  // PS4-native PCG sampling. Every coordinate is reproducible from one seed;
