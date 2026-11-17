@@ -429,7 +429,7 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
 }
 bool solid_tile(int t){return t==DarkStone||t==Stone||t==Wood||t==Bone||t==Crystal||t==IronOre||t==Obsidian||t==Rune;}
 bool creature_occupies(int x,int y,const Creature*skip=nullptr){for(const auto &m:creatures)if(&m!=skip&&m.hp>0&&m.x==x&&m.y==y)return true;return false;}
-void move_player(int dx,int dy){if(!dx&&!dy)return;int nx=std::clamp(px+dx,1,COLS-2),ny=std::clamp(py+dy,1,ROWS-2);if(solid_tile(tile_at(nx,ny)))return;px=nx;py=ny;faceX=dx;faceY=dy;}
+void move_player(int dx,int dy){if(!dx&&!dy)return;int nx=std::clamp(px+dx,1,COLS-2),ny=std::clamp(py+dy,1,ROWS-2);if((nx==BOSS_X&&ny==BOSS_Y)||solid_tile(tile_at(nx,ny)))return;px=nx;py=ny;faceX=dx;faceY=dy;}
 // Inventory counts are persisted as signed integers; cap every reward at the
 // same limit enforced by save loading and crafting to prevent overflow.
 void add_stock(int item,int amount=1){
@@ -465,6 +465,7 @@ void update_primordial_boss(){
  const auto event=mineplus::BossCombatDirector::update(primordialBoss,now);
  if(event==mineplus::BossEvent::AttackResolved){const auto attack=mineplus::BossCombatDirector::attack_profile(primordialBoss.pending_attack,primordialBoss.phase);const int dx=abs(BOSS_X-px),dy=abs(BOSS_Y-py),range=dx+dy;bool hit=false;
   if(attack.attack==mineplus::BossAttack::GroundSlam)hit=range<=attack.area_radius;else if(attack.attack==mineplus::BossAttack::RuneVolley)hit=range<=attack.range&&(dx==0||dy==0);else if(attack.attack==mineplus::BossAttack::RiftCharge)hit=range<=attack.range+attack.area_radius;
+  hit=mineplus::BossCombatDirector::attack_hits_player(attack,static_cast<std::uint16_t>(dx),static_cast<std::uint16_t>(dy));
   if(hit){const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);const int incoming=mineplus::EquipmentCatalog::mitigate_damage(attack.damage,stats,true);playerHealth=std::max(0,playerHealth-incoming);for(std::size_t slot=1;slot<equipmentState.equipped.size();++slot)mineplus::EquipmentCatalog::wear(equipmentState,static_cast<mineplus::EquipmentSlot>(slot),1);}
  }
  if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);save_world(false);return;}
