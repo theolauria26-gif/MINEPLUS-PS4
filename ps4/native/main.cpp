@@ -396,6 +396,19 @@ void init_world(){
    const int x=centerX+ox,y=centerY+oy;
    world[y*COLS+x]=((ox+oy)&3)==0?Moss:Grass;
   }
+  // A compact walkable village green connects the five entrances. Four
+  // planted beds break up the empty square without adding blocking props.
+  for(int offset=-5;offset<=5;++offset){
+   world[centerY*COLS+centerX+offset]=Sand;
+   world[(centerY+offset)*COLS+centerX]=Sand;
+  }
+  for(int bedY : {-5,5})for(int bedX : {-5,5}){
+   for(int oy=-1;oy<=1;++oy)for(int ox=-1;ox<=1;++ox){
+    const int gx=centerX+bedX+ox,gy=centerY+bedY+oy;
+    if(gx<2||gy<2||gx>=COLS-2||gy>=ROWS-2)continue;
+    world[gy*COLS+gx]=(ox==0&&oy==0)?Moss:Leaves;
+   }
+  }
   for(std::uint8_t i=0;i<5u;++i){
    mineplus::SettlementBuilding building{};
    if(!mineplus::surface_settlement_building(settlement,i,building))continue;
