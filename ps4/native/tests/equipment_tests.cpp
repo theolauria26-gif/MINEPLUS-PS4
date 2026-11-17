@@ -75,5 +75,5 @@ int main(){
  assert(EquipmentCatalog::mitigate_damage(5,armor,true)==1);
  assert(EquipmentCatalog::mitigate_damage(1,armor,true)==1);
  assert(EquipmentCatalog::mitigate_damage(0,armor,true)==0);
- std::cout<<"Equipment catalog tests passed\\n";
+ std::cout<<"Equipment catalog tests passed\n";
 }
