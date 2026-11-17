@@ -1,6 +1,7 @@
 #include "surface_settlements.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 
 namespace mineplus {
 namespace {
@@ -30,9 +31,12 @@ bool surface_settlement_for_cell(const PcgWorld& world,
                                  std::int32_t cell_x,
                                  std::int32_t cell_y,
                                  SurfaceSettlement& out) {
+    constexpr std::int32_t CELL=320;
+    constexpr std::int32_t LIMIT=std::numeric_limits<std::int32_t>::max()/CELL-1;
+    if(cell_x < -LIMIT || cell_x > LIMIT ||
+       cell_y < -LIMIT || cell_y > LIMIT) return false;
     const std::uint32_t seed=mix(cell_x,cell_y,0x51E771Eu);
     if(seed%7u!=0u) return false;
-    constexpr std::int32_t CELL=320;
     const std::int32_t x=cell_x*CELL+32+
         static_cast<std::int32_t>((seed>>8)%256u);
     const std::int32_t y=cell_y*CELL+32+
