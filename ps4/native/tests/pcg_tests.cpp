@@ -137,6 +137,28 @@ int main() {
     assert(highlandColumns > 0);
     assert(highestSurface - lowestSurface >= 20);
 
+    // The central continent transitions into warm sandy beaches before
+    // the ocean shelf; coastline samples remain deterministic across seeds.
+    bool foundCoastalBeach = false;
+    for (int y = -5200; y <= 5200; y += 24) {
+        for (int x = -5200; x <= 5200; x += 24) {
+            const float distance = std::sqrt(float(x) * float(x) +
+                                             float(y) * float(y));
+            if (distance < 4550.0f || distance > 5000.0f) continue;
+            const auto a = worldA.sample_surface(x, y);
+            const auto b = worldB.sample_surface(x, y);
+            assert(same_sample(a, b));
+            if (a.surface == 9 &&
+                a.biome != static_cast<std::uint8_t>(Biome::Desert) &&
+                a.biome != static_cast<std::uint8_t>(Biome::Ocean)) {
+                foundCoastalBeach = true;
+                const auto sand = worldA.sample_voxel(x, y, a.height);
+                assert(sand.material == VoxelMaterial::Sand && sand.solid);
+            }
+        }
+    }
+    assert(foundCoastalBeach);
+
     // 3D voxel queries are deterministic and bounded to the world height.
     for (const auto& p : coords) {
         const auto column = worldA.sample_surface(p[0], p[1]);
