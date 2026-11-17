@@ -380,7 +380,7 @@ void init_world(){
    if(resident<5u){mineplus::SettlementBuilding building{};if(!mineplus::surface_settlement_building(settlement,resident,building))continue;hx+=building.offset_x;hy+=building.offset_y+building.half_extent+1;role=building.role;}
    else{hx+=resident==5u?3:-3;hy+=resident==5u?-3:3;}
    const auto ground=tile_at(hx,hy);
-   if(hx<2||hy<2||hx>=COLS-2||hy>=ROWS-2||solid_tile(ground)||ground==Water||ground==Lava)continue;
+   if(hx<2||hy<2||hx>=COLS-2||hy>=ROWS-2||ground==DarkStone||ground==Stone||ground==Wood||ground==Bone||ground==Crystal||ground==IronOre||ground==Obsidian||ground==Rune||ground==Water||ground==Lava)continue;
    mineplus::SettlementNpc npc{};npc.x=hx;npc.y=hy;npc.home_x=hx;npc.home_y=hy;
    npc.seed=hash2(settlement.x+int(resident)*97,settlement.y-int(resident)*53);
    npc.role=role;npc.dialogue_stage=0;settlementNpcs[settlementNpcCount++]=npc;
