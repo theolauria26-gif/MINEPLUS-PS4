@@ -428,7 +428,7 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
  }
 }
 bool solid_tile(int t){return t==DarkStone||t==Stone||t==Wood||t==Bone||t==Crystal||t==IronOre||t==Obsidian||t==Rune;}
-bool creature_occupies(int x,int y,const Creature*skip=nullptr){for(const auto &m:creatures)if(&m!=skip&&m.hp>0&&m.x==x&&m.y==y)return true;return false;}
+bool creature_occupies(int x,int y,const Creature*skip=nullptr){if(x==BOSS_X&&y==BOSS_Y&&primordialBoss.state!=mineplus::BossState::Defeated)return true;for(const auto &m:creatures)if(&m!=skip&&m.hp>0&&m.x==x&&m.y==y)return true;return false;}
 void move_player(int dx,int dy){if(!dx&&!dy)return;int nx=std::clamp(px+dx,1,COLS-2),ny=std::clamp(py+dy,1,ROWS-2);if((nx==BOSS_X&&ny==BOSS_Y)||solid_tile(tile_at(nx,ny)))return;px=nx;py=ny;faceX=dx;faceY=dy;}
 // Inventory counts are persisted as signed integers; cap every reward at the
 // same limit enforced by save loading and crafting to prevent overflow.
