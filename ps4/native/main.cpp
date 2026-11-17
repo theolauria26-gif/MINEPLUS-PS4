@@ -95,6 +95,9 @@ void init_world(){
   const int wx=x-COLS/2, wy=y-ROWS/2;
   const auto sample=pcg.sample_surface(wx,wy);
   unsigned char tile=sample.surface;
+  // Trees form clustered groves with open clearings instead of uniform noise.
+  if((tile==Grass||tile==Moss)&&pcg.surface_tree_at(wx,wy,sample))
+   tile=Wood;
   const unsigned h=hash2(x,y);
   // Sparse resources are coordinate-hashed, so revisiting an area never rerolls it.
   if(tile==Stone && h%389u==0u) tile=IronOre;
