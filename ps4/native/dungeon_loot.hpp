@@ -22,6 +22,12 @@ struct DungeonLootDrop {
     std::uint16_t count = 0;
 };
 
+struct DungeonChestState {
+    std::uint32_t room_id = 0;
+    bool opened = false;
+    std::vector<DungeonLootDrop> contents;
+};
+
 // Stable per world/room loot. Repeated generation for the same room never rerolls.
 class DungeonLootGenerator {
 public:
