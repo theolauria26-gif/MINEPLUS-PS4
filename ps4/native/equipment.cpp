@@ -124,7 +124,7 @@ EquipmentTotals EquipmentCatalog::calculate(const EquipmentLoadout& loadout){
 bool EquipmentCatalog::craft(EquipmentState& state,EquipmentId id,int* inventory,std::size_t n){
  const auto raw=static_cast<std::size_t>(id);
  const auto* d=definition(id);
- if(!d||raw>=state.owned.size()||state.owned[raw])return false;
+ if(!d||raw>=state.owned.size()||(state.owned[raw]&&state.durability[raw]>0))return false;
  if(!consume_recipe(id,inventory,n))return false;
  state.owned[raw]=1;
  state.durability[raw]=d->durability;
