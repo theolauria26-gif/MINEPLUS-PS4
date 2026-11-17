@@ -32,6 +32,9 @@ std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> legacyWorldBuffer{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0,selectedEquipment=0;
 mineplus::EquipmentState equipmentState{};
 mineplus::BossEncounter primordialBoss{};
+mineplus::BossAttack lastBossAttack=mineplus::BossAttack::None;
+Uint32 lastBossAttackAt=0;
+bool lastBossAttackHitPlayer=false;
 constexpr int BOSS_X=COLS/2+16,BOSS_Y=ROWS/2;
 bool equipmentPage=false;
 std::uint64_t worldSeed=4839201ULL;
@@ -464,7 +467,7 @@ void update_primordial_boss(){
  const Uint32 now=SDL_GetTicks();const int distance=abs(BOSS_X-px)+abs(BOSS_Y-py);
  if(primordialBoss.state==mineplus::BossState::Dormant&&distance>9)return;
  const auto event=mineplus::BossCombatDirector::update(primordialBoss,now);
- if(event==mineplus::BossEvent::AttackResolved){const auto attack=mineplus::BossCombatDirector::attack_profile(primordialBoss.pending_attack,primordialBoss.phase);const int dx=abs(BOSS_X-px),dy=abs(BOSS_Y-py);const bool hit=mineplus::BossCombatDirector::attack_hits_player(attack,static_cast<std::uint16_t>(dx),static_cast<std::uint16_t>(dy));
+ if(event==mineplus::BossEvent::AttackResolved){const auto attack=mineplus::BossCombatDirector::attack_profile(primordialBoss.pending_attack,primordialBoss.phase);const int dx=abs(BOSS_X-px),dy=abs(BOSS_Y-py);const bool hit=mineplus::BossCombatDirector::attack_hits_player(attack,static_cast<std::uint16_t>(dx),static_cast<std::uint16_t>(dy));lastBossAttack=attack.attack;lastBossAttackAt=now;lastBossAttackHitPlayer=hit;
   if(hit){const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);const int incoming=mineplus::EquipmentCatalog::mitigate_damage(attack.damage,stats,true);playerHealth=std::max(0,playerHealth-incoming);for(std::size_t slot=1;slot<equipmentState.equipped.size();++slot)mineplus::EquipmentCatalog::wear(equipmentState,static_cast<mineplus::EquipmentSlot>(slot),1);}
  }
  if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);save_world(false);return;}
@@ -780,6 +783,16 @@ void draw_world(){
  // First-person blocky arms and tool silhouette.
  rect(W/2+115,H-158,75,180,91,65,49);rect(W/2+125,H-166,58,28,155,119,82);
  rect(W/2+164,H-190,12,95,151,159,163);rect(W/2+132,H-198,75,13,181,190,190);
+ // Telegraph tint and attack-specific impact cues make boss timing readable.
+ const Uint32 now=SDL_GetTicks();
+ if(primordialBoss.state==mineplus::BossState::Telegraph)rect(0,64,W,H-64,135,24,35,24);
+ if(lastBossAttackAt&&now-lastBossAttackAt<260u){
+  if(lastBossAttackHitPlayer)rect(0,64,W,H-64,185,24,32,58);
+  const int center=W/2,base=H*2/3;
+  if(lastBossAttack==mineplus::BossAttack::GroundSlam){color(245,104,78,220);for(int k=0;k<4;++k)SDL_RenderDrawLine(renderer,center-110-k*14,base+k*8,center+110+k*14,base+k*8);}
+  else if(lastBossAttack==mineplus::BossAttack::RuneVolley){color(128,220,235,230);for(int k=-2;k<=2;++k)SDL_RenderDrawLine(renderer,center+k*18,base-70,center+k*18,base+55);}
+  else if(lastBossAttack==mineplus::BossAttack::RiftCharge){color(205,112,235,230);SDL_RenderDrawLine(renderer,center-145,base+55,center+145,base-65);SDL_RenderDrawLine(renderer,center-120,base+75,center+170,base-45);}
+ }
  // Crosshair and weapon-art impact flash.
  color(225,232,222);SDL_RenderDrawLine(renderer,W/2-9,H/2,W/2+9,H/2);SDL_RenderDrawLine(renderer,W/2,H/2-9,W/2,H/2+9);
  if(SDL_GetTicks()<weaponArtFlashUntil){color(120,235,210,220);SDL_RenderDrawLine(renderer,W/2-28,H/2+22,W/2+28,H/2-22);SDL_RenderDrawLine(renderer,W/2-20,H/2+28,W/2+20,H/2-28);}
