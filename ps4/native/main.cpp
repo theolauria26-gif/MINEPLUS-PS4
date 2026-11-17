@@ -187,6 +187,46 @@ void init_world(){
    if(tile!=Air)world[ly*COLS+lx]=tile;
   }
  }
+ // Connect nearby landmarks with coordinate-stable dirt roads. Links are
+ // chosen by the PCG world, drawn once at generation time and never rerolled.
+ for(int cy=-13;cy<=13;++cy)for(int cx=-13;cx<=13;++cx){
+  mineplus::StructureAnchor from{},to{};
+  if(!pcg.surface_road_link_for_cell(cx,cy,from,to))continue;
+  if(to.y<from.y||(to.y==from.y&&to.x<from.x))continue;
+  const int vx=to.x-from.x,vy=to.y-from.y;
+  const float length=std::sqrt(float(vx*vx+vy*vy));
+  if(length<=float(from.radius+to.radius+4))continue;
+  const int sx=from.x+static_cast<int>(std::lround(vx/length*(from.radius+2)));
+  const int sy=from.y+static_cast<int>(std::lround(vy/length*(from.radius+2)));
+  const int ex=to.x-static_cast<int>(std::lround(vx/length*(to.radius+2)));
+  const int ey=to.y-static_cast<int>(std::lround(vy/length*(to.radius+2)));
+  int x0=sx+COLS/2,y0=sy+ROWS/2,x1=ex+COLS/2,y1=ey+ROWS/2;
+  if(x0<2||x0>=COLS-2||y0<2||y0>=ROWS-2||
+     x1<2||x1>=COLS-2||y1<2||y1>=ROWS-2)continue;
+  // Do not carve roads through lakes or lava fields; those remain natural barriers.
+  int ax=std::abs(x1-x0),ay=std::abs(y1-y0),stepX=x0<x1?1:-1,stepY=y0<y1?1:-1;
+  int error=ax-ay,tx=x0,ty=y0;bool blocked=false;
+  for(;;){
+   const auto ground=tile_at(tx,ty);
+   if(ground==Water||ground==Lava){blocked=true;break;}
+   if(tx==x1&&ty==y1)break;
+   const int twice=2*error;
+   if(twice>-ay){error-=ay;tx+=stepX;}
+   if(twice<ax){error+=ax;ty+=stepY;}
+  }
+  if(blocked)continue;
+  ax=std::abs(x1-x0);ay=std::abs(y1-y0);error=ax-ay;tx=x0;ty=y0;
+  for(;;){
+   const auto ground=tile_at(tx,ty);
+   if(ground!=ChestClosed&&ground!=DarkStone&&ground!=AncientRune&&
+      ground!=Crystal&&ground!=ObsidianCore&&ground!=Bone)
+    world[ty*COLS+tx]=Sand;
+   if(tx==x1&&ty==y1)break;
+   const int twice=2*error;
+   if(twice>-ay){error-=ay;tx+=stepX;}
+   if(twice<ax){error+=ax;ty+=stepY;}
+  }
+ }
  // Large ancient keeps, watchtowers, shrines and circular ruins.
  for(int cy=24;cy<ROWS-24;cy+=61)for(int cx=24;cx<COLS-24;cx+=73){
   unsigned seed=hash2(cx,cy);int w=9+(seed%13),h=8+(hash2(cy,cx)%11);
