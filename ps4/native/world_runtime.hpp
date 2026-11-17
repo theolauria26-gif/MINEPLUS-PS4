@@ -1,5 +1,6 @@
 #pragma once
 #include "chunk_cache.hpp"
+#include "dungeon_loot.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -38,12 +39,18 @@ public:
     std::size_t saved_edits() const;
     std::uint64_t seed() const;
 
+    // Persistent dungeon chest state keyed by stable dungeon room ID.
+    bool set_dungeon_chest(const DungeonChestState& chest);
+    bool get_dungeon_chest(std::uint32_t room_id, DungeonChestState& chest) const;
+    const std::vector<DungeonChestState>& dungeon_chests() const;
+
     // Portable, checksummed snapshot of the seed and player-made terrain edits.
     bool encode_save(std::vector<std::uint8_t>& bytes) const;
     bool decode_save(const std::uint8_t* bytes, std::size_t size);
 
 private:
     ChunkCache chunks_;
+    std::vector<DungeonChestState> dungeon_chests_;
 };
 
 } // namespace mineplus
