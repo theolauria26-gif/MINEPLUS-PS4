@@ -110,6 +110,27 @@ SurfaceSample PcgWorld::sample_surface(std::int32_t x,std::int32_t y) const {
 }
 
 
+bool PcgWorld::surface_tree_at(std::int32_t x, std::int32_t y,
+                               const SurfaceSample& column) const {
+    const Biome biome = static_cast<Biome>(column.biome);
+    if (column.surface == 9 || column.surface == 13 ||
+        biome == Biome::Ocean || biome == Biome::Desert ||
+        biome == Biome::Volcanic || biome == Biome::CrystalWastes)
+        return false;
+
+    // Low-frequency grove density creates broad wooded patches and clearings;
+    // a separate coordinate hash distributes individual trunks inside them.
+    const float grove = fbm(float(x) / 48.0f, float(y) / 48.0f,
+                            0x7AEE5101u, 2, 0.58f);
+    const std::uint32_t placement = hash(x, y, 0x7AEE5102u) % 100u;
+    if (biome == Biome::Forest)
+        return grove > -0.24f && placement < 24u;
+    if (biome == Biome::Plains && column.moisture >= 150u)
+        return grove > 0.28f && placement < 7u;
+    return false;
+}
+
+
 VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
                                     std::int32_t z) const {
     if (z < 0 || z >= WORLD_HEIGHT) return {};
