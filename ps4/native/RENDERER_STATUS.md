@@ -82,3 +82,10 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - The effects are deterministic in their spatial seeds and animated from the game clock; they allocate no per-frame particle objects and are drawn behind the first-person tool and HUD.
 - Wildlife billboards now include a separately animated head, species-dependent ears and tails, and retain their idle bob/leg swing. This improves readability but does not turn the billboard figures into rigged 3D models or skeletal animation.
 - This is a first visual pass toward the larger art/animation/atmosphere upgrade. It does not yet add imported texture assets, a texture atlas, full 3D meshes, GPU particles, dynamic lighting, shadows, water simulation, or a true voxel renderer.
+
+## Dynamic surface sky cycle
+
+- The current SDL height-field presentation now has a 480-second visual day/night cycle.
+- Sky colors transition through daylight and warmer dawn/dusk palettes; a celestial disc travels across the horizon and switches from sun to moon styling at night.
+- Horizon haze responds to the transition, while existing material emission remains animated.
+- This is a screen-space atmosphere pass for the current renderer, not a physically based sky, volumetric atmosphere, dynamic shadow system, or true 3D lighting solution.
