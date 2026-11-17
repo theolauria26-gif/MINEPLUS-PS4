@@ -43,6 +43,9 @@ public:
 
     std::uint64_t seed() const { return seed_; }
     SurfaceSample sample_surface(std::int32_t world_x, std::int32_t world_y) const;
+    // Deterministic tree placement follows biome and broad forest-grove density.
+    bool surface_tree_at(std::int32_t world_x, std::int32_t world_y,
+                         const SurfaceSample& column) const;
     // Consulta voxel 3D sem armazenar uma coluna densa; z cresce para cima.
     VoxelSample sample_voxel(std::int32_t world_x, std::int32_t world_y,
                              std::int32_t z) const;
