@@ -84,6 +84,24 @@ BossEvent BossCombatDirector::update(BossEncounter& boss, std::uint32_t now_ms,
     return BossEvent::None;
 }
 
+BossAttackProfile BossCombatDirector::attack_profile(BossAttack attack, std::uint8_t phase) {
+    const std::uint8_t safe_phase = std::clamp<std::uint8_t>(phase, 1, 3);
+    switch (attack) {
+    case BossAttack::GroundSlam:
+        return {attack, static_cast<std::uint16_t>(3u + safe_phase),
+                1u, static_cast<std::uint16_t>(1u + safe_phase)};
+    case BossAttack::RuneVolley:
+        return {attack, static_cast<std::uint16_t>(2u + safe_phase),
+                4u, 0u};
+    case BossAttack::RiftCharge:
+        return {attack, static_cast<std::uint16_t>(4u + safe_phase),
+                3u, 1u};
+    case BossAttack::None:
+    default:
+        return {};
+    }
+}
+
 bool BossCombatDirector::claim_reward(BossEncounter& boss) {
     if (boss.state != BossState::Defeated || boss.reward_claimed) return false;
     boss.reward_claimed = true;
