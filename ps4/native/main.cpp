@@ -995,8 +995,8 @@ void draw_world(){
  // A complete day/night cycle drives sky palette, celestial bodies and material emission.
  const Uint32 worldTicks=SDL_GetTicks();
  const float dayPhase=float(worldTicks%480000u)/480000.0f*6.2831853f;
- const float daylight=std::clamp(0.5f+0.5f*std::sin(dayPhase-1.5707963f),0.0f,1.0f);
- const float dawn=std::max(0.0f,1.0f-std::fabs(daylight-0.5f)*3.4f);
+ const float daylight=std::clamp(static_cast<float>(0.5+0.5*std::sin(static_cast<double>(dayPhase)-1.5707963)),0.0f,1.0f);
+ const float dawn=std::max(0.0f,static_cast<float>(1.0-std::fabs(static_cast<double>(daylight)-0.5)*3.4));
  const float glowPulse=0.92f+0.08f*std::sin(float(worldTicks)*0.004f);
  const int skyR=int(7+daylight*67+dawn*65),skyG=int(12+daylight*112+dawn*37),skyB=int(24+daylight*157+dawn*20);
  rect(0,0,W,H,skyR,skyG,skyB);
