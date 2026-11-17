@@ -372,6 +372,37 @@ bool PcgWorld::structure_anchor_for_cell(std::int32_t ax,std::int32_t ay,
     return true;
 }
 
+bool PcgWorld::surface_road_link_for_cell(std::int32_t cell_x,
+                                                   std::int32_t cell_y,
+                                                   StructureAnchor& from,
+                                                   StructureAnchor& to) const {
+    if (!structure_anchor_for_cell(cell_x, cell_y, from)) return false;
+    constexpr std::int64_t MAX_DISTANCE_SQUARED = 420LL * 420LL;
+    std::int64_t best_distance = MAX_DISTANCE_SQUARED + 1;
+    bool found = false;
+    for (std::int32_t oy = -4; oy <= 4; ++oy) {
+        for (std::int32_t ox = -4; ox <= 4; ++ox) {
+            if (ox == 0 && oy == 0) continue;
+            StructureAnchor candidate{};
+            if (!structure_anchor_for_cell(cell_x + ox, cell_y + oy, candidate))
+                continue;
+            const std::int64_t dx = std::int64_t(candidate.x) - from.x;
+            const std::int64_t dy = std::int64_t(candidate.y) - from.y;
+            const std::int64_t distance = dx * dx + dy * dy;
+            if (distance > MAX_DISTANCE_SQUARED) continue;
+            if (!found || distance < best_distance ||
+                (distance == best_distance &&
+                 (candidate.y < to.y ||
+                  (candidate.y == to.y && candidate.x < to.x)))) {
+                to = candidate;
+                best_distance = distance;
+                found = true;
+            }
+        }
+    }
+    return found;
+}
+
 bool PcgWorld::structure_at(std::int32_t x,std::int32_t y,StructureAnchor& out) const {
     // Query neighboring macro-cells because a structure can cross chunk borders.
     constexpr int CELL=96;
