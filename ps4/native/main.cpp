@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <cstdlib>
 #include <cmath>
 #include <cstdio>
@@ -633,7 +634,7 @@ void move_player(int dx,int dy){if(!dx&&!dy)return;int nx=std::clamp(px+dx,1,COL
 // same limit enforced by save loading and crafting to prevent overflow.
 void add_stock(int item,int amount=1){
  if(item<0||item>=static_cast<int>(stock.size())||amount<=0)return;
- if(item>=0&&item<=255)amount+=mineplus::surface_event_gather_bonus(currentSurfaceEvent.type,static_cast<std::uint8_t>(item));
+ if(item>=0&&item<=255&&amount<9999)amount=std::min(9999,amount+int(mineplus::surface_event_gather_bonus(currentSurfaceEvent.type,static_cast<std::uint8_t>(item))));
  stock[item]=std::clamp(stock[item],0,9999-std::min(amount,9999))+std::min(amount,9999);
  if(item>=0&&item<=255){bool questChanged=false;for(std::size_t i=0;i<surfaceQuestProgress.size();++i){const auto q=mineplus::surface_quest_definition(static_cast<std::uint8_t>(i));if(surfaceQuestProgress[i].state==static_cast<std::uint8_t>(mineplus::SurfaceQuestState::Active)&&q.item_id==item)questChanged=true;}mineplus::surface_quest_add_progress(surfaceQuestProgress,static_cast<std::uint8_t>(item),static_cast<std::uint16_t>(std::min(amount,65535)));if(questChanged)save_world(false);}
 }
