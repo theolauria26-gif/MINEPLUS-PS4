@@ -74,8 +74,9 @@ jobs:
             -o "$RUNNER_TEMP/mineplus-dungeon-voxel-builder-tests"
           "$RUNNER_TEMP/mineplus-dungeon-voxel-builder-tests"
           clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
-            ps4/native/pcg_world.cpp ps4/native/voxel_mesher.cpp \
-            ps4/native/procedural_voxel_chunk.cpp \
+            ps4/native/pcg_world.cpp ps4/native/chunk_generator.cpp ps4/native/chunk_cache.cpp \
+            ps4/native/save_codec.cpp ps4/native/world_runtime.cpp \
+            ps4/native/voxel_mesher.cpp ps4/native/procedural_voxel_chunk.cpp \
             ps4/native/tests/procedural_voxel_chunk_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-procedural-voxel-chunk-tests"
           "$RUNNER_TEMP/mineplus-procedural-voxel-chunk-tests"
