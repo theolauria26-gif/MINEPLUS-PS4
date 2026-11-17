@@ -333,7 +333,7 @@ bool load_world(){
   for(int i=0;i<9;i++)stock[i]=std::clamp(h.stock[i],0,9999);
   for(int i=0;i<13;i++)stock[i+9]=std::clamp(extraStock[i],0,9999);
    for(int i=0;i<9;i++)stock[i+22]=std::clamp(extraLoot[i],0,9999);
-  equipmentState=restoredEquipment;primordialBoss=restoredBoss;
+  equipmentState=restoredEquipment;primordialBoss=restoredBoss;primordialBoss.state_started_at=SDL_GetTicks();
   playerHealth=std::clamp(playerHealth,1,static_cast<int>(mineplus::EquipmentCatalog::calculate(equipmentState).max_health));
   return true;
 }
@@ -463,9 +463,7 @@ void update_primordial_boss(){
  const Uint32 now=SDL_GetTicks();const int distance=abs(BOSS_X-px)+abs(BOSS_Y-py);
  if(primordialBoss.state==mineplus::BossState::Dormant&&distance>9)return;
  const auto event=mineplus::BossCombatDirector::update(primordialBoss,now);
- if(event==mineplus::BossEvent::AttackResolved){const auto attack=mineplus::BossCombatDirector::attack_profile(primordialBoss.pending_attack,primordialBoss.phase);const int dx=abs(BOSS_X-px),dy=abs(BOSS_Y-py),range=dx+dy;bool hit=false;
-  if(attack.attack==mineplus::BossAttack::GroundSlam)hit=range<=attack.area_radius;else if(attack.attack==mineplus::BossAttack::RuneVolley)hit=range<=attack.range&&(dx==0||dy==0);else if(attack.attack==mineplus::BossAttack::RiftCharge)hit=range<=attack.range+attack.area_radius;
-  hit=mineplus::BossCombatDirector::attack_hits_player(attack,static_cast<std::uint16_t>(dx),static_cast<std::uint16_t>(dy));
+ if(event==mineplus::BossEvent::AttackResolved){const auto attack=mineplus::BossCombatDirector::attack_profile(primordialBoss.pending_attack,primordialBoss.phase);const int dx=abs(BOSS_X-px),dy=abs(BOSS_Y-py);const bool hit=mineplus::BossCombatDirector::attack_hits_player(attack,static_cast<std::uint16_t>(dx),static_cast<std::uint16_t>(dy));
   if(hit){const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);const int incoming=mineplus::EquipmentCatalog::mitigate_damage(attack.damage,stats,true);playerHealth=std::max(0,playerHealth-incoming);for(std::size_t slot=1;slot<equipmentState.equipped.size();++slot)mineplus::EquipmentCatalog::wear(equipmentState,static_cast<mineplus::EquipmentSlot>(slot),1);}
  }
  if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);save_world(false);return;}
