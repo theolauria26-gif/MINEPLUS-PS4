@@ -18,5 +18,16 @@ int main(){
  assert(negative.get(-1,-1,128)==0);
  assert(!ProceduralVoxelChunkBuilder::build(world,{INT32_MAX,0},negative));
  assert(!ProceduralVoxelChunkBuilder::build(world,{0,INT32_MIN},negative));
+ WorldRuntime runtime(0x4D504C5553ULL);
+ assert(runtime.set_voxel(4,5,40,VoxelMaterial::Crystal));
+ VoxelChunk edited;
+ assert(ProceduralVoxelChunkBuilder::build(runtime,{0,0},edited));
+ assert(edited.get(4,5,40)==static_cast<std::uint8_t>(VoxelMaterial::Crystal));
+ assert(runtime.set_voxel(4,5,40,VoxelMaterial::Air));
+ assert(ProceduralVoxelChunkBuilder::build(runtime,{0,0},edited));
+ assert(edited.get(4,5,40)==0);
+ const auto preserved=edited.cells;
+ assert(!ProceduralVoxelChunkBuilder::build(runtime,{INT32_MAX,0},edited));
+ assert(edited.cells==preserved);
  std::cout<<"MINEPLUS procedural voxel chunk tests: OK\n";
 }
