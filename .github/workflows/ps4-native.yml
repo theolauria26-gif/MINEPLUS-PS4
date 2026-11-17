@@ -121,6 +121,13 @@ jobs:
             ps4/native/tests/surface_settlements_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-surface-settlement-tests"
           "$RUNNER_TEMP/mineplus-surface-settlement-tests"
+      - name: Run surface NPC tests
+        run: |
+          set -euxo pipefail
+          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \\
+            ps4/native/surface_npcs.cpp ps4/native/tests/surface_npcs_tests.cpp \\
+            -o "$RUNNER_TEMP/mineplus-surface-npc-tests"
+          "$RUNNER_TEMP/mineplus-surface-npc-tests"
       - name: Run equipment progression tests
         run: |
           set -euxo pipefail
