@@ -102,6 +102,22 @@ BossAttackProfile BossCombatDirector::attack_profile(BossAttack attack, std::uin
     }
 }
 
+bool BossCombatDirector::attack_hits_player(const BossAttackProfile& profile,
+                                             std::uint16_t dx, std::uint16_t dy) {
+    const std::uint32_t distance = static_cast<std::uint32_t>(dx) + dy;
+    switch (profile.attack) {
+    case BossAttack::GroundSlam:
+        return distance <= profile.area_radius;
+    case BossAttack::RuneVolley:
+        return distance <= profile.range && (dx == 0 || dy == 0);
+    case BossAttack::RiftCharge:
+        return distance <= static_cast<std::uint32_t>(profile.range) + profile.area_radius;
+    case BossAttack::None:
+    default:
+        return false;
+    }
+}
+
 bool BossCombatDirector::claim_reward(BossEncounter& boss) {
     if (boss.state != BossState::Defeated || boss.reward_claimed) return false;
     boss.reward_claimed = true;
