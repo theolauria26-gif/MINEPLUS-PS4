@@ -637,14 +637,29 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     if((pattern%19u)==0u){r=static_cast<Uint8>(std::min(255,int(r)+35));g=static_cast<Uint8>(std::min(255,int(g)+38));b=static_cast<Uint8>(std::min(255,int(b)+24));}
     break;
    }
-   case Moss:
-    draw=(pattern%4u)==0u;r=111;g=151;b=76;break;
+   case Moss: {
+    // Damp forest moss carries tiny cool spore flecks and layered green patches.
+    const unsigned patch=(pattern>>6)&3u;
+    draw=(pattern%4u)==0u || (v==1u&&(pattern%9u)==0u);
+    r=static_cast<Uint8>(patch==0u?82u:patch==1u?103u:patch==2u?119u:137u);
+    g=static_cast<Uint8>(patch==0u?126u:patch==1u?148u:patch==2u?163u:176u);
+    b=static_cast<Uint8>(patch==0u?61u:patch==1u?69u:patch==2u?77u:83u);
+    if((pattern%29u)==0u){r=151;g=211;b=174;}
+    break;
+   }
    case Crystal: case ObsidianCore:
     draw=(pattern%3u)==0u;r= t==Crystal?190:145;g=t==Crystal?239:112;b=t==Crystal?246:207;break;
    case Bone:
     draw=(pattern%6u)==0u;r=222;g=206;b=164;break;
-   case Sand:
-    draw=(pattern%5u)==0u;r=224;g=191;b=125;break;
+   case Sand: {
+    // Fine grit and occasional darker pebbles break up long flat paths and beaches.
+    draw=(pattern%5u)==0u || (v==6u&&(pattern%11u)==0u);
+    r=static_cast<Uint8>((pattern%17u)==0u?143u:224u);
+    g=static_cast<Uint8>((pattern%17u)==0u?119u:191u);
+    b=static_cast<Uint8>((pattern%17u)==0u?82u:125u);
+    if((pattern%31u)==0u){r=239;g=214;b=158;}
+    break;
+   }
    case Snow: case Ice:
     draw=(pattern%5u)==0u;r=245;g=250;b=255;break;
    case Lava: case Ember: case EmberCatalyst:
