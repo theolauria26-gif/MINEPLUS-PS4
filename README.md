@@ -16,6 +16,12 @@ Cliente nativo de exploração e sobrevivência para PlayStation 4, escrito em C
 
 Não considere streaming infinito, prefabs 3D completos, animações esqueléticas ou compatibilidade Android como recursos concluídos nesta versão.
 
+## Protótipo Godot e persistência de mundos
+
+O projeto Godot é um protótipo separado do cliente C++ que gera o PKG de PS4. A persistência do protótipo agora usa `scripts/world_save.gd`, com formato versão 5 e leitura/migração dos saves anteriores (até a versão 4). O codec valida e limita quantidades, coordenadas, inventário e durabilidade; grava primeiro em arquivo temporário e mantém uma cópia `.bak` para recuperação se a gravação for interrompida ou o JSON principal ficar inválido.
+
+O workflow Godot executa o projeto em modo headless, instancia o mundo streamed e roda testes de round-trip, saneamento de dados, rejeição de versões futuras e recuperação do backup. Esses testes cobrem o protótipo Godot; não alteram nem substituem o codec de save do cliente nativo PS4.
+
 ## Build PS4
 
 O workflow [Build MINEPLUS PS4 PKG](.github/workflows/ps4-native.yml) baixa OpenOrbis v0.5.4, compila os testes portáveis, gera o EBOOT, cria o PKG e executa validações estruturais. O artefato `MINEPLUS-PS4-PKG` só é publicado se todas as etapas passarem.
@@ -52,7 +58,7 @@ O workflow executa testes C++ portáveis para:
 - runtime, edição de voxels, exportação/importação e checksum de saves;
 - adaptadores de mundo fixo e streamed.
 
-Os testes não substituem teste de desempenho, controles e instalação no hardware PS4.
+O workflow Godot também verifica a instanciação do mundo streamed e os testes do codec de save versão 5 em modo headless. Os testes não substituem teste de desempenho, controles e instalação no hardware PS4.
 
 ## Estrutura principal
 
@@ -76,9 +82,9 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 - Os testes portáveis verificam as quatro alas e a continuidade da geração. Isso ainda é geometria voxel procedural, não uma implementação final de renderização 3D, iluminação volumétrica, chefes ou decoração avançada.
 
 ## Último build automatizado
-- Em 16/11/2026, o workflow GitHub Actions **Build MINEPLUS PS4 PKG** concluiu com sucesso para o commit `2e52caf8`: testes portáveis de mundo, compilação do EBOOT/PKG e upload do artefato `MINEPLUS-PS4-PKG`.
-- O PKG gerado é um artefato de CI; ainda precisa ser instalado e testado em um PS4 compatível. Build verde não comprova estabilidade em hardware real.
-- Execução: https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/43958492489
+- Em 17/11/2026, o workflow GitHub Actions **Build MINEPLUS PS4 PKG** concluiu com sucesso para o commit nativo `3bf375cdbb`: testes portáveis, compilação do EBOOT/PKG e upload do artefato `MINEPLUS-PS4-PKG`.
+- Artefato de CI: 5.978.576 bytes, SHA-256 `f49ea6b8979f6f7ca590d71976da48145b3ede50a6c4a36aaad9a2aa05676722`. Ainda precisa ser instalado e testado em um PS4 compatível; build verde não comprova estabilidade em hardware real.
+- Execução: https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44154673906
 
 
 ## Direção visual: materiais pixel-art
