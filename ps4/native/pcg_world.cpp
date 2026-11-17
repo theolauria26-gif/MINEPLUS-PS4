@@ -149,6 +149,10 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
             // isolated floating blocks. Their macro-cell hash keeps clusters
             // stable across chunk boundaries and negative world coordinates.
             if (depth == 13) {
+                // Every chamber has one guaranteed, mineable seam on the
+                // central room's eastern floor edge.
+                if (dx == main_radius - 1 && dy == 0)
+                    return {VoxelMaterial::Crystal, true, false};
                 const std::int32_t vein_x = floor_div4(x);
                 const std::int32_t vein_y = floor_div4(y);
                 const std::uint32_t vein = hash(vein_x, vein_y, 0xC4A7E101u);
