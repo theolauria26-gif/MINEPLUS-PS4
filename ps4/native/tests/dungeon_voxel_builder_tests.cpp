@@ -83,6 +83,37 @@ int main() {
     invalid_layout.rooms[1].grid_x = 3;
     assert(!DungeonVoxelBuilder::build_layout_chunk(invalid_layout, settings, invalid_output));
 
+    DungeonRoom treasure;
+    treasure.id = 20; treasure.x = 18; treasure.y = 2;
+    treasure.width = 8; treasure.height = 8;
+    treasure.type = DungeonRoomType::Treasure;
+    DungeonVoxelSettings treasure_settings = settings;
+    treasure_settings.chunk_origin_x = 16;
+    VoxelChunk treasure_chunk;
+    assert(DungeonVoxelBuilder::build_room(treasure, treasure_settings, treasure_chunk));
+    assert(treasure_chunk.get(5, 6, 25) == 4); // chest body
+    assert(treasure_chunk.get(6, 6, 26) == 14); // iron latch
+
+    DungeonRoom puzzle = room;
+    puzzle.type = DungeonRoomType::Puzzle;
+    VoxelChunk puzzle_chunk;
+    assert(DungeonVoxelBuilder::build_room(puzzle, settings, puzzle_chunk));
+    assert(puzzle_chunk.get(8, 8, 25) == 17); // rune altar
+    assert(puzzle_chunk.get(8, 8, 26) == 6); // crystal focus
+
+    DungeonRoom exit_room = room;
+    exit_room.type = DungeonRoomType::Exit;
+    VoxelChunk exit_chunk;
+    assert(DungeonVoxelBuilder::build_room(exit_room, settings, exit_chunk));
+    assert(exit_chunk.get(7, 8, 25) == 8); // gate post
+    assert(exit_chunk.get(7, 8, 28) == 6); // crystal lintel
+
+    DungeonRoom combat = room;
+    combat.type = DungeonRoomType::Combat;
+    VoxelChunk combat_chunk;
+    assert(DungeonVoxelBuilder::build_room(combat, settings, combat_chunk));
+    assert(combat_chunk.get(6, 8, 25) == 7); // bone hazard marker
+
     DungeonVoxelSettings invalid = settings;
     invalid.floor_z = 127;
     VoxelChunk untouched;
