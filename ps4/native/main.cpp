@@ -1159,28 +1159,6 @@ void draw_world(){
   const int b=int(skyB+(53+daylight*105-skyB)*blend);
   rect(0,y,W,3,r,g,b);
  }
- // Moving voxel-style cloud banks add parallax and soften the horizon.
- // Their positions are seed-stable; only the wind offset changes over time.
- const Uint8 cloudAlpha=static_cast<Uint8>(28.0f+daylight*54.0f);
- for(unsigned i=0;i<22u;++i){
-  const unsigned cloudSeed=hash2(static_cast<int>(i*131u+47u),
-                                 static_cast<int>(worldSeed>>7));
-  const unsigned travel=worldTicks/95u*(1u+(i%3u));
-  const int cloudX=static_cast<int>((cloudSeed+travel)%
-      static_cast<unsigned>(W+360))-180;
-  const int cloudY=28+static_cast<int>((cloudSeed>>11)%178u);
-  const int cloudW=72+static_cast<int>((cloudSeed>>19)%126u);
-  const int cloudH=10+static_cast<int>((cloudSeed>>25)%17u);
-  const Uint8 cloudR=static_cast<Uint8>(daylight>0.55f?118:45);
-  const Uint8 cloudG=static_cast<Uint8>(daylight>0.55f?139:58);
-  const Uint8 cloudB=static_cast<Uint8>(daylight>0.55f?157:83);
-  rect(cloudX,cloudY,cloudW,cloudH,cloudR,cloudG,cloudB,cloudAlpha);
-  rect(cloudX+cloudW/5,cloudY-cloudH/2,cloudW/2,cloudH/2+2,
-       static_cast<Uint8>(cloudR+12u),static_cast<Uint8>(cloudG+12u),
-       static_cast<Uint8>(cloudB+12u),static_cast<Uint8>(cloudAlpha+12u));
-  rect(cloudX+cloudW/3,cloudY+cloudH-2,cloudW/2,3,
-       22,31,43,static_cast<Uint8>(cloudAlpha/2u));
- }
  // A deterministic star field fades in as the daylight falls.
  const float night=1.0f-daylight;
  for(unsigned i=0;i<72u;++i){
@@ -1209,6 +1187,28 @@ void draw_world(){
   if(sunVisible)color(255,218,151,bodyAlpha);
   else color(207,220,225,bodyAlpha);
   SDL_RenderDrawPoint(renderer,celestialX+xx,celestialY+yy);
+ }
+ // Moving voxel-style cloud banks add parallax and soften the horizon.
+ // Their positions are seed-stable; only the wind offset changes over time.
+ const Uint8 cloudAlpha=static_cast<Uint8>(28.0f+daylight*54.0f);
+ for(unsigned i=0;i<22u;++i){
+  const unsigned cloudSeed=hash2(static_cast<int>(i*131u+47u),
+                                 static_cast<int>(worldSeed>>7));
+  const unsigned travel=worldTicks/95u*(1u+(i%3u));
+  const int cloudX=static_cast<int>((cloudSeed+travel)%
+      static_cast<unsigned>(W+360))-180;
+  const int cloudY=28+static_cast<int>((cloudSeed>>11)%178u);
+  const int cloudW=72+static_cast<int>((cloudSeed>>19)%126u);
+  const int cloudH=10+static_cast<int>((cloudSeed>>25)%17u);
+  const Uint8 cloudR=static_cast<Uint8>(daylight>0.55f?118:45);
+  const Uint8 cloudG=static_cast<Uint8>(daylight>0.55f?139:58);
+  const Uint8 cloudB=static_cast<Uint8>(daylight>0.55f?157:83);
+  rect(cloudX,cloudY,cloudW,cloudH,cloudR,cloudG,cloudB,cloudAlpha);
+  rect(cloudX+cloudW/5,cloudY-cloudH/2,cloudW/2,cloudH/2+2,
+       static_cast<Uint8>(cloudR+12u),static_cast<Uint8>(cloudG+12u),
+       static_cast<Uint8>(cloudB+12u),static_cast<Uint8>(cloudAlpha+12u));
+  rect(cloudX+cloudW/3,cloudY+cloudH-2,cloudW/2,3,
+       22,31,43,static_cast<Uint8>(cloudAlpha/2u));
  }
  // Layered horizon haze becomes brighter at sunrise and sunset.
  for(int i=0;i<7;i++){
