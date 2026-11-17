@@ -55,3 +55,11 @@ The pinned OpenOrbis toolchain source tree was inspected directly:
 4. Retain SDL2 as the fallback and UI path. Do not link speculative GNM calls into the shipping game.
 
 This audit narrows the next task: the toolchain exposes low-level GNM draw/submit symbols, but a safe GPU renderer still needs a verified memory/command/shader/presentation foundation. A CI package alone cannot validate GPU execution on PS4 hardware.
+
+
+## Surface wildlife ecology
+
+- Surface wildlife now uses a standalone deterministic species catalog for the twelve existing creature IDs. The catalog gives each species a name, biome affinity, climate bounds and behavior role (grazer, skittish, predator or territorial).
+- Initial placement now asks the ecology catalog to select a species compatible with the sampled biome, moisture, temperature and land surface. Ocean, water and sandy shoreline cells are rejected; if no species fits the sampled climate, the bounded spawn attempt is retried.
+- Creature movement reads the catalog behavior role: grazers and skittish wildlife flee when approached, while predators and territorial species pursue. This reuses the existing simple tile-step movement; it is not advanced pathfinding, pack coordination, animation or a new rendered model.
+- Portable tests cover all twelve species IDs, biome/climate eligibility, invalid surfaces, deterministic selection and behavior roles.
