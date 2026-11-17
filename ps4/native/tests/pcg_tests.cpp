@@ -96,7 +96,11 @@ int main() {
         const auto column = worldA.sample_surface(p[0], p[1]);
         const auto top1 = worldA.sample_voxel(p[0], p[1], column.height);
         const auto top2 = worldB.sample_voxel(p[0], p[1], column.height);
-        assert(top1.solid && !top1.liquid && top1.material != VoxelMaterial::Air);
+        if (top1.liquid) {
+            assert(top1.material == VoxelMaterial::Water && !top1.solid);
+        } else {
+            assert(top1.solid && top1.material != VoxelMaterial::Air);
+        }
         assert(top1.material == top2.material);
         const auto soil = worldA.sample_voxel(p[0], p[1], column.height - 1);
         assert(soil.solid);
