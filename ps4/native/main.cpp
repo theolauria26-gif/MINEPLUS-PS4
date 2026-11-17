@@ -511,6 +511,8 @@ void draw_minimap(){
 }
 void draw_world(){
  // Perspective height-field renderer for the native PS4 build.
+ // One inexpensive frame-wide pulse drives emissive materials without per-ray trig.
+ const float glowPulse=0.92f+0.08f*std::sin(float(SDL_GetTicks())*0.004f);
  rect(0,0,W,H,8,13,22);
  for(int y=0;y<330;y+=3){Uint8 v=static_cast<Uint8>(13+y/28);rect(0,y,W,3,v,v+7,v+15);}
  // Moon, distant haze and layered atmospheric fog.
@@ -543,9 +545,20 @@ void draw_world(){
     if(t==Crystal)light=std::min(1.0f,light+0.16f);
     int strata=((wx+wy*3)%7==0)?9:0;
     int fleck=(tex%23==0)?22:0;
-    r=Uint8(std::clamp(int((int(r)+grain+strata+fleck)*light),0,255));
-    g=Uint8(std::clamp(int((int(g)+grain+strata+fleck)*light),0,255));
-    b=Uint8(std::clamp(int((int(b)+grain+strata+fleck)*light),0,255));
+    int rr=int((int(r)+grain+strata+fleck)*light);
+    int gg=int((int(g)+grain+strata+fleck)*light);
+    int bb=int((int(b)+grain+strata+fleck)*light);
+    // Localized material emission adds a readable glow to rare resources and hazards.
+    const int emission=int(glowPulse*(t==Lava?48:t==Ember||t==EmberCatalyst?35:
+                         t==Crystal||t==ObsidianCore?25:t==Rune||t==AncientRune?22:0));
+    if(emission>0){
+     if(t==Lava||t==Ember||t==EmberCatalyst){rr+=emission;gg+=emission/2;bb+=emission/7;}
+     else if(t==Crystal||t==ObsidianCore){rr+=emission/2;gg+=emission;bb+=emission;}
+     else{rr+=emission/3;gg+=emission;bb+=emission*3/4;}
+    }
+    r=Uint8(std::clamp(rr,0,255));
+    g=Uint8(std::clamp(gg,0,255));
+    b=Uint8(std::clamp(bb,0,255));
     color(r,g,b);SDL_RenderDrawLine(renderer,sx,sy,sx,lastY);
     // Hand-painted-inspired pixel motifs are generated from world coordinates,
     // so grain, mineral seams and foliage marks do not crawl while moving.
