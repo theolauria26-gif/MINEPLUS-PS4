@@ -310,7 +310,7 @@ bool load_world(){
   }
   world=restored;
   worldSeed=restoredSeed;
-  playerHealth=std::clamp(restoredHealth,1,10);lastDamage=0;damageCooldown=0;
+  playerHealth=std::max(1,restoredHealth);lastDamage=0;damageCooldown=0;
   px=std::clamp(legacy?h.x+COLS/2-LEGACY_COLS/2:h.x,1,COLS-2);
   py=std::clamp(legacy?h.y+ROWS/2-LEGACY_ROWS/2:h.y,1,ROWS-2);
   selected=std::clamp(h.selected,0,7);faceX=h.fx;faceY=h.fy;
@@ -440,6 +440,7 @@ void update_player_combat(){
    playerHealth=std::max(0,playerHealth-incoming);
    for(std::size_t slot=1;slot<equipmentState.equipped.size();++slot)
     mineplus::EquipmentCatalog::wear(equipmentState,static_cast<mineplus::EquipmentSlot>(slot),1);
+   save_world(false);
    lastDamage=now;damageCooldown=now+500;return;
   }
  }
