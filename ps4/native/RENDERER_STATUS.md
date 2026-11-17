@@ -8,6 +8,12 @@
 - The new stone/darkstone surface pattern uses staggered masonry joints; wood uses directional grain; obsidian and iron bars have dedicated highlights.
 - The CPU voxel pipeline (`VoxelMesher`, `VoxelMeshVertexBuilder`, and `ProceduralVoxelChunkBuilder`) is not yet submitted to a GPU draw path.
 
+## Overworld surface generation
+
+- The deterministic PCG surface sampler now carves meandering river channels through moist temperate land, with sandy banks that transition into plains, forests and highlands.
+- River fields use global coordinates and the world seed, so neighboring chunks and reloads reproduce the same channels. The biome identity remains intact for climate and later surface ecology.
+- Surface voxel sampling reports river water as liquid and river banks as solid sand. This is CPU world-generation data consumed by the current surface tile map; it is not a new GPU water renderer.
+
 ## Requirements before true voxel rendering
 
 1. Confirm the exact SDL2/OpenOrbis renderer capabilities and available GPU APIs in the pinned PS4 toolchain.
