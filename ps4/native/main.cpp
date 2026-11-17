@@ -325,9 +325,17 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     draw=(pattern%7u)==0u;r=190;g=132;b=83;
     if((pattern%11u)==0u){r=77;g=54;b=43;}break;
    case Stone: case DarkStone:
-    draw=(v==3u&&(pattern%3u)!=0u);r= t==Stone?151:91;g=t==Stone?154:91;b=t==Stone?158:108;break;
+    // Broken masonry: staggered horizontal joints with occasional vertical seams.
+    draw=(v==3u&&(pattern%3u)!=0u)||
+         (v==7u&&((cellX+(cellY&1u))%4u==0u));
+    r=t==Stone?151:91;g=t==Stone?154:91;b=t==Stone?158:108;
+    if(v==3u){r=t==Stone?76:34;g=t==Stone?82:37;b=t==Stone?91:49;}
+    break;
    case Wood:
-    draw=(cellX%3u==0u&&(pattern%2u)==0u);r=174;g=119;b=69;break;
+    // Long grain streaks follow the trunk instead of random stone-like speckles.
+    draw=(cellX%3u==0u&&(pattern%2u)==0u)||
+         (cellX==4u&&(v%3u==0u));
+    r=174;g=119;b=69;break;
    case Moss:
     draw=(pattern%4u)==0u;r=111;g=151;b=76;break;
    case Crystal: case ObsidianCore:
@@ -344,6 +352,12 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     draw=(v%3u==0u&&(pattern%3u)==0u);r=103;g=177;b=204;break;
    case IronOre:
     draw=(pattern%4u)==0u;r=207;g=164;b=111;break;
+   case Obsidian:
+    draw=(pattern%4u)==0u||(v==2u&&cellX==3u);
+    r=132;g=112;b=177;break;
+   case IronBar:
+    draw=(v%3u==0u&&(pattern%2u)==0u);
+    r=231;g=239;b=240;break;
    case Rune: case AncientRune:
     draw=(pattern%3u)==0u;r=168;g=255;b=216;break;
    default: break;
