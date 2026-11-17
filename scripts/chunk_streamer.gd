@@ -65,17 +65,20 @@ func _process(_delta: float) -> void:
 func _chunk_of_world(position: Vector3) -> Vector2i:
 	return Vector2i(floori(position.x / CHUNK_SIZE), floori(position.z / CHUNK_SIZE))
 
-func _height(x: int, z: int) -> int:
+func _sample_world(x: int, z: int) -> Array:
+	var sample: Array = generator.surface_at(x, z)
 	var key := "%d,%d" % [x, z]
 	if terrain_edits.has(key):
-		return int(terrain_edits[key].height)
-	return int(generator.surface_at(x, z)[0])
+		var edit: Dictionary = terrain_edits[key]
+		sample[0] = int(edit.height)
+		sample[1] = int(edit.type)
+	return sample
+
+func _height(x: int, z: int) -> int:
+	return int(_sample_world(x, z)[0])
 
 func _block_type(x: int, z: int) -> int:
-	var key := "%d,%d" % [x, z]
-	if terrain_edits.has(key):
-		return int(terrain_edits[key].type)
-	return int(generator.surface_at(x, z)[1])
+	return int(_sample_world(x, z)[1])
 
 func _biome_color(biome: int, block_type: int) -> Color:
 	match block_type:
@@ -103,11 +106,23 @@ func _build_chunk(key: Vector2i) -> void:
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var start_x := key.x * CHUNK_SIZE
 	var start_z := key.y * CHUNK_SIZE
-	for z in range(start_z, start_z + CHUNK_SIZE):
-		for x in range(start_x, start_x + CHUNK_SIZE):
-			var sample: Array = generator.surface_at(x, z)
-			var y := _height(x, z)
-			var block_type := _block_type(x, z)
+
+	# Sample the chunk plus a one-cell halo once. The old path sampled each
+	# center cell and its four neighbors independently (up to 5x noise work).
+	var sample_grid: Array = []
+	for local_z in range(-1, CHUNK_SIZE + 1):
+		var row: Array = []
+		for local_x in range(-1, CHUNK_SIZE + 1):
+			row.append(_sample_world(start_x + local_x, start_z + local_z))
+		sample_grid.append(row)
+
+	for local_z in range(CHUNK_SIZE):
+		for local_x in range(CHUNK_SIZE):
+			var x := start_x + local_x
+			var z := start_z + local_z
+			var sample: Array = sample_grid[local_z + 1][local_x + 1]
+			var y := int(sample[0])
+			var block_type := int(sample[1])
 			var color := _biome_color(int(sample[2]), block_type)
 			var x0 := float(x) - 0.5
 			var x1 := float(x) + 0.5
@@ -115,18 +130,22 @@ func _build_chunk(key: Vector2i) -> void:
 			var z1 := float(z) + 0.5
 			var top := float(y) + 0.5
 			_add_quad(st, Vector3(x0, top, z0), Vector3(x0, top, z1), Vector3(x1, top, z1), Vector3(x1, top, z0), color)
-			var west := _height(x - 1, z)
-			var east := _height(x + 1, z)
-			var north := _height(x, z - 1)
-			var south := _height(x, z + 1)
-			if west < y:
-				_add_quad(st, Vector3(x0, float(west) + 0.5, z0), Vector3(x0, float(west) + 0.5, z1), Vector3(x0, top, z1), Vector3(x0, top, z0), color.darkened(0.18))
-			if east < y:
-				_add_quad(st, Vector3(x1, float(east) + 0.5, z1), Vector3(x1, float(east) + 0.5, z0), Vector3(x1, top, z0), Vector3(x1, top, z1), color.darkened(0.18))
-			if north < y:
-				_add_quad(st, Vector3(x1, float(north) + 0.5, z0), Vector3(x0, float(north) + 0.5, z0), Vector3(x0, top, z0), Vector3(x1, top, z0), color.darkened(0.28))
-			if south < y:
-				_add_quad(st, Vector3(x0, float(south) + 0.5, z1), Vector3(x1, float(south) + 0.5, z1), Vector3(x1, top, z1), Vector3(x0, top, z1), color.darkened(0.28))
+			var west: Array = sample_grid[local_z + 1][local_x]
+			var east: Array = sample_grid[local_z + 1][local_x + 2]
+			var north: Array = sample_grid[local_z][local_x + 1]
+			var south: Array = sample_grid[local_z + 2][local_x + 1]
+			var west_height := int(west[0])
+			var east_height := int(east[0])
+			var north_height := int(north[0])
+			var south_height := int(south[0])
+			if west_height < y:
+				_add_quad(st, Vector3(x0, float(west_height) + 0.5, z0), Vector3(x0, float(west_height) + 0.5, z1), Vector3(x0, top, z1), Vector3(x0, top, z0), color.darkened(0.18))
+			if east_height < y:
+				_add_quad(st, Vector3(x1, float(east_height) + 0.5, z1), Vector3(x1, float(east_height) + 0.5, z0), Vector3(x1, top, z0), Vector3(x1, top, z1), color.darkened(0.18))
+			if north_height < y:
+				_add_quad(st, Vector3(x1, float(north_height) + 0.5, z0), Vector3(x0, float(north_height) + 0.5, z0), Vector3(x0, top, z0), Vector3(x1, top, z0), color.darkened(0.28))
+			if south_height < y:
+				_add_quad(st, Vector3(x0, float(south_height) + 0.5, z1), Vector3(x1, float(south_height) + 0.5, z1), Vector3(x1, top, z1), Vector3(x0, top, z1), color.darkened(0.28))
 	var mesh := st.commit()
 	if mesh == null or mesh.get_surface_count() == 0:
 		return
