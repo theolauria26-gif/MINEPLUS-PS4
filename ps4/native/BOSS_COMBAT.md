@@ -12,9 +12,17 @@ The portable boss combat director provides a deterministic, testable encounter s
 - A reward can be claimed exactly once after defeat.
 - Timer comparisons use unsigned elapsed-time subtraction, safe across the 32-bit millisecond counter wrap.
 
-## Integration status
+## Gameplay integration
 
-This module is currently a portable combat director and is not yet connected to a visible boss entity, arena trigger, animation, hitbox, or save-game progression in the SDL2 gameplay. The next integration step must connect its events to boss movement/attacks, player damage and persistent dungeon completion. Do not treat this module alone as an in-game boss encounter.
+The Primordial Guardian now occupies a deterministic dark-stone arena 16 tiles east of the starting clearing. Approaching within 9 Manhattan tiles activates its encounter. The SDL2 renderer draws a towering runic silhouette and a boss health bar; this is a projected 2D sprite treatment, not a GPU voxel model.
+
+- Normal melee and weapon arts damage the Guardian when the player faces its arena center.
+- Ground Slam resolves against its phase-scaled area radius, Rune Volley checks a straight line and range, and Rift Charge checks its phase-scaled reach.
+- Telegraphs appear in the HUD. Resolved attacks apply elemental damage through equipped armor mitigation and durability.
+- Defeat grants one Boss Sigil, three Ancient Relics and two Ember Cores. The reward-claimed flag prevents duplicate payout.
+- Save format v11 persists boss health, phase, attack cycle, telegraph/recovery timing, pending attack and reward state. Versions 1–10 load a fresh dormant encounter; the arena is rebuilt after loading legacy worlds.
+
+The encounter is integrated into SDL2 gameplay and saves, but it still has no skeletal animation, GPU mesh, simulated projectile objects or dedicated boss audio.
 
 ## Tests
 
@@ -30,4 +38,4 @@ Each attack exposes a phase-scaled damage and targeting profile for the gameplay
 | Rune Volley | 3 / 4 / 5 | 4 tiles | Single-target line |
 | Rift Charge | 5 / 6 / 7 | 3 tiles | 1 tile |
 
-The director exposes these values as data; the actual collision, projectile visuals and player-hit application still belong to the gameplay integration layer.
+The gameplay layer resolves these profiles against the player's tile position. Projectiles and boss motion are still represented by range/area checks rather than simulated projectile objects.
