@@ -241,12 +241,16 @@ void init_world(){
   int x0=sx+COLS/2,y0=sy+ROWS/2,x1=ex+COLS/2,y1=ey+ROWS/2;
   if(x0<2||x0>=COLS-2||y0<2||y0>=ROWS-2||
      x1<2||x1>=COLS-2||y1<2||y1>=ROWS-2)continue;
-  // Do not carve roads through lakes or lava fields; those remain natural barriers.
+  // Roads may cross a narrow river at a shallow ford/causeway, but never
+  // cut through lakes, broad channels or lava fields.
   int ax=std::abs(x1-x0),ay=std::abs(y1-y0),stepX=x0<x1?1:-1,stepY=y0<y1?1:-1;
-  int error=ax-ay,tx=x0,ty=y0;bool blocked=false;
+  int error=ax-ay,tx=x0,ty=y0,waterRun=0,maxWaterRun=0;bool blocked=false;
   for(;;){
    const auto ground=tile_at(tx,ty);
-   if(ground==Water||ground==Lava){blocked=true;break;}
+   if(ground==Lava){blocked=true;break;}
+   if(ground==Water){++waterRun;maxWaterRun=std::max(maxWaterRun,waterRun);}
+   else waterRun=0;
+   if(maxWaterRun>5){blocked=true;break;}
    if(tx==x1&&ty==y1)break;
    const int twice=2*error;
    if(twice>-ay){error-=ay;tx+=stepX;}
@@ -256,7 +260,10 @@ void init_world(){
   ax=std::abs(x1-x0);ay=std::abs(y1-y0);error=ax-ay;tx=x0;ty=y0;
   for(;;){
    const auto ground=tile_at(tx,ty);
-   if(ground!=ChestClosed&&ground!=DarkStone&&ground!=AncientRune&&
+   if(ground==Water){
+    // Sand causeway tiles are walkable and visually distinct from open water.
+    world[ty*COLS+tx]=Sand;
+   }else if(ground!=ChestClosed&&ground!=DarkStone&&ground!=AncientRune&&
       ground!=Crystal&&ground!=ObsidianCore&&ground!=Bone)
     world[ty*COLS+tx]=Sand;
    if(tx==x1&&ty==y1)break;
