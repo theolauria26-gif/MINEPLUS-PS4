@@ -134,3 +134,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Deterministic landmark roads can now cross narrow water channels using a short sand causeway, while lava and water stretches wider than five tiles remain barriers. This makes some surface routes continuous without allowing roads to erase lakes or broad rivers.
 - The ford reuses the existing walkable sand tile and therefore adds no new tile ID, save migration, bridge mesh or water simulation. It is a simple low-profile crossing, not a timber bridge model.
 \n\n## Village courtyards and planted beds\n\n- Frontier settlements now receive a walkable sand footpath cross linking the central green to the building entrances, plus four small planted beds made from the existing leaf and moss materials. The beds add visual structure to the village square without introducing new tile IDs or blocking resident movement.\n- The courtyard is rasterized deterministically during world generation and remains part of the existing tile-map renderer; these are stylized surface plots, not crop simulation, harvestable plants, 3D props or animated farm machinery.\n
+
+## Wildflower and fern micro-variation
+
+- Grass material now mixes the existing small flower flecks with sparse fern-like fronds. Flower pixels use a distinct stem/bloom palette so they read as tiny plants rather than isolated color noise.
+- Moss receives rare cool cyan mycelium glints in addition to its green patch variations, reinforcing the damp/arcane forest-floor identity.
+- All details are generated from the existing deterministic material hash and current SDL pixel pass. They add no tile IDs, entities, collision, inventory items, save fields, per-frame allocations or imported assets; they are visual micro-details, not collectible flora or a simulated ecosystem.
