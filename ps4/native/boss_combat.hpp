@@ -37,6 +37,13 @@ struct BossEncounter {
     bool reward_claimed = false;
 };
 
+struct BossAttackProfile {
+    BossAttack attack = BossAttack::None;
+    std::uint16_t damage = 0;
+    std::uint8_t range = 0;
+    std::uint16_t area_radius = 0;
+};
+
 struct BossTuning {
     std::uint32_t telegraph_ms = 900;
     std::uint32_t recovery_ms = 1250;
@@ -54,6 +61,7 @@ public:
     static BossEvent update(BossEncounter& boss, std::uint32_t now_ms,
                             BossTuning tuning = {});
     static bool claim_reward(BossEncounter& boss);
+    static BossAttackProfile attack_profile(BossAttack attack, std::uint8_t phase);
     static std::uint8_t phase_for_health(std::uint32_t health,
                                          std::uint32_t max_health);
 };
