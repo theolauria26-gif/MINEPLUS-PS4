@@ -229,40 +229,6 @@ void init_world(){
    if(twice<ax){error+=ax;ty+=stepY;}
   }
  }
- // Small frontier settlements occupy gentle, temperate clearings and
- // preserve their footprints after the road pass. Their deterministic five-house
- // layouts are data-driven; resident NPC actors are added by the next gameplay pass.
- for(int cy=-3;cy<=3;++cy)for(int cx=-3;cx<=3;++cx){
-  mineplus::SurfaceSettlement settlement{};
-  if(!mineplus::surface_settlement_for_cell(pcg,cx,cy,settlement))continue;
-  const int centerX=settlement.x+COLS/2,centerY=settlement.y+ROWS/2;
-  if(centerX<20||centerY<20||centerX>=COLS-20||centerY>=ROWS-20)continue;
-  for(int oy=-17;oy<=17;++oy)for(int ox=-17;ox<=17;++ox){
-   const int x=centerX+ox,y=centerY+oy;
-   if(ox*ox+oy*oy>17*17)continue;
-   const auto ground=tile_at(x,y);
-   if(ground==Water||ground==Lava||ground==ChestClosed||ground==DarkStone||
-      ground==AncientRune||ground==Crystal||ground==ObsidianCore)continue;
-   world[y*COLS+x]=((ox+oy)&3)==0?Moss:Grass;
-  }
-  for(std::uint8_t i=0;i<5u;++i){
-   mineplus::SettlementBuilding building{};
-   if(!mineplus::surface_settlement_building(settlement,i,building))continue;
-   const int bx=centerX+building.offset_x,by=centerY+building.offset_y;
-   const int extent=building.half_extent;
-   for(int oy=-extent;oy<=extent;++oy)for(int ox=-extent;ox<=extent;++ox){
-    const int x=bx+ox,y=by+oy;
-    if(x<2||y<2||x>=COLS-2||y>=ROWS-2)continue;
-    const bool edge=std::abs(ox)==extent||std::abs(oy)==extent;
-    if(edge)world[y*COLS+x]=(building.role==0||building.role==2)?Stone:Wood;
-    else if(ox==0&&oy==0)world[y*COLS+x]=building.role==0?Ember:Moss;
-    else if((ox==0||oy==0)&&((ox+oy+int(building.role))&1)==0)
-     world[y*COLS+x]=Wood;
-   }
-   // Doorway faces the central square and remains walkable.
-   world[(by+extent)*COLS+bx]=Grass;
-  }
- }
  // Large ancient keeps, watchtowers, shrines and circular ruins.
  for(int cy=24;cy<ROWS-24;cy+=61)for(int cx=24;cx<COLS-24;cx+=73){
   unsigned seed=hash2(cx,cy);int w=9+(seed%13),h=8+(hash2(cy,cx)%11);
@@ -364,6 +330,45 @@ void init_world(){
     if(tx>1&&ty>1&&tx<COLS-1&&ty<ROWS-1&&world[ty*COLS+tx]!=Water&&world[ty*COLS+tx]!=Lava)
      world[ty*COLS+tx]=(side==0)?DarkStone:((step%5==0)?Moss:Stone);
    }
+  }
+ }
+ // Small frontier settlements occupy gentle, temperate clearings and
+ // preserve their footprints after the road pass. Their deterministic five-house
+ // layouts are data-driven; resident NPC actors are added by the next gameplay pass.
+ for(int cy=-3;cy<=3;++cy)for(int cx=-3;cx<=3;++cx){
+  mineplus::SurfaceSettlement settlement{};
+  if(!mineplus::surface_settlement_for_cell(pcg,cx,cy,settlement))continue;
+  const int centerX=settlement.x+COLS/2,centerY=settlement.y+ROWS/2;
+  if(centerX<20||centerY<20||centerX>=COLS-20||centerY>=ROWS-20)continue;
+  bool blocked=false;
+  for(int oy=-17;oy<=17&&!blocked;++oy)for(int ox=-17;ox<=17;++ox){
+   if(ox*ox+oy*oy>17*17)continue;
+   const auto ground=tile_at(centerX+ox,centerY+oy);
+   if(ground==Water||ground==Lava||ground==ChestClosed||ground==DarkStone||
+      ground==AncientRune||ground==Crystal||ground==ObsidianCore){blocked=true;break;}
+  }
+  if(blocked)continue;
+  for(int oy=-17;oy<=17;++oy)for(int ox=-17;ox<=17;++ox){
+   if(ox*ox+oy*oy>17*17)continue;
+   const int x=centerX+ox,y=centerY+oy;
+   world[y*COLS+x]=((ox+oy)&3)==0?Moss:Grass;
+  }
+  for(std::uint8_t i=0;i<5u;++i){
+   mineplus::SettlementBuilding building{};
+   if(!mineplus::surface_settlement_building(settlement,i,building))continue;
+   const int bx=centerX+building.offset_x,by=centerY+building.offset_y;
+   const int extent=building.half_extent;
+   for(int oy=-extent;oy<=extent;++oy)for(int ox=-extent;ox<=extent;++ox){
+    const int x=bx+ox,y=by+oy;
+    if(x<2||y<2||x>=COLS-2||y>=ROWS-2)continue;
+    const bool edge=std::abs(ox)==extent||std::abs(oy)==extent;
+    if(edge)world[y*COLS+x]=(building.role==0||building.role==2)?Stone:Wood;
+    else if(ox==0&&oy==0)world[y*COLS+x]=building.role==0?Ember:Moss;
+    else if((ox==0||oy==0)&&((ox+oy+int(building.role))&1)==0)
+     world[y*COLS+x]=Wood;
+   }
+   // Doorway faces the central square and remains walkable.
+   world[(by+extent)*COLS+bx]=Grass;
   }
  }
  for(int i=0;i<(int)creatures.size();i++){
