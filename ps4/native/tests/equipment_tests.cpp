@@ -55,5 +55,25 @@ int main(){
  mixed.slots[2]=EquipmentId::ObsidianChest;
  totals=EquipmentCatalog::calculate(mixed);
  assert(totals.active_set==0);
- std::cout<<"Equipment catalog tests passed\n";
+ EquipmentState state{};
+ int forgeStock[31]{};forgeStock[18]=3;forgeStock[14]=2;forgeStock[4]=1;
+ assert(EquipmentCatalog::craft(state,EquipmentId::IronSword,forgeStock,31));
+ assert(state.owned[static_cast<unsigned>(EquipmentId::IronSword)]==1);
+ assert(!EquipmentCatalog::craft(state,EquipmentId::IronSword,forgeStock,31));
+ assert(EquipmentCatalog::equip(state,EquipmentId::IronSword));
+ auto equippedTotals=EquipmentCatalog::calculate(state);
+ assert(equippedTotals.damage==12);
+ const auto swordIndex=static_cast<unsigned>(EquipmentId::IronSword);
+ assert(state.durability[swordIndex]>1);
+ EquipmentCatalog::wear(state,EquipmentSlot::Weapon,static_cast<std::uint16_t>(state.durability[swordIndex]-1));
+ assert(EquipmentCatalog::calculate(state).damage==12);
+ EquipmentCatalog::wear(state,EquipmentSlot::Weapon,1);
+ assert(state.durability[swordIndex]==0);
+ assert(EquipmentCatalog::calculate(state).damage==0);
+ EquipmentTotals armor{};armor.defense=16;armor.resistance=20;
+ assert(EquipmentCatalog::mitigate_damage(5,armor,false)==3);
+ assert(EquipmentCatalog::mitigate_damage(5,armor,true)==1);
+ assert(EquipmentCatalog::mitigate_damage(1,armor,true)==1);
+ assert(EquipmentCatalog::mitigate_damage(0,armor,true)==0);
+ std::cout<<"Equipment catalog tests passed\\n";
 }
