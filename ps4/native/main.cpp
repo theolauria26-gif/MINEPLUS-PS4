@@ -320,6 +320,7 @@ bool load_world(){
   for(int i=0;i<13;i++)stock[i+9]=std::clamp(extraStock[i],0,9999);
    for(int i=0;i<9;i++)stock[i+22]=std::clamp(extraLoot[i],0,9999);
   equipmentState=restoredEquipment;
+  playerHealth=std::clamp(playerHealth,1,static_cast<int>(mineplus::EquipmentCatalog::calculate(equipmentState).max_health));
   return true;
 }
 void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){
@@ -425,9 +426,23 @@ void turn_player(int direction){if(direction>0){int old=faceX;faceX=-faceY;faceY
 Uint32 lastCreatureUpdate=0;
 void update_player_combat(){
  Uint32 now=SDL_GetTicks();
- if(playerHealth<=0){playerHealth=10;px=COLS/2;py=ROWS/2;lastDamage=now;damageCooldown=now+1400;return;}
+ const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);
+ const int maxHealth=static_cast<int>(stats.max_health);
+ playerHealth=std::clamp(playerHealth,1,maxHealth);
+ if(playerHealth<=0){playerHealth=maxHealth;px=COLS/2;py=ROWS/2;lastDamage=now;damageCooldown=now+1400;return;}
  if(now<damageCooldown)return;
- for(const auto &m:creatures){if(m.hp<=0||m.type%4==3)continue;int distance=abs(m.x-px)+abs(m.y-py);if(distance<=1&&now-lastDamage>=950){--playerHealth;lastDamage=now;damageCooldown=now+500;return;}}
+ for(const auto &m:creatures){
+  if(m.hp<=0||m.type%4==3)continue;
+  const int distance=abs(m.x-px)+abs(m.y-py);
+  if(distance<=1&&now-lastDamage>=950){
+   const bool elemental=m.type==6||m.type==9||m.type==10;
+   const int incoming=mineplus::EquipmentCatalog::mitigate_damage(3,stats,elemental);
+   playerHealth=std::max(0,playerHealth-incoming);
+   for(std::size_t slot=1;slot<equipmentState.equipped.size();++slot)
+    mineplus::EquipmentCatalog::wear(equipmentState,static_cast<mineplus::EquipmentSlot>(slot),1);
+   lastDamage=now;damageCooldown=now+500;return;
+  }
+ }
 }
 void update_creatures(){
  Uint32 now=SDL_GetTicks();if(now-lastCreatureUpdate<650)return;lastCreatureUpdate=now;
@@ -467,6 +482,23 @@ void update_creatures(){
 bool target_tile(int& x,int& y){x=px+faceX;y=py+faceY;return worldGrid.contains(x,y);}
 void place_block(){int x=0,y=0;int block=selected+1;if(target_tile(x,y)&&tile_at(x,y)==Air&&block<=8&&stock[block]>0&&set_tile_at(x,y,static_cast<unsigned char>(block)))--stock[block];}
 void change_recipe(int direction){selectedRecipe=(selectedRecipe+direction+9)%9;}
+void change_equipment(int direction){selectedEquipment=(selectedEquipment+direction+25)%25;}
+mineplus::EquipmentId selected_equipment_id(){return static_cast<mineplus::EquipmentId>(selectedEquipment+1);}
+bool craft_equipment(){
+ const auto id=selected_equipment_id();
+ if(!mineplus::EquipmentCatalog::craft(equipmentState,id,stock.data(),stock.size()))return false;
+ const auto* def=mineplus::EquipmentCatalog::find(id);
+ const auto slot=static_cast<std::size_t>(def->slot);
+ if(slot<equipmentState.equipped.size()&&equipmentState.equipped[slot]==mineplus::EquipmentId::None)
+  mineplus::EquipmentCatalog::equip(equipmentState,id);
+ save_world(false);
+ return true;
+}
+bool equip_selected_equipment(){
+ const bool equipped=mineplus::EquipmentCatalog::equip(equipmentState,selected_equipment_id());
+ if(equipped)save_world(false);
+ return equipped;
+}
 void craft_item(){
  // Five deterministic survival recipes, all using resources already in the world.
  switch(selectedRecipe){
@@ -496,7 +528,21 @@ bool open_treasure_chest(int x,int y){
   save_world();
   return true;
 }
-void mine_block(){int x=0,y=0;if(!target_tile(x,y))return;if(tile_at(x,y)==ChestClosed){open_treasure_chest(x,y);return;}for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){lastCreatureHit=SDL_GetTicks();lastCreatureHitX=x;lastCreatureHitY=y;if(--m.hp<=0){if(m.type<4)add_stock(Bone,2);else if(m.type<8)add_stock(Crystal);else add_stock(DarkStone);m.x=-100;m.y=-100;}return;}int block=tile_at(x,y);if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)add_stock(drop);else if(drop>=IronOre&&drop<=Rune)add_stock(drop);set_tile_at(x,y,Air);}}
+void mine_block(){
+ int x=0,y=0;if(!target_tile(x,y))return;
+ if(tile_at(x,y)==ChestClosed){open_treasure_chest(x,y);return;}
+ for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){
+  lastCreatureHit=SDL_GetTicks();lastCreatureHitX=x;lastCreatureHitY=y;
+  const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);
+  const int damage=std::max(1,static_cast<int>(stats.damage)/6);
+  m.hp-=damage;
+  mineplus::EquipmentCatalog::wear(equipmentState,mineplus::EquipmentSlot::Weapon,1);
+  if(m.hp<=0){if(m.type<4)add_stock(Bone,2);else if(m.type<8)add_stock(Crystal);else add_stock(DarkStone);m.x=-100;m.y=-100;}
+  save_world(false);return;
+ }
+ int block=tile_at(x,y);
+ if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)add_stock(drop);else if(drop>=IronOre&&drop<=Rune)add_stock(drop);set_tile_at(x,y,Air);}
+}
 void draw_menu(){
  // Dark-fantasy title screen: moonlit ruins, distant towers and drifting embers.
  rect(0,0,W,H,5,8,14);
