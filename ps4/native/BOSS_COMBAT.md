@@ -19,6 +19,7 @@ The Primordial Guardian now occupies a deterministic dark-stone arena 16 tiles e
 - Normal melee and weapon arts damage the Guardian when the player faces its arena center.
 - Ground Slam resolves against its phase-scaled area radius, Rune Volley checks a straight line and range, and Rift Charge checks its phase-scaled reach.
 - Telegraphs name the incoming move and display a phase label. Resolved attacks apply elemental damage through equipped armor mitigation and durability.
+- Encounter timers advance only during active gameplay; opening the inventory or pause menu freezes the telegraph and recovery windows.
 - The boss silhouette is hidden when solid terrain blocks line of sight, and flashes when struck.
 - A red Guardian marker on the minimap points toward the arena, including when it is beyond the local map bounds.
 - The telegraph phase tints the playfield; resolved attacks show distinct short-lived Ground Slam, Rune Volley or Rift Charge impact cues, including a hit flash when the player is caught.
