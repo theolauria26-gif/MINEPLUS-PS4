@@ -32,3 +32,17 @@ This system is now connected to the inventory UI, crafting, equipped stats, comb
 ## Repair and maintenance
 
 The equipment catalog now supports full-durability repairs without changing the save format. Repairing requires an owned, damaged item and consumes a tier-specific material pair atomically: primitive gear uses wood/bone, iron uses iron bars/bone, obsidian uses obsidian/ember, runic uses ancient runes/rune fragments, and primordial gear uses ancient relics/boss sigils. Full-durability items, unowned items, and repairs with insufficient materials are rejected without consumption. The repair action is available on the equipment inventory page: press **R** on keyboard or **X** on the controller while the damaged item is selected. Successful repairs save immediately. This is field maintenance rather than a placed forge station; a physical forge station, animations and repair feedback are still future polish.
+
+## Weapon arts
+
+Equipped weapons now provide one tier-specific special attack in live combat. Press **G** on keyboard or click **R3** (right-stick button) on the controller while outside the inventory. The move hits creatures in a straight line in front of the player, within its profile range; it only consumes durability and starts its cooldown when at least one creature is hit.
+
+| Weapon | Art | Range | Bonus damage | Cooldown | Durability |
+|---|---|---:|---:|---:|---:|
+| Stone Hatchet | Heavy Strike | 1 | +2 | 1.3 s | 2 |
+| Iron Sword | Iron Cleave | 2 | +4 | 1.6 s | 2 |
+| Obsidian Blade | Obsidian Rift | 2 | +7 | 1.95 s | 3 |
+| Rune Sword | Runic Arc | 3 | +10 | 2.35 s | 3 |
+| Primordial Blade | Primordial Nova | 3 | +16 | 2.9 s | 4 |
+
+The hit also produces a brief slash flash at the crosshair. Weapon arts are implemented as combat rules and a 2D feedback effect in the current SDL2 pseudo-3D renderer; they are not skeletal animations or GPU particle effects. Cooldowns are session timers and reset when the game restarts; weapon durability remains persisted by save version 10.
