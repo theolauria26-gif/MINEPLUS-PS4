@@ -35,7 +35,7 @@ mineplus::BossEncounter primordialBoss{};
 constexpr int BOSS_X=COLS/2+16,BOSS_Y=ROWS/2;
 bool equipmentPage=false;
 std::uint64_t worldSeed=4839201ULL;
-Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0,lastSaveAt=0,lastWeaponArtAt=0,weaponArtFlashUntil=0;bool lastSaveSucceeded=true;int lastCreatureHitX=-100,lastCreatureHitY=-100;
+Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0,lastBossHitAt=0,lastSaveAt=0,lastWeaponArtAt=0,weaponArtFlashUntil=0;bool lastSaveSucceeded=true;int lastCreatureHitX=-100,lastCreatureHitY=-100;
 struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};std::array<int,31> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
 unsigned hash2(int x,int y){unsigned n=(unsigned)(x*374761393u+y*668265263u+0x9e3779b9u);n=(n^(n>>13))*1274126177u;return n^(n>>16);}
 bool running=true,playing=false,inventory=false,paused=false;
@@ -242,6 +242,7 @@ void init_world(){
  }
  for(int i=0;i<(int)creatures.size();i++){auto &m=creatures[i];m.x=8+(int)(hash2(i,91)%(COLS-16));m.y=8+(int)(hash2(91,i)%(ROWS-16));m.type=(int)(hash2(m.x,m.y)%12);m.hp=3;}
  build_boss_arena();
+ mineplus::BossCombatDirector::start(primordialBoss,SDL_GetTicks(),1200);
  world[py*COLS+px]=Air;
 }
 constexpr const char* SAVE_DIR="/data/MINEPLUS";
@@ -561,7 +562,7 @@ bool open_treasure_chest(int x,int y){
 void mine_block(){
  int x=0,y=0;if(!target_tile(x,y))return;
  if(tile_at(x,y)==ChestClosed){open_treasure_chest(x,y);return;}
- if(x==BOSS_X&&y==BOSS_Y&&primordialBoss.state!=mineplus::BossState::Defeated){const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);const auto damage=static_cast<std::uint32_t>(std::max(1,static_cast<int>(stats.damage)/6));mineplus::BossCombatDirector::damage(primordialBoss,damage);mineplus::EquipmentCatalog::wear(equipmentState,mineplus::EquipmentSlot::Weapon,1);if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);}save_world(false);return;}
+ if(x==BOSS_X&&y==BOSS_Y&&primordialBoss.state!=mineplus::BossState::Defeated){const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);const auto damage=static_cast<std::uint32_t>(std::max(1,static_cast<int>(stats.damage)/6));mineplus::BossCombatDirector::damage(primordialBoss,damage);lastBossHitAt=SDL_GetTicks();mineplus::EquipmentCatalog::wear(equipmentState,mineplus::EquipmentSlot::Weapon,1);if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);}save_world(false);return;}
  for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){
   lastCreatureHit=SDL_GetTicks();lastCreatureHitX=x;lastCreatureHitY=y;
   const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);
@@ -584,7 +585,7 @@ bool use_weapon_art(){
  const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);
  const int damage=std::max(1,static_cast<int>(stats.damage)/6)+profile.bonus_damage;
  bool hit=false;
- for(unsigned step=1;step<=profile.range;++step){const int bx=px+faceX*static_cast<int>(step),by=py+faceY*static_cast<int>(step);if(bx==BOSS_X&&by==BOSS_Y&&primordialBoss.state!=mineplus::BossState::Defeated){mineplus::BossCombatDirector::damage(primordialBoss,static_cast<std::uint32_t>(damage));hit=true;if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);}}
+ for(unsigned step=1;step<=profile.range;++step){const int bx=px+faceX*static_cast<int>(step),by=py+faceY*static_cast<int>(step);if(bx==BOSS_X&&by==BOSS_Y&&primordialBoss.state!=mineplus::BossState::Defeated){mineplus::BossCombatDirector::damage(primordialBoss,static_cast<std::uint32_t>(damage));lastBossHitAt=now;hit=true;if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);}}
   const int tx=px+faceX*static_cast<int>(step),ty=py+faceY*static_cast<int>(step);
   for(auto &m:creatures)if(m.hp>0&&m.x==tx&&m.y==ty){
    m.hp=std::max(0,m.hp-damage);lastCreatureHit=now;lastCreatureHitX=tx;lastCreatureHitY=ty;hit=true;
@@ -664,6 +665,11 @@ void draw_minimap(){
  draw_text("MAP",ox,oy+cell*17+7,1,190,204,190);
  char coords[32];std::snprintf(coords,sizeof(coords),"%d %d",px,py);
  draw_text(coords,ox+35,oy+cell*17+7,1,190,204,190);
+}
+bool boss_visible_from_player(){
+ const int dx=BOSS_X-px,dy=BOSS_Y-py,steps=std::max(abs(dx),abs(dy));
+ for(int i=1;i<steps;++i){const int x=px+(dx*i)/steps,y=py+(dy*i)/steps;if(solid_tile(tile_at(x,y)))return false;}
+ return true;
 }
 void draw_world(){
  // Perspective height-field renderer for the native PS4 build.
@@ -770,7 +776,7 @@ void draw_world(){
   }
  }
  // Primordial Guardian: oversized pseudo-3D silhouette with glowing runic eyes.
- if(primordialBoss.state!=mineplus::BossState::Defeated){const float dx=float(BOSS_X-px),dy=float(BOSS_Y-py),forward=dx*dirX+dy*dirY,side=dx*rightX+dy*rightY;if(forward>0.7f&&forward<28.0f){const int sx=int(W*0.5f+(side/forward)*focal/fov),size=int(1050.0f/forward),sy=int(horizon+focal*0.72f/forward-size*0.78f);if(sx>12&&sx<W-12&&size>5){const int pulse=int((std::sin(float(SDL_GetTicks())*0.004f)+1.0f)*18.0f);rect(sx-size/3,sy+size/2,size*2/3,size/2,25,19,34);rect(sx-size/2,sy+size/5,size,size/2,53,43,67);rect(sx-size/3,sy-size/4,size*2/3,size/2,74,60,89);rect(sx-size/2,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx+size/2-size/7,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx-size/5,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);rect(sx+size/10,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);}}}
+ if(primordialBoss.state!=mineplus::BossState::Defeated&&boss_visible_from_player()){const float dx=float(BOSS_X-px),dy=float(BOSS_Y-py),forward=dx*dirX+dy*dirY,side=dx*rightX+dy*rightY;if(forward>0.7f&&forward<28.0f){const int sx=int(W*0.5f+(side/forward)*focal/fov),size=int(1050.0f/forward),sy=int(horizon+focal*0.72f/forward-size*0.78f);if(sx>12&&sx<W-12&&size>5){const int pulse=int((std::sin(float(SDL_GetTicks())*0.004f)+1.0f)*18.0f);const bool struck=SDL_GetTicks()-lastBossHitAt<180u;const int body= struck?130:53;rect(sx-size/3,sy+size/2,size*2/3,size/2,25,19,34);rect(sx-size/2,sy+size/5,size,size/2,body,43,67);rect(sx-size/3,sy-size/4,size*2/3,size/2,struck?185:74,60,89);rect(sx-size/2,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx+size/2-size/7,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx-size/5,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);rect(sx+size/10,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);}}}
  // First-person blocky arms and tool silhouette.
  rect(W/2+115,H-158,75,180,91,65,49);rect(W/2+125,H-166,58,28,155,119,82);
  rect(W/2+164,H-190,12,95,151,159,163);rect(W/2+132,H-198,75,13,181,190,190);
@@ -782,7 +788,7 @@ void draw_world(){
  draw_text("HP",500,20,2,210,218,208);rect(535,19,110,14,36,25,26);const int maxHealth=static_cast<int>(mineplus::EquipmentCatalog::calculate(equipmentState).max_health);rect(537,21,std::clamp(playerHealth*110/maxHealth,0,110),10,playerHealth>3?75:190,playerHealth>3?183:66,playerHealth>3?111:53);
  draw_text("MOVE  /  R-STICK LOOK  /  F OPEN/BREAK  /  E BAG",650,25,2,190,198,192);
  draw_text("G / R3 SPECIAL ATTACK",650,47,1,145,215,190);
- if(primordialBoss.state!=mineplus::BossState::Dormant&&primordialBoss.state!=mineplus::BossState::Defeated){draw_text("PRIMORDIAL GUARDIAN",490,82,2,220,180,210);rect(490,101,300,13,34,25,38);rect(492,103,std::max(0,296*int(primordialBoss.health)/int(primordialBoss.max_health)),9,165,65,112);if(primordialBoss.state==mineplus::BossState::Telegraph)draw_text("DODGE THE ATTACK",490,119,1,245,180,135);}
+ if(primordialBoss.state!=mineplus::BossState::Dormant&&primordialBoss.state!=mineplus::BossState::Defeated){draw_text("PRIMORDIAL GUARDIAN",490,82,2,220,180,210);rect(490,101,300,13,34,25,38);rect(492,103,std::max(0,296*int(primordialBoss.health)/int(primordialBoss.max_health)),9,165,65,112);char phaseLabel[24];std::snprintf(phaseLabel,sizeof(phaseLabel),"PHASE %u / 3",unsigned(primordialBoss.phase));draw_text(phaseLabel,800,101,1,195,175,205);if(primordialBoss.state==mineplus::BossState::Telegraph){const char* warning="MOVE OUT OF RANGE";switch(primordialBoss.pending_attack){case mineplus::BossAttack::GroundSlam:warning="GROUND SLAM - MOVE AWAY";break;case mineplus::BossAttack::RuneVolley:warning="RUNE VOLLEY - BREAK LINE";break;case mineplus::BossAttack::RiftCharge:warning="RIFT CHARGE - RETREAT";break;default:break;}draw_text(warning,490,119,1,245,145,115);}}
  if(lastSaveAt&&SDL_GetTicks()-lastSaveAt<2400u)draw_text(lastSaveSucceeded?"WORLD SAVED":"SAVE FAILED",44,84,2,lastSaveSucceeded?120:235,lastSaveSucceeded?220:100,lastSaveSucceeded?165:90);
  draw_minimap();
  int start=(W-8*62)/2;for(int i=0;i<8;i++){int x=start+i*62;rect(x,H-72,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-72,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-57,24,24,r,g,b);char qty[8];std::snprintf(qty,sizeof(qty),"%d",stock[i+1]);draw_text(qty,x+17,H-20,1,225,230,220);}
