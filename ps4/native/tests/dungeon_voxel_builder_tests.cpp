@@ -61,7 +61,7 @@ int main() {
     assert(assembled.get(17, 5, 25) == 0);
     assert(assembled.get(10, 4, 25) == 8); // corridor side wall
     assert(assembled.get(10, 5, 25) == 0); // passage remains walkable
-    assert(assembled.get(20, 5, 24) == 14); // treasure room floor
+    assert(assembled.get(15, 5, 24) == 0); // outside this chunk
 
     DungeonVoxelSettings far_chunk = settings;
     far_chunk.chunk_origin_x = 16;
@@ -69,6 +69,7 @@ int main() {
     assert(DungeonVoxelBuilder::build_layout_chunk(layout, far_chunk, corridor_chunk));
     assert(corridor_chunk.get(0, 5, 24) == 3);
     assert(corridor_chunk.get(1, 5, 24) == 3);
+    assert(corridor_chunk.get(4, 5, 24) == 14); // treasure room floor
 
     DungeonLayout invalid_layout = layout;
     invalid_layout.connections[0].to = 99;
