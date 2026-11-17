@@ -16,7 +16,7 @@
 #include "boss_combat.hpp"
 namespace {
 constexpr int W=1280,H=720,COLS=2048,ROWS=2048,LEGACY_COLS=1024,LEGACY_ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
-enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21,ChestClosed=22,ChestOpened=23};
+enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21,ChestClosed=22,ChestOpened=23,Leaves=24};
 std::array<unsigned char,COLS*ROWS> world{};
 mineplus::FixedWorldGrid fixedWorldGrid(world.data(), COLS, ROWS);
 mineplus::WorldGridView& worldGrid = fixedWorldGrid;
@@ -104,6 +104,20 @@ void init_world(){
   else if((tile==Stone||tile==DarkStone)&&h%12007u==0u) tile=Rune;
   world[y*COLS+x]=tile;
   heightMap[y*COLS+x]=static_cast<unsigned char>(std::clamp<int>(sample.height,0,255));
+ }
+ // Build a broad leaf canopy around natural forest trunks. Leaves are walk-through
+ // foliage, while the taller trunk remains the tree's collision point.
+ for(int y=3;y<ROWS-3;++y)for(int x=3;x<COLS-3;++x){
+  if(world[y*COLS+x]!=Wood)continue;
+  const int wx=x-COLS/2,wy=y-ROWS/2;
+  const auto column=pcg.sample_surface(wx,wy);
+  if(!pcg.surface_tree_at(wx,wy,column))continue;
+  for(int oy=-2;oy<=2;++oy)for(int ox=-2;ox<=2;++ox){
+   if(ox==0&&oy==0||ox*ox+oy*oy>5)continue;
+   const int nx=x+ox,ny=y+oy;
+   const auto ground=world[ny*COLS+nx];
+   if(ground==Grass||ground==Moss)world[ny*COLS+nx]=Leaves;
+  }
  }
  // Resolve each 96x96 structure cell once, then rasterize a distinct
  // landmark silhouette. Every pattern is seed/coordinate deterministic.
@@ -338,7 +352,7 @@ bool load_world(){
   std::fclose(f);if(!ok)return false;
   // Reject impossible tile IDs before they reach rendering, collision or inventory.
   // This protects the live world from structurally valid but semantically corrupt saves.
-  for(const auto tile:restored)if(tile>ChestOpened)return false;
+  for(const auto tile:restored)if(tile>Leaves)return false;
   if(restoredRewardClaimed>1||restoredBoss.max_health==0||restoredBoss.max_health>100000000u||restoredBoss.health>restoredBoss.max_health||restoredBoss.phase<1||restoredBoss.phase>3||static_cast<unsigned>(restoredBoss.state)>static_cast<unsigned>(mineplus::BossState::Defeated)||static_cast<unsigned>(restoredBoss.pending_attack)>static_cast<unsigned>(mineplus::BossAttack::RiftCharge)||(restoredBoss.state==mineplus::BossState::Defeated&&restoredBoss.health!=0)||(restoredBoss.health==0&&restoredBoss.state!=mineplus::BossState::Defeated))return false;
   for(std::size_t i=0;i<restoredEquipment.owned.size();++i){
    if(restoredEquipment.owned[i]>1)return false;
@@ -387,7 +401,7 @@ void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){
  case Rune:r=90;g=190;b=166;break;case IronBar:r=183;g=192;b=197;break;
  case ObsidianCore:r=82;g=55;b=116;break;case EmberCatalyst:r=255;g=133;b=49;break;
  case AncientRune:r=124;g=231;b=190;break;
-  case ChestClosed:r=154;g=91;b=48;break;case ChestOpened:r=78;g=58;b=42;break;
+  case ChestClosed:r=154;g=91;b=48;break;case ChestOpened:r=78;g=58;b=42;break;case Leaves:r=48;g=116;b=55;break;
   case 24:r=235;g=190;b=72;break;case 25:r=100;g=190;b=105;break;case 26:r=190;g=181;b=150;break;
   case 27:r=150;g=158;b=168;break;case 28:r=105;g=190;b=210;break;case 29:r=150;g=105;b=210;break;case 30:r=245;g=125;b=55;break;default:r=16;g=23;b=29;break;
 }}
@@ -434,6 +448,9 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     draw=(cellX%3u==0u&&(pattern%2u)==0u)||
          (cellX==4u&&(v%3u==0u));
     r=174;g=119;b=69;break;
+   case Leaves:
+    draw=(pattern%3u)!=0u || v==1u;
+    r=static_cast<Uint8>(70u+(pattern%38u));g=static_cast<Uint8>(132u+(pattern%62u));b=static_cast<Uint8>(48u+(pattern%24u));break;
    case Moss:
     draw=(pattern%4u)==0u;r=111;g=151;b=76;break;
    case Crystal: case ObsidianCore:
@@ -610,7 +627,7 @@ void mine_block(){
   save_world(false);return;
  }
  int block=tile_at(x,y);
- if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)add_stock(drop);else if(drop>=IronOre&&drop<=Rune)add_stock(drop);set_tile_at(x,y,Air);}
+ if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop==Leaves)add_stock(Moss);else if(drop>=1&&drop<=8)add_stock(drop);else if(drop>=IronOre&&drop<=Rune)add_stock(drop);set_tile_at(x,y,Air);}
 }
 bool use_weapon_art(){
  const auto weapon=equipmentState.equipped[static_cast<std::size_t>(mineplus::EquipmentSlot::Weapon)];
@@ -672,7 +689,7 @@ float terrain_height(int t,int x,int y){
  // Elevation was generated once with the chunk-independent PCG world seed.
  // Reusing it here keeps the first-person ray marcher cheap enough for PS4.
  float h=float(heightMap[y*COLS+x])/48.0f;
- switch(t){case Grass:h+=0.12f;break;case Dirt:h+=0.04f;break;case Stone:h+=0.34f;break;case Wood:h+=0.72f;break;case Moss:h+=0.18f;break;case Crystal:h+=0.92f;break;case Bone:h+=0.48f;break;case DarkStone:h+=0.42f;break;case Sand:h-=0.08f;break;case Snow:h+=0.24f;break;case Ice:h+=0.12f;break;case Lava:h-=0.08f;break;case Water:h-=0.22f;break;case IronOre:h+=0.36f;break;case Obsidian:h+=0.46f;break;case Ember:h+=0.02f;break;case Rune:h+=0.58f;break;case IronBar:h+=0.3f;break;case ObsidianCore:h+=0.6f;break;case EmberCatalyst:h+=0.5f;break;case AncientRune:h+=0.8f;break;default:break;}
+ switch(t){case Grass:h+=0.12f;break;case Dirt:h+=0.04f;break;case Stone:h+=0.34f;break;case Wood:h+=0.72f;break;case Leaves:h+=0.96f;break;case Moss:h+=0.18f;break;case Crystal:h+=0.92f;break;case Bone:h+=0.48f;break;case DarkStone:h+=0.42f;break;case Sand:h-=0.08f;break;case Snow:h+=0.24f;break;case Ice:h+=0.12f;break;case Lava:h-=0.08f;break;case Water:h-=0.22f;break;case IronOre:h+=0.36f;break;case Obsidian:h+=0.46f;break;case Ember:h+=0.02f;break;case Rune:h+=0.58f;break;case IronBar:h+=0.3f;break;case ObsidianCore:h+=0.6f;break;case EmberCatalyst:h+=0.5f;break;case AncientRune:h+=0.8f;break;default:break;}
  // Multi-scale elevation creates broad mountain ranges, rolling foothills and rocky peaks.
  float continental=smooth_noise(x/310.0f,y/310.0f);
  float ridge=1.0f-std::fabs(2.0f*smooth_noise(x/118.0f+37.0f,y/118.0f-19.0f)-1.0f);
