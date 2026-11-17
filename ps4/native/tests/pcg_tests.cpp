@@ -192,6 +192,24 @@ int main() {
                a.kind == b.kind && a.radius == b.radius);
     }
 
+    // Surface camps are a fifth deterministic landmark family. Verify that
+    // the expanded anchor catalog is stable and that camps occur in the search area.
+    bool foundSurfaceCamp = false;
+    for (int cy = -24; cy <= 24; ++cy) {
+        for (int cx = -24; cx <= 24; ++cx) {
+            StructureAnchor campA{}, campB{};
+            const bool hasCampA = worldA.structure_anchor_for_cell(cx, cy, campA);
+            const bool hasCampB = worldB.structure_anchor_for_cell(cx, cy, campB);
+            assert(hasCampA == hasCampB);
+            if (!hasCampA) continue;
+            assert(campA.kind >= 1 && campA.kind <= 5);
+            assert(campA.x == campB.x && campA.y == campB.y &&
+                   campA.kind == campB.kind && campA.radius == campB.radius);
+            if (campA.kind == 5) foundSurfaceCamp = true;
+        }
+    }
+    assert(foundSurfaceCamp);
+
     // Landmark anchors also create a deterministic primordial complex:
     // five chambers connected by a cross corridor, with a solid roof and floor.
     bool checkedDungeon = false;
