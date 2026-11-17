@@ -249,7 +249,35 @@ void init_world(){
    }
   }
  }
- for(int i=0;i<(int)creatures.size();i++){auto &m=creatures[i];m.x=8+(int)(hash2(i,91)%(COLS-16));m.y=8+(int)(hash2(91,i)%(ROWS-16));m.type=(int)(hash2(m.x,m.y)%12);m.hp=3;}
+ for(int i=0;i<(int)creatures.size();i++){
+  auto &m=creatures[i];
+  m.x=-100;m.y=-100;m.type=0;m.hp=0;
+  // Spawn wildlife on valid surface clearings and choose its family from the
+  // local biome. Bounded attempts keep world initialization deterministic.
+  for(unsigned attempt=0;attempt<64u;++attempt){
+   const unsigned salt=static_cast<unsigned>(i)*131u+attempt*977u;
+   const int sx=8+static_cast<int>(hash2(static_cast<int>(salt),91)%(COLS-16));
+   const int sy=8+static_cast<int>(hash2(91,static_cast<int>(salt))%(ROWS-16));
+   const int tile=world[sy*COLS+sx];
+   if(tile==Water||tile==Lava||tile==Wood||tile==Stone||tile==DarkStone||
+      tile==Bone||tile==Crystal||tile==IronOre||tile==Obsidian||tile==Rune||
+      tile==ChestClosed||tile==AncientRune||tile==ObsidianCore)continue;
+   if(abs(sx-COLS/2)+abs(sy-ROWS/2)<20)continue;
+   if(abs(sx-BOSS_X)+abs(sy-BOSS_Y)<20)continue;
+   const auto surface=pcg.sample_surface(sx-COLS/2,sy-ROWS/2);
+   const auto biome=static_cast<mineplus::Biome>(surface.biome);
+   if(biome==mineplus::Biome::Ocean)continue;
+   const unsigned family=hash2(sx,sy);
+   if(biome==mineplus::Biome::Forest||biome==mineplus::Biome::Plains)
+    m.type=static_cast<int>(family%4u);
+   else if(biome==mineplus::Biome::Desert||biome==mineplus::Biome::Tundra)
+    m.type=4+static_cast<int>(family%4u);
+   else
+    m.type=8+static_cast<int>(family%4u);
+   m.x=sx;m.y=sy;m.hp=3;
+   break;
+  }
+ }
  build_boss_arena();
  mineplus::BossCombatDirector::start(primordialBoss,SDL_GetTicks(),1200);
  world[py*COLS+px]=Air;
