@@ -68,12 +68,23 @@ SurfaceSample PcgWorld::sample_surface(std::int32_t x,std::int32_t y) const {
     const float ridge=1.0f-std::fabs(fbm(fx/410.0f,fy/410.0f,29,4,0.56f));
     const float detail=fbm(fx/75.0f,fy/75.0f,47,3,0.48f);
     const float continent=continent_mask(fx,fy);
-    const float elevation=broad*0.34f+ridge*0.42f+detail*0.12f+continent*0.18f-0.32f;
+    // Broad ridged fields create connected mountain chains instead of isolated
+    // height spikes. A separate narrow field carves winding lowland valleys.
+    const float mountainSignal=1.0f-std::fabs(
+        fbm(fx/760.0f,fy/760.0f,0x4D4F554Eu,4,0.57f));
+    const float mountainMask=smooth(std::clamp(
+        (mountainSignal-0.61f)/0.25f,0.0f,1.0f));
+    const float valleySignal=std::fabs(
+        fbm(fx/520.0f,fy/520.0f,0x56414C4Cu,3,0.55f));
+    const float valleyMask=1.0f-smooth(std::clamp(
+        valleySignal/0.19f,0.0f,1.0f));
+    const float elevation=broad*0.34f+ridge*0.42f+detail*0.12f+
+        continent*0.18f-0.32f+mountainMask*0.30f-valleyMask*0.13f;
     const float latitudeCooling=static_cast<float>(std::fabs(fy)/12000.0f);
     const float temperature=fbm(fx/2300.0f,fy/2300.0f,71,3,0.5f)-std::min(0.8f,latitudeCooling);
     const float moisture=fbm(fx/1250.0f,fy/1250.0f,97,4,0.53f);
     const Biome biome=choose_biome(temperature,moisture,elevation,continent);
-    int height=static_cast<int>(34.0f+elevation*58.0f);
+    int height=static_cast<int>(34.0f+elevation*58.0f+mountainMask*16.0f);
     std::uint8_t tile=1; // grass
     switch(biome){
         case Biome::Ocean: height=18+int((detail+1.0f)*3.0f); tile=13; break; // water
