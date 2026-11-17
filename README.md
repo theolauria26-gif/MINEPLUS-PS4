@@ -87,8 +87,9 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 ## Último build automatizado
 - Em 17/11/2026, o workflow [Build MINEPLUS PS4 PKG](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44171203498) concluiu com sucesso para o commit `50c6ae5b`, incluindo testes portáveis, compilação do EBOOT/PKG, validação estrutural e publicação do artefato.
 - A atualização documental desse marco também passou no workflow [de documentação](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44171215115).
-- A melhoria visual mais recente (`23fb65e3`) acrescenta pequenas flores com caule, frondes e brilhos de micélio ciano no musgo. A nova compilação será validada pelo CI após este commit; ainda não há confirmação de teste em hardware PS4.
-- [Acessar o último artefato já validado](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44171203498)
+- A melhoria visual `23fb65e3` acrescenta pequenas flores com caule, frondes e brilhos de micélio ciano no musgo; o workflow [correspondente](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44171985600) concluiu com sucesso.
+- A etapa seguinte (`db49876d`, `02653665`, `b054d82f`) introduz árvores coníferas esparsas na tundra e em áreas úmidas das montanhas, com copas mais estreitas e testes de determinismo. O CI está em execução: [geração](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44172738544), [integração visual](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44172770796) e [testes de PCG](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44172801289).
+- [Acessar o último artefato já validado](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44171985600)
 
 
 ## Direção visual: materiais pixel-art
