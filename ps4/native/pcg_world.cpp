@@ -85,6 +85,23 @@ SurfaceSample PcgWorld::sample_surface(std::int32_t x,std::int32_t y) const {
         case Biome::Volcanic: tile=16; height+=5; break;
         case Biome::CrystalWastes: tile=6; break;
     }
+    // Meandering surface rivers use a separate low-frequency field, so their
+    // banks remain continuous across chunk boundaries and world reloads.
+    // Rivers favor moist temperate land and avoid deserts, volcanic fields,
+    // crystal wastes and the outer ocean shelf.
+    const float riverField = std::fabs(fbm(fx/210.0f, fy/210.0f, 131, 3, 0.54f));
+    const bool riverEligible = continent >= 0.18f && elevation > 0.03f &&
+        temperature > -0.72f && moisture > -0.35f &&
+        biome != Biome::Desert && biome != Biome::Volcanic &&
+        biome != Biome::CrystalWastes && biome != Biome::Ocean;
+    if (riverEligible && riverField < 0.018f) {
+        tile = 13; // Water: a narrow channel cut into the local terrain.
+        height = std::max(19, height - 3);
+    } else if (riverEligible && riverField < 0.043f &&
+               (tile == 1 || tile == 5 || tile == 3)) {
+        tile = 9; // Sand banks transition into grass, forest and highlands.
+        height = std::max(20, height - 1);
+    }
     height=std::max(1,std::min(WORLD_HEIGHT-1,height));
     return {static_cast<std::int16_t>(height),tile,
             static_cast<std::uint8_t>(biome),
