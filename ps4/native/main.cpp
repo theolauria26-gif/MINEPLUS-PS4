@@ -11,6 +11,7 @@
 #include "pcg_world.hpp"
 #include "surface_ecology.hpp"
 #include "surface_settlements.hpp"
+#include "surface_npcs.hpp"
 #include "world_grid.hpp"
 #include "dungeon_loot.hpp"
 #include "equipment.hpp"
@@ -42,7 +43,10 @@ bool equipmentPage=false;
 std::uint64_t worldSeed=4839201ULL;
 Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0,lastBossHitAt=0,lastSaveAt=0,lastWeaponArtAt=0,weaponArtFlashUntil=0;
 Uint32 bossClockMs=0,lastBossClockTick=0;bool lastSaveSucceeded=true;int lastCreatureHitX=-100,lastCreatureHitY=-100;
-struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};std::array<int,31> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
+struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};
+std::array<mineplus::SettlementNpc,64> settlementNpcs{};std::size_t settlementNpcCount=0;
+Uint32 lastNpcUpdate=0,npcDialogueUntil=0;const char* activeNpcName=nullptr;const char* activeNpcLine=nullptr;
+std::array<int,31> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
 unsigned hash2(int x,int y){unsigned n=(unsigned)(x*374761393u+y*668265263u+0x9e3779b9u);n=(n^(n>>13))*1274126177u;return n^(n>>16);}
 bool running=true,playing=false,inventory=false,paused=false;
 Uint32 lastMove=0,lastTurn=0;
@@ -93,6 +97,7 @@ void init_world(){
  // PS4-native PCG sampling. Every coordinate is reproducible from one seed;
  // this 2048x2048 resident window is a transitional cache, not the final world limit.
  mineplus::PcgWorld pcg(worldSeed);
+ settlementNpcCount=0;activeNpcName=nullptr;activeNpcLine=nullptr;npcDialogueUntil=0;
  for(int y=0;y<ROWS;y++)for(int x=0;x<COLS;x++){
   const int wx=x-COLS/2, wy=y-ROWS/2;
   const auto sample=pcg.sample_surface(wx,wy);
@@ -370,6 +375,16 @@ void init_world(){
    // Doorway faces the central square and remains walkable.
    world[(by+extent)*COLS+bx]=Grass;
   }
+  for(std::uint8_t resident=0;resident<settlement.resident_count&&settlementNpcCount<settlementNpcs.size();++resident){
+   int hx=centerX,hy=centerY;std::uint8_t role=static_cast<std::uint8_t>(resident%5u);
+   if(resident<5u){mineplus::SettlementBuilding building{};if(!mineplus::surface_settlement_building(settlement,resident,building))continue;hx+=building.offset_x;hy+=building.offset_y+building.half_extent+1;role=building.role;}
+   else{hx+=resident==5u?3:-3;hy+=resident==5u?-3:3;}
+   const auto ground=tile_at(hx,hy);
+   if(hx<2||hy<2||hx>=COLS-2||hy>=ROWS-2||solid_tile(ground)||ground==Water||ground==Lava)continue;
+   mineplus::SettlementNpc npc{};npc.x=hx;npc.y=hy;npc.home_x=hx;npc.home_y=hy;
+   npc.seed=hash2(settlement.x+int(resident)*97,settlement.y-int(resident)*53);
+   npc.role=role;npc.dialogue_stage=0;settlementNpcs[settlementNpcCount++]=npc;
+  }
  }
  for(int i=0;i<(int)creatures.size();i++){
   auto &m=creatures[i];
@@ -643,6 +658,30 @@ void update_primordial_boss(Uint32 now){
  }
  if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);save_world(false);return;}
  if(event!=mineplus::BossEvent::None)save_world(false);
+}
+void update_settlement_npcs(){
+ const Uint32 now=SDL_GetTicks();if(now-lastNpcUpdate<800u)return;lastNpcUpdate=now;
+ const std::uint32_t schedule=now/800u;
+ for(std::size_t i=0;i<settlementNpcCount;++i){
+  auto& npc=settlementNpcs[i];std::int32_t gx=npc.home_x,gy=npc.home_y;
+  mineplus::settlement_npc_goal(npc,schedule,gx,gy);
+  const int dx=gx-npc.x,dy=gy-npc.y;if(std::abs(dx)+std::abs(dy)==0)continue;
+  int sx=0,sy=0;
+  if(std::abs(dx)>std::abs(dy))sx=(dx>0)-(dx<0);
+  else if(std::abs(dy)>std::abs(dx))sy=(dy>0)-(dy<0);
+  else if((npc.seed+schedule)&1u)sx=(dx>0)-(dx<0);else sy=(dy>0)-(dy<0);
+  const int nx=npc.x+sx,ny=npc.y+sy;
+  if(nx<1||ny<1||nx>=COLS-1||ny>=ROWS-1||(nx==px&&ny==py)||solid_tile(tile_at(nx,ny))||tile_at(nx,ny)==Water||tile_at(nx,ny)==Lava)continue;
+  bool occupied=false;for(std::size_t j=0;j<settlementNpcCount;++j)if(j!=i&&settlementNpcs[j].x==nx&&settlementNpcs[j].y==ny){occupied=true;break;}
+  if(!occupied){npc.x=nx;npc.y=ny;}
+ }
+}
+void talk_to_nearest_npc(){
+ std::size_t nearest=settlementNpcCount;int best=3;
+ for(std::size_t i=0;i<settlementNpcCount;++i){const int d=std::abs(settlementNpcs[i].x-px)+std::abs(settlementNpcs[i].y-py);if(d<best){best=d;nearest=i;}}
+ if(nearest==settlementNpcCount){activeNpcName="NO RESIDENT";activeNpcLine="COME CLOSER TO A VILLAGER";}
+ else{auto& npc=settlementNpcs[nearest];const auto line=mineplus::settlement_npc_dialogue(npc.role,npc.dialogue_stage);activeNpcName=line.name;activeNpcLine=line.line;npc.dialogue_stage=static_cast<std::uint8_t>((npc.dialogue_stage+1u)%3u);}
+ npcDialogueUntil=SDL_GetTicks()+4200u;
 }
 void update_creatures(){
  Uint32 now=SDL_GetTicks();if(now-lastCreatureUpdate<650)return;lastCreatureUpdate=now;
@@ -957,6 +996,28 @@ void draw_world(){
    rect(sx+bodyW/8,sy+bodyH/4,eye,eye,235,226,190);
   }
  }
+ // Surface residents: role-colored pseudo-3D figures with an idle bob.
+ for(std::size_t i=0;i<settlementNpcCount;++i){
+  const auto& npc=settlementNpcs[i];const float dx=float(npc.x-px),dy=float(npc.y-py);
+  const float forward=dx*dirX+dy*dirY,side=dx*rightX+dy*rightY;
+  if(forward<0.7f||forward>18.0f)continue;
+  const int sx=int(W*0.5f+(side/forward)*focal/fov),size=int(390.0f/forward);
+  const float phase=animTime+float(npc.seed%628u)*0.01f;
+  const int bob=int(std::sin(phase*2.1f)*std::max(1,size/30));
+  const int sy=int(horizon+focal*0.62f/forward-size*0.82f)+bob;
+  if(sx<8||sx>=W-8||size<4)continue;
+  static const int coats[5][3]={{103,117,133},{133,78,55},{83,128,77},{105,91,135},{153,129,83}};
+  const auto& coat=coats[npc.role%5u];const int bw=std::max(3,size/2),bh=std::max(4,size*2/3);
+  rect(sx-bw/2,sy+bh-1,bw,std::max(1,size/18),7,9,11,120);
+  rect(sx-bw/2,sy+size/4,bw,bh/2,coat[0],coat[1],coat[2]);
+  rect(sx-bw/3,sy+bh/2,std::max(2,bw/4),std::max(2,size/5),55,43,39);
+  rect(sx+bw/8,sy+bh/2,std::max(2,bw/4),std::max(2,size/5),55,43,39);
+  rect(sx-size/5,sy,std::max(3,size*2/5),std::max(3,size/3),191,151,116);
+  rect(sx-size/5,sy-size/12,std::max(3,size*2/5),std::max(2,size/9),npc.role==1u?74:coat[0],npc.role==1u?61:coat[1],npc.role==1u?52:coat[2]);
+  rect(sx-size/10,sy+size/8,std::max(1,size/18),std::max(1,size/18),35,30,28);
+  if(npc.role==1u)rect(sx+bw/3,sy+size/3,std::max(2,size/8),std::max(2,size/3),105,112,119);
+  if(npc.role==3u)rect(sx+bw/2,sy+size/8,std::max(1,size/14),std::max(2,size/2),173,145,94);
+ }
  // Primordial Guardian: oversized pseudo-3D silhouette with glowing runic eyes.
  if(primordialBoss.state!=mineplus::BossState::Defeated&&boss_visible_from_player()){const float dx=float(BOSS_X-px),dy=float(BOSS_Y-py),forward=dx*dirX+dy*dirY,side=dx*rightX+dy*rightY;if(forward>0.7f&&forward<28.0f){const int sx=int(W*0.5f+(side/forward)*focal/fov),size=int(1050.0f/forward),sy=int(horizon+focal*0.72f/forward-size*0.78f);if(sx>12&&sx<W-12&&size>5){const int pulse=int((std::sin(float(SDL_GetTicks())*0.004f)+1.0f)*18.0f);const bool struck=SDL_GetTicks()-lastBossHitAt<180u;const int body= struck?130:53;rect(sx-size/3,sy+size/2,size*2/3,size/2,25,19,34);rect(sx-size/2,sy+size/5,size,size/2,body,43,67);rect(sx-size/3,sy-size/4,size*2/3,size/2,struck?185:74,60,89);rect(sx-size/2,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx+size/2-size/7,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx-size/5,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);rect(sx+size/10,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);}}}
  // First-person blocky arms and tool silhouette.
@@ -975,11 +1036,13 @@ void draw_world(){
  // Crosshair and weapon-art impact flash.
  color(225,232,222);SDL_RenderDrawLine(renderer,W/2-9,H/2,W/2+9,H/2);SDL_RenderDrawLine(renderer,W/2,H/2-9,W/2,H/2+9);
  if(SDL_GetTicks()<weaponArtFlashUntil){color(120,235,210,220);SDL_RenderDrawLine(renderer,W/2-28,H/2+22,W/2+28,H/2-22);SDL_RenderDrawLine(renderer,W/2-20,H/2+28,W/2+20,H/2-28);}
+ if(activeNpcName&&SDL_GetTicks()<npcDialogueUntil){rect(250,526,780,92,7,13,17,238);outline(250,526,780,92,111,155,127);draw_text(activeNpcName,275,543,2,151,224,177);draw_text(activeNpcLine?activeNpcLine:"",275,574,2,224,226,210);}
   const int aimedX=px+faceX,aimedY=py+faceY;if(worldGrid.contains(aimedX,aimedY)&&tile_at(aimedX,aimedY)==ChestClosed)draw_text("TREASURE CHEST  /  PRESS F OR X",W/2-145,H/2+25,2,245,205,130);
  rect(0,0,W,64,7,12,16,235);rect(20,13,7,38,52,212,132);draw_text("MINEPLUS  /  THE FORGOTTEN WILDS",44,15,3);draw_text("3D VOXEL SURVIVAL",45,43,1,160,190,174);
  draw_text("HP",500,20,2,210,218,208);rect(535,19,110,14,36,25,26);const int maxHealth=static_cast<int>(mineplus::EquipmentCatalog::calculate(equipmentState).max_health);rect(537,21,std::clamp(playerHealth*110/maxHealth,0,110),10,playerHealth>3?75:190,playerHealth>3?183:66,playerHealth>3?111:53);
  draw_text("MOVE  /  R-STICK LOOK  /  F OPEN/BREAK  /  E BAG",650,25,2,190,198,192);
  draw_text("G / R3 SPECIAL ATTACK",650,47,1,145,215,190);
+ draw_text("T TALK TO RESIDENT",44,54,1,145,215,190);
  if(primordialBoss.state!=mineplus::BossState::Dormant&&primordialBoss.state!=mineplus::BossState::Defeated){draw_text("PRIMORDIAL GUARDIAN",490,82,2,220,180,210);rect(490,101,300,13,34,25,38);rect(492,103,std::max(0,296*int(primordialBoss.health)/int(primordialBoss.max_health)),9,165,65,112);char phaseLabel[24];std::snprintf(phaseLabel,sizeof(phaseLabel),"PHASE %u / 3",unsigned(primordialBoss.phase));draw_text(phaseLabel,800,101,1,195,175,205);if(primordialBoss.state==mineplus::BossState::Telegraph){const char* warning="MOVE OUT OF RANGE";switch(primordialBoss.pending_attack){case mineplus::BossAttack::GroundSlam:warning="GROUND SLAM - MOVE AWAY";break;case mineplus::BossAttack::RuneVolley:warning="RUNE VOLLEY - BREAK LINE";break;case mineplus::BossAttack::RiftCharge:warning="RIFT CHARGE - RETREAT";break;default:break;}draw_text(warning,490,119,1,245,145,115);}}
  if(lastSaveAt&&SDL_GetTicks()-lastSaveAt<2400u)draw_text(lastSaveSucceeded?"WORLD SAVED":"SAVE FAILED",44,84,2,lastSaveSucceeded?120:235,lastSaveSucceeded?220:100,lastSaveSucceeded?165:90);
  draw_minimap();
@@ -1040,7 +1103,7 @@ void handle_key(SDL_Keycode k){
  if(k==SDLK_ESCAPE){paused=!paused;inventory=false;return;}
  if(paused){if(k==SDLK_RETURN)paused=false;return;}
  if(k==SDLK_TAB||k==SDLK_e){inventory=!inventory;return;}
- if(!inventory){if(k==SDLK_q)turn_player(-1);if(k==SDLK_r)turn_player(1);if(k==SDLK_g)use_weapon_art();}
+ if(!inventory){if(k==SDLK_q)turn_player(-1);if(k==SDLK_r)turn_player(1);if(k==SDLK_g)use_weapon_art();if(k==SDLK_t)talk_to_nearest_npc();}
  if(inventory){
   if(k==SDLK_v){equipmentPage=!equipmentPage;return;}
   if(equipmentPage){
@@ -1065,4 +1128,4 @@ void handle_key(SDL_Keycode k){
  if(k==SDLK_SPACE)place_block();if(k==SDLK_f)mine_block();
 }
 }
-int main(int,char**){if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_EVENTS)!=0)return 1;window=SDL_CreateWindow("MINEPLUS",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,W,H,SDL_WINDOW_SHOWN);if(!window){SDL_Quit();return 2;}renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);SDL_RenderSetLogicalSize(renderer,W,H);if(SDL_NumJoysticks()>0&&SDL_IsGameController(0))pad=SDL_GameControllerOpen(0);init_world();load_world();build_boss_arena();bossClockMs=SDL_GetTicks();lastBossClockTick=bossClockMs;primordialBoss.state_started_at=bossClockMs;Uint32 lastAutosave=SDL_GetTicks();while(running){const Uint32 frameStart=SDL_GetTicks();const Uint32 wallNow=frameStart;if(lastBossClockTick==0)lastBossClockTick=wallNow;if(playing&&!paused&&!inventory)bossClockMs+=wallNow-lastBossClockTick;lastBossClockTick=wallNow;SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;if(e.type==SDL_KEYDOWN&&e.key.repeat==0)handle_key(e.key.keysym.sym);if(e.type==SDL_MOUSEBUTTONDOWN&&playing&&!paused&&!inventory){if(e.button.button==SDL_BUTTON_LEFT)mine_block();else if(e.button.button==SDL_BUTTON_RIGHT)place_block();}if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_START:if(!playing)playing=true;else{paused=!paused;inventory=false;}break;case SDL_CONTROLLER_BUTTON_BACK:if(playing&&!paused)inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_A:if(!playing)playing=true;else if(paused)paused=false;else if(inventory){if(equipmentPage)craft_equipment();else craft_item();}else place_block();break;case SDL_CONTROLLER_BUTTON_X:if(paused)save_world();else if(playing&&inventory&&equipmentPage)repair_selected_equipment();else if(playing&&!inventory)mine_block();break;case SDL_CONTROLLER_BUTTON_B:if(inventory)inventory=false;else if(paused)paused=false;else if(playing)paused=true;else running=false;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:if(playing&&!paused&&!inventory)move_player(0,-1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(playing&&!paused&&!inventory)move_player(0,1);break;case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(playing&&!paused&&!inventory)move_player(-1,0);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(playing&&!paused&&!inventory)move_player(1,0);break;case SDL_CONTROLLER_BUTTON_Y:if(playing&&!paused)inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(inventory){if(equipmentPage)equip_selected_equipment();else craft_item();}else if(playing&&!paused)use_weapon_art();break;case SDL_CONTROLLER_BUTTON_LEFTSTICK:if(inventory)equipmentPage=!equipmentPage;break;case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(inventory){if(equipmentPage)change_equipment(-1);else change_recipe(-1);}else selected=(selected+7)%8;break;case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(inventory){if(equipmentPage)change_equipment(1);else change_recipe(1);}else selected=(selected+1)%8;break;default:break;}}}if(playing&&!paused&&!inventory){update_creatures();update_primordial_boss(bossClockMs);}if(playing&&!paused&&!inventory)update_player_combat();if(playing&&!paused&&!inventory&&pad){Uint32 now=SDL_GetTicks();if(now-lastTurn>230){Sint16 rx=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_RIGHTX);if(rx>18000){turn_player(1);lastTurn=now;}else if(rx< -18000){turn_player(-1);lastTurn=now;}}if(now-lastMove>155){Sint16 ax=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX),ay=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTY);if(ax>18000){move_player(1,0);lastMove=now;}else if(ax< -18000){move_player(-1,0);lastMove=now;}else if(ay>18000){move_player(0,1);lastMove=now;}else if(ay< -18000){move_player(0,-1);lastMove=now;}}}if(playing&&!paused&&SDL_GetTicks()-lastAutosave>30000){save_world(false);lastAutosave=SDL_GetTicks();}if(playing)draw_world();else draw_menu();SDL_RenderPresent(renderer);const Uint32 frameElapsed=SDL_GetTicks()-frameStart;if(frameElapsed<16u)SDL_Delay(16u-frameElapsed);}save_world(false);if(pad)SDL_GameControllerClose(pad);SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;}
+int main(int,char**){if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_EVENTS)!=0)return 1;window=SDL_CreateWindow("MINEPLUS",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,W,H,SDL_WINDOW_SHOWN);if(!window){SDL_Quit();return 2;}renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);SDL_RenderSetLogicalSize(renderer,W,H);if(SDL_NumJoysticks()>0&&SDL_IsGameController(0))pad=SDL_GameControllerOpen(0);init_world();load_world();build_boss_arena();bossClockMs=SDL_GetTicks();lastBossClockTick=bossClockMs;primordialBoss.state_started_at=bossClockMs;Uint32 lastAutosave=SDL_GetTicks();while(running){const Uint32 frameStart=SDL_GetTicks();const Uint32 wallNow=frameStart;if(lastBossClockTick==0)lastBossClockTick=wallNow;if(playing&&!paused&&!inventory)bossClockMs+=wallNow-lastBossClockTick;lastBossClockTick=wallNow;SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;if(e.type==SDL_KEYDOWN&&e.key.repeat==0)handle_key(e.key.keysym.sym);if(e.type==SDL_MOUSEBUTTONDOWN&&playing&&!paused&&!inventory){if(e.button.button==SDL_BUTTON_LEFT)mine_block();else if(e.button.button==SDL_BUTTON_RIGHT)place_block();}if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_START:if(!playing)playing=true;else{paused=!paused;inventory=false;}break;case SDL_CONTROLLER_BUTTON_BACK:if(playing&&!paused)inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_A:if(!playing)playing=true;else if(paused)paused=false;else if(inventory){if(equipmentPage)craft_equipment();else craft_item();}else place_block();break;case SDL_CONTROLLER_BUTTON_X:if(paused)save_world();else if(playing&&inventory&&equipmentPage)repair_selected_equipment();else if(playing&&!inventory)mine_block();break;case SDL_CONTROLLER_BUTTON_B:if(inventory)inventory=false;else if(paused)paused=false;else if(playing)paused=true;else running=false;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:if(playing&&!paused&&!inventory)move_player(0,-1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(playing&&!paused&&!inventory)move_player(0,1);break;case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(playing&&!paused&&!inventory)move_player(-1,0);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(playing&&!paused&&!inventory)move_player(1,0);break;case SDL_CONTROLLER_BUTTON_Y:if(playing&&!paused)inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(inventory){if(equipmentPage)equip_selected_equipment();else craft_item();}else if(playing&&!paused)use_weapon_art();break;case SDL_CONTROLLER_BUTTON_LEFTSTICK:if(inventory)equipmentPage=!equipmentPage;else if(playing&&!paused)talk_to_nearest_npc();break;case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(inventory){if(equipmentPage)change_equipment(-1);else change_recipe(-1);}else selected=(selected+7)%8;break;case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(inventory){if(equipmentPage)change_equipment(1);else change_recipe(1);}else selected=(selected+1)%8;break;default:break;}}}if(playing&&!paused&&!inventory){update_creatures();update_settlement_npcs();update_primordial_boss(bossClockMs);}if(playing&&!paused&&!inventory)update_player_combat();if(playing&&!paused&&!inventory&&pad){Uint32 now=SDL_GetTicks();if(now-lastTurn>230){Sint16 rx=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_RIGHTX);if(rx>18000){turn_player(1);lastTurn=now;}else if(rx< -18000){turn_player(-1);lastTurn=now;}}if(now-lastMove>155){Sint16 ax=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX),ay=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTY);if(ax>18000){move_player(1,0);lastMove=now;}else if(ax< -18000){move_player(-1,0);lastMove=now;}else if(ay>18000){move_player(0,1);lastMove=now;}else if(ay< -18000){move_player(0,-1);lastMove=now;}}}if(playing&&!paused&&SDL_GetTicks()-lastAutosave>30000){save_world(false);lastAutosave=SDL_GetTicks();}if(playing)draw_world();else draw_menu();SDL_RenderPresent(renderer);const Uint32 frameElapsed=SDL_GetTicks()-frameStart;if(frameElapsed<16u)SDL_Delay(16u-frameElapsed);}save_world(false);if(pad)SDL_GameControllerClose(pad);SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;}
