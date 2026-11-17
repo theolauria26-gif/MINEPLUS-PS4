@@ -315,6 +315,20 @@ void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){
   case 24:r=235;g=190;b=72;break;case 25:r=100;g=190;b=105;break;case 26:r=190;g=181;b=150;break;
   case 27:r=150;g=158;b=168;break;case 28:r=105;g=190;b=210;break;case 29:r=150;g=105;b=210;break;case 30:r=245;g=125;b=55;break;default:r=16;g=23;b=29;break;
 }}
+void inventory_item_color(int id,Uint8& r,Uint8& g,Uint8& b){
+ switch(id){
+  case 22:r=235;g=190;b=72;break;
+  case 23:r=100;g=190;b=105;break;
+  case 24:r=190;g=181;b=150;break;
+  case 25:r=150;g=158;b=168;break;
+  case 26:r=105;g=190;b=210;break;
+  case 27:r=150;g=105;b=210;break;
+  case 28:r=245;g=125;b=55;break;
+  case 29:r=205;g=180;b=130;break;
+  case 30:r=220;g=80;b=95;break;
+  default:tile_color(id,r,g,b);break;
+ }
+}
 void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigned seed){
  // Tiny deterministic pixel-art motifs: no external assets, no per-frame allocation.
  // World-space anchoring keeps each material pattern stable while the camera moves.
@@ -648,7 +662,7 @@ void draw_world(){
   if(inventory){
     static const int itemIds[25]={Grass,Dirt,Stone,Wood,Moss,Crystal,Bone,DarkStone,IronOre,Obsidian,Ember,Rune,IronBar,ObsidianCore,EmberCatalyst,AncientRune,22,23,24,25,26,27,28,29,30};
     static const char* itemNames[25]={"GRASS","DIRT","STONE","WOOD","MOSS","CRYSTAL","BONE","DARKSTONE","IRON ORE","OBSIDIAN","EMBER","RUNE","IRON BARS","OBSIDIAN CORE","EMBER CATALYST","ANCIENT RUNE","COINS","HERBS","BONE SHARDS","IRON ORE","CRYSTAL SHARDS","RUNE FRAGMENTS","EMBER CORES","ANCIENT RELICS","BOSS SIGILS"};
-    for(int i=0;i<25;i++){int x=265+(i%4)*188,y=245+(i/4)*40,id=itemIds[i];rect(x,y,170,36,27,43,43);Uint8 r,g,b;tile_color(id,r,g,b);rect(x+7,y+4,27,27,r,g,b);outline(x,y,170,36,75,145,98);draw_text(itemNames[i],x+41,y+5,1,208,215,208);char amount[12];std::snprintf(amount,sizeof(amount),"%d",stock[id]);draw_text(amount,x+41,y+21,1,160,220,174);}
+    for(int i=0;i<25;i++){int x=265+(i%4)*188,y=245+(i/4)*40,id=itemIds[i];rect(x,y,170,36,27,43,43);Uint8 r,g,b;if(id>=22)inventory_item_color(id,r,g,b);else tile_color(id,r,g,b);rect(x+7,y+4,27,27,r,g,b);outline(x,y,170,36,75,145,98);draw_text(itemNames[i],x+41,y+5,1,208,215,208);char amount[12];std::snprintf(amount,sizeof(amount),"%d",stock[id]);draw_text(amount,x+41,y+21,1,160,220,174);}
     static const char* recipes[9]={"DARKSTONE: 3 STONE + 2 WOOD","MOSS: 3 DIRT + 1 WOOD","CRYSTAL: 4 STONE + 1 BONE","BONE: 2 WOOD + 1 STONE","STONE: 3 DIRT + 1 BONE","IRON BARS: 3 ORE + 1 EMBER","OBSIDIAN CORE: 3 OBSIDIAN + 1 ORE","EMBER CATALYST: 3 EMBER + 1 CRYSTAL","ANCIENT RUNE: 2 RUNES + 2 CRYSTAL"};
     draw_text("CRAFTING",1010,218,2,132,235,166);
     for(int ri=0;ri<9;ri++)draw_text(recipes[ri],1010,245+ri*25,1,ri==selectedRecipe?245:145,ri==selectedRecipe?220:165,ri==selectedRecipe?145:160);
