@@ -252,7 +252,7 @@ bool save_world(bool feedback=true){
 bool load_world(){
   FILE* f=std::fopen(SAVE_FILE,"rb");if(!f)return false;
   SaveHeader h{};
-  bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version>=1&&h.version<=8);
+  bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version>=1&&h.version<=9);
   const bool legacy=h.version<5;
   auto &restored=loadWorldBuffer;
   restored.fill(0);
