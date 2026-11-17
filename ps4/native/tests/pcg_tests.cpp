@@ -40,6 +40,33 @@ int main() {
     }
     assert(seedChangesTerrain);
 
+    // The overworld must contain deterministic river channels and sandy
+    // transitions without erasing the identity of the surrounding biome.
+    bool foundRiver = false;
+    bool foundRiverBank = false;
+    for (int y = -2048; y <= 2048; y += 8) {
+        for (int x = -2048; x <= 2048; x += 8) {
+            const auto sample = worldA.sample_surface(x, y);
+            if (sample.surface == 13 && sample.biome !=
+                    static_cast<std::uint8_t>(Biome::Ocean)) {
+                foundRiver = true;
+                const auto water = worldA.sample_voxel(x, y, sample.height);
+                assert(water.material == VoxelMaterial::Water);
+                assert(water.liquid && !water.solid);
+                assert(same_sample(sample, worldB.sample_surface(x, y)));
+            }
+            if (sample.surface == 9 &&
+                sample.biome != static_cast<std::uint8_t>(Biome::Desert) &&
+                sample.biome != static_cast<std::uint8_t>(Biome::Ocean)) {
+                foundRiverBank = true;
+                const auto bank = worldA.sample_voxel(x, y, sample.height);
+                assert(bank.material == VoxelMaterial::Sand && bank.solid);
+            }
+        }
+    }
+    assert(foundRiver);
+    assert(foundRiverBank);
+
     // 3D voxel queries are deterministic and bounded to the world height.
     for (const auto& p : coords) {
         const auto column = worldA.sample_surface(p[0], p[1]);
