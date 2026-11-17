@@ -33,4 +33,9 @@ std::uint32_t surface_event_creature_interval(SurfaceEventType type) {
     if(type==SurfaceEventType::PredatorWarning)return 460u;
     return 650u;
 }
+std::uint8_t surface_event_alert_distance(SurfaceEventType type,bool passive) {
+    if(type==SurfaceEventType::WildlifeMigration&&passive)return 11u;
+    if(type==SurfaceEventType::PredatorWarning&&!passive)return 20u;
+    return passive?7u:14u;
+}
 } // namespace mineplus
