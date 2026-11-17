@@ -90,6 +90,29 @@ int main() {
             assert(roof.material == VoxelMaterial::DarkStone && roof.solid);
             assert(room.material == repeatRoom.material);
 
+            // Primordial chambers contain deterministic floor-level crystal
+            // deposits. Scan the complete central chamber and verify the same
+            // coordinates/materials in a second world with the same seed.
+            bool foundFloorVein = false;
+            const int scanRadius = int(dungeon.radius);
+            for (int vy = -scanRadius; vy <= scanRadius; ++vy) {
+                for (int vx = -scanRadius; vx <= scanRadius; ++vx) {
+                    const int wx = dungeon.x + vx;
+                    const int wy = dungeon.y + vy;
+                    const auto localSurface = worldA.sample_surface(wx, wy);
+                    const auto veinA = worldA.sample_voxel(
+                        wx, wy, localSurface.height - 13);
+                    const auto veinB = worldB.sample_voxel(
+                        wx, wy, localSurface.height - 13);
+                    assert(veinA.material == veinB.material);
+                    if (veinA.material == VoxelMaterial::Crystal) {
+                        foundFloorVein = true;
+                        assert(veinA.solid && !veinA.liquid);
+                    }
+                }
+            }
+            assert(foundFloorVein);
+
             const int profile = int(dungeon.kind % 4u);
             const int mainDivisor = profile == 1 ? 3 : (profile == 2 ? 5 : 4);
             const int wingDivisor = profile == 2 ? 6 : (profile == 3 ? 4 : 5);
