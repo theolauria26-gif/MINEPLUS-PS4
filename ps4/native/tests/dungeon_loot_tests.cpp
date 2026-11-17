@@ -27,6 +27,18 @@ int main() {
     for (const auto& drop : first) if (drop.item == DungeonLootItem::BossSigil && drop.count == 1) has_sigil = true;
     assert(has_sigil && first.size() <= 6);
 
+    room.type = DungeonRoomType::Treasure;
+    DungeonChestState chest{};
+    assert(DungeonLootGenerator::generate_chest(0x12345678ULL,room,chest));
+    assert(chest.room_id==room.id && !chest.opened && !chest.contents.empty());
+    DungeonChestState sameChest{};
+    assert(DungeonLootGenerator::generate_chest(0x12345678ULL,room,sameChest));
+    assert(sameChest.contents.size()==chest.contents.size());
+    for(std::size_t i=0;i<chest.contents.size();++i) {
+        assert(sameChest.contents[i].item==chest.contents[i].item);
+        assert(sameChest.contents[i].count==chest.contents[i].count);
+    }
+
     room.type = DungeonRoomType::Start;
     assert(DungeonLootGenerator::generate(7, room, first) && first.empty());
     room.type = DungeonRoomType::Exit;
