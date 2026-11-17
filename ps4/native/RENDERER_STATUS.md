@@ -155,3 +155,10 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Glasswing Moths now render with two translucent fluttering wings and a pulsing luminous body accent. Pale Wisps receive a broken drifting halo and a faint trailing afterimage, separating their silhouettes from grounded fauna.
 - Both effects use the existing species IDs, deterministic world placement and time-based SDL projection. No new save fields, tile IDs, entity types, imported assets or per-frame allocations were added.
 - These remain stylized 2D projected sprites in the current renderer; they are not skeletal animations, volumetric particles or full 3D creature models.
+
+
+## More recognizable surface-fauna silhouettes
+
+- Mossback Grazers now have branching antlers; Glimmer Hares have upright ears; Frost Prowlers have a jagged icy dorsal ridge; Burrow Foxes have a fuller animated brush tail; and Shardbacks have three faceted back plates.
+- These are lightweight additions to the existing projected SDL creature pass, keyed to existing species IDs. They do not add entity types, save data, tile IDs or imported assets.
+- The silhouettes remain 2D projected shapes rather than rigged 3D models. Their animation is procedural screen-space motion, not skeletal animation.
