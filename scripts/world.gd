@@ -606,47 +606,34 @@ func _save_world(silent: bool = false) -> void:
 		player_position = [player.position.x, player.position.y, player.position.z]
 		player_rotation_y = player.rotation.y
 		camera_pitch = camera.rotation.x
-	var payload := {"version": 4, "world_seed": chunk_streamer.generator.world_seed if chunk_streamer else 4839201, "terrain_edits": chunk_streamer.export_edits() if chunk_streamer else [], "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "selected_block": selected_block}
-	var file := FileAccess.open(_world_save_path(), FileAccess.WRITE)
-	if file:
-		file.store_string(JSON.stringify(payload))
+	var payload := {"version": MineplusWorldSave.CURRENT_VERSION, "world_seed": chunk_streamer.generator.world_seed if chunk_streamer else 4839201, "terrain_edits": chunk_streamer.export_edits() if chunk_streamer else [], "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "selected_block": selected_block}
+	var saved := MineplusWorldSave.save_world(_world_save_path(), payload)
+	if saved:
 		if not silent and status_label:
-			status_label.text = "Mundo salvo neste dispositivo."
+			status_label.text = "Mundo salvo com segurança neste dispositivo."
 	elif not silent and status_label:
-		status_label.text = "Não foi possível salvar o mundo."
+		status_label.text = "Falha ao salvar. O arquivo anterior foi preservado."
 
 func _load_world() -> void:
-	if not FileAccess.file_exists(_world_save_path()):
-		return
-	var file := FileAccess.open(_world_save_path(), FileAccess.READ)
-	if file == null:
-		return
-	var parsed = JSON.parse_string(file.get_as_text())
-	if typeof(parsed) != TYPE_DICTIONARY or not parsed.has("blocks"):
+	var parsed := MineplusWorldSave.load_world(_world_save_path())
+	if parsed.is_empty():
 		return
 	for body in blocks.values():
 		body.queue_free()
 	blocks.clear()
 	if chunk_streamer:
-		chunk_streamer.generator = MineplusWorldGen.new(int(parsed.get("world_seed", 4839201)))
-		chunk_streamer.import_edits(parsed.get("terrain_edits", []))
-	if parsed.has("pickaxe_durability"):
-		pickaxe_durability = clampi(int(parsed["pickaxe_durability"]), 0, 40)
-	if parsed.has("player_position") and parsed["player_position"] is Array and parsed["player_position"].size() == 3:
-		var saved_position: Array = parsed["player_position"]
-		saved_player_position = Vector3(float(saved_position[0]), float(saved_position[1]), float(saved_position[2]))
-	if parsed.has("player_rotation_y"):
-		saved_player_rotation_y = float(parsed["player_rotation_y"])
-	if parsed.has("camera_pitch"):
-		saved_camera_pitch = clampf(float(parsed["camera_pitch"]), -1.45, 1.45)
-	if parsed.has("selected_block"):
-		saved_selected_block = clampi(int(parsed["selected_block"]), 0, BLOCK_NAMES.size() - 1)
-	if parsed.has("inventory") and parsed["inventory"] is Array and parsed["inventory"].size() > 0:
-		for i in range(mini(BLOCK_NAMES.size(), parsed["inventory"].size())):
-			block_counts[i] = clampi(int(parsed["inventory"][i]), 0, MAX_STACK_SIZE)
+		chunk_streamer.generator = MineplusWorldGen.new(int(parsed["world_seed"]))
+		chunk_streamer.import_edits(parsed["terrain_edits"])
+	pickaxe_durability = int(parsed["pickaxe_durability"])
+	var saved_position: Array = parsed["player_position"]
+	saved_player_position = Vector3(float(saved_position[0]), float(saved_position[1]), float(saved_position[2]))
+	saved_player_rotation_y = float(parsed["player_rotation_y"])
+	saved_camera_pitch = float(parsed["camera_pitch"])
+	saved_selected_block = int(parsed["selected_block"])
+	for i in range(BLOCK_NAMES.size()):
+		block_counts[i] = int(parsed["inventory"][i])
 	for entry in parsed["blocks"]:
-		if entry is Array and entry.size() == 4:
-			_add_block(Vector3i(int(entry[0]), int(entry[1]), int(entry[2])), clampi(int(entry[3]), 0, BLOCK_COLORS.size() - 1))
+		_add_block(Vector3i(int(entry[0]), int(entry[1]), int(entry[2])), int(entry[3]))
 	if status_label:
 		status_label.text = "Mundo salvo carregado."
 
