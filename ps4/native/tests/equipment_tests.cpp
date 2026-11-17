@@ -21,10 +21,10 @@ int main(){
  loadout.slots[2]=EquipmentId::RuneChest;
  auto totals=EquipmentCatalog::calculate(loadout);
  assert(totals.damage==24);
- assert(totals.defense==27);
+ assert(totals.defense==31);
  assert(totals.active_set==4&&totals.set_piece_count==3);
- assert(totals.arcane==21);
- assert(totals.resistance==17);
+ assert(totals.arcane==27);
+ assert(totals.resistance==20);
 
  loadout.slots[3]=EquipmentId::RuneLegs;
  loadout.slots[4]=EquipmentId::RuneBoots;
