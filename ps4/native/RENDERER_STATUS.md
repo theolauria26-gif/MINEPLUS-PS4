@@ -88,4 +88,5 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - The current SDL height-field presentation now has a 480-second visual day/night cycle.
 - Sky colors transition through daylight and warmer dawn/dusk palettes; a celestial disc travels across the horizon and switches from sun to moon styling at night.
 - Horizon haze responds to the transition, while existing material emission remains animated.
+- A deterministic field of small stars fades in as daylight falls; star positions are stable for the world seed and opacity follows the night level.
 - This is a screen-space atmosphere pass for the current renderer, not a physically based sky, volumetric atmosphere, dynamic shadow system, or true 3D lighting solution.
