@@ -40,8 +40,6 @@ std::uint32_t BossCombatDirector::damage(BossEncounter& boss, std::uint32_t amou
         boss.state = BossState::Defeated;
         boss.pending_attack = BossAttack::None;
         boss.state_duration_ms = 0;
-    } else {
-        boss.phase = phase_for_health(boss.health, boss.max_health);
     }
     return applied;
 }
