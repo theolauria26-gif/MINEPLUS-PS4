@@ -1,6 +1,7 @@
 #include "dungeon_voxel_builder.hpp"
 #include <algorithm>
 #include <cstddef>
+#include <initializer_list>
 
 namespace mineplus {
 namespace {
