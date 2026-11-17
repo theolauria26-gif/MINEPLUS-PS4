@@ -23,13 +23,15 @@ int main() {
     assert(BossCombatDirector::damage(boss, 407) == 407);
     assert(boss.health == 793 && boss.phase == 1);
     assert(BossCombatDirector::damage(boss, 1) == 1);
-    assert(boss.phase == 2);
+    assert(boss.phase == 1);
     // The phase change is announced when the current recovery ends.
     assert(BossCombatDirector::update(boss, 3150) == BossEvent::AttackResolved);
     assert(BossCombatDirector::update(boss, 4400) == BossEvent::PhaseChanged);
     assert(boss.phase == 2);
-    assert(BossCombatDirector::damage(boss, 400) == 400);
+    assert(BossCombatDirector::update(boss, 5100) == BossEvent::AttackResolved);
+    assert(BossCombatDirector::update(boss, 6350) == BossEvent::PhaseChanged);
     assert(boss.phase == 3);
+    assert(BossCombatDirector::damage(boss, 400) == 400);
     assert(BossCombatDirector::damage(boss, 10000) == 392);
     assert(boss.health == 0 && boss.state == BossState::Defeated);
     assert(BossCombatDirector::damage(boss, 1) == 0);
