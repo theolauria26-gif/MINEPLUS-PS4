@@ -22,6 +22,8 @@ O projeto Godot é um protótipo separado do cliente C++ que gera o PKG de PS4. 
 
 O workflow Godot executa o projeto em modo headless, instancia o mundo streamed e roda testes de round-trip, saneamento de dados, rejeição de versões futuras e recuperação do backup. Esses testes cobrem o protótipo Godot; não alteram nem substituem o codec de save do cliente nativo PS4.
 
+A geração dos chunks Godot agora pré-amostra uma grade de 18×18 (chunk 16×16 + halo) e reutiliza as quatro alturas vizinhas na construção das faces laterais. Em um chunk sem edições, isso reduz o pior caso de até 1.792 chamadas repetidas de amostragem para 324, mantendo o limite de um chunk construído por frame e as coordenadas globais determinísticas.
+
 ## Build PS4
 
 O workflow [Build MINEPLUS PS4 PKG](.github/workflows/ps4-native.yml) baixa OpenOrbis v0.5.4, compila os testes portáveis, gera o EBOOT, cria o PKG e executa validações estruturais. O artefato `MINEPLUS-PS4-PKG` só é publicado se todas as etapas passarem.
