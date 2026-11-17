@@ -63,3 +63,10 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Initial placement now asks the ecology catalog to select a species compatible with the sampled biome, moisture, temperature and land surface. Ocean, water and sandy shoreline cells are rejected; if no species fits the sampled climate, the bounded spawn attempt is retried.
 - Creature movement reads the catalog behavior role: grazers and skittish wildlife flee when approached, while predators and territorial species pursue. This reuses the existing simple tile-step movement; it is not advanced pathfinding, pack coordination, animation or a new rendered model.
 - Portable tests cover all twelve species IDs, biome/climate eligibility, invalid surfaces, deterministic selection and behavior roles.
+
+
+## Frontier settlements
+
+- Added deterministic settlement site selection on temperate Plains/Forest clearings with moisture and temperature bounds and a five-point height/surface check.
+- Each accepted site has one of four five-building layouts and a stable resident-count target (5–7). The current gameplay integration rasterizes five distinct house/workshop footprints, a central hearth and walkable doorways after the road pass.
+- This pass creates settlement architecture only. Resident NPC actors, dialogue, schedules, trading and quest persistence are not yet implemented; those remain a separate gameplay milestone.
