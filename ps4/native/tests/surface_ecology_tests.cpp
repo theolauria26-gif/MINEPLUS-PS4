@@ -12,20 +12,20 @@ int main() {
     assert(surface_species(12) == nullptr);
     assert(surface_species(255) == nullptr);
 
-    const auto forest = choose_surface_species(Biome::Forest, 190, 150, 0);
-    const auto plains = choose_surface_species(Biome::Plains, 180, 150, 3);
-    const auto desert = choose_surface_species(Biome::Desert, 80, 190, 0);
-    const auto tundra = choose_surface_species(Biome::Tundra, 80, 65, 1);
-    const auto highlands = choose_surface_species(Biome::Highlands, 120, 120, 2);
+    const auto forest = choose_surface_species(Biome::Forest, 190, 150, 1, 0);
+    const auto plains = choose_surface_species(Biome::Plains, 180, 150, 1, 3);
+    const auto desert = choose_surface_species(Biome::Desert, 80, 190, 9, 0);
+    const auto tundra = choose_surface_species(Biome::Tundra, 80, 65, 10, 1);
+    const auto highlands = choose_surface_species(Biome::Highlands, 120, 120, 3, 2);
     assert(forest < 4);
     assert(plains < 4);
     assert(desert >= 4 && desert < 8);
     assert(tundra >= 4 && tundra < 8);
     assert(highlands >= 8 && highlands < 12);
-    assert(choose_surface_species(Biome::Ocean, 120, 120, 0) == 255u);
+    assert(choose_surface_species(Biome::Ocean, 120, 120, 13, 0) == 255u);
 
     for (unsigned seed = 0; seed < 64; ++seed) {
-        const auto a = choose_surface_species(Biome::Forest, 190, 150, seed);
+        const auto a = choose_surface_species(Biome::Forest, 190, 150, 1, seed);
         const auto b = choose_surface_species(Biome::Forest, 190, 150, seed);
         assert(a == b);
         assert(a < 4);
@@ -39,6 +39,7 @@ int main() {
     assert(!surface_species_can_spawn(5, Biome::Tundra, 80, 180, 1));
     assert(surface_species_can_spawn(0, Biome::Forest, 190, 150, 1));
     assert(surface_species_can_spawn(5, Biome::Tundra, 80, 65, 1));
+    assert(surface_species_can_spawn(4, Biome::Desert, 80, 190, 9));
 
     assert(surface_species(0)->behavior == SurfaceBehavior::Grazer);
     assert(surface_species(1)->behavior == SurfaceBehavior::Predator);
