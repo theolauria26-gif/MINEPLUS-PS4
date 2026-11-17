@@ -251,7 +251,8 @@ func _create_hud() -> void:
 	hotbar_label.add_theme_color_override("font_color", Color("#f1f5f2"))
 	hud.add_child(hotbar_label)
 	_update_hotbar()
-	_add_touch_controls(hud)
+	if OS.has_feature("mobile"):
+		_add_touch_controls(hud)
 	_add_hotbar_buttons(hud)
 	_add_save_button(hud)
 	_add_craft_button(hud)
@@ -260,21 +261,23 @@ func _create_hud() -> void:
 	_create_pause_menu(hud)
 
 func _add_touch_controls(hud: CanvasLayer) -> void:
-	var ui_scale := clampf(get_viewport().get_visible_rect().size.x / 720.0, 0.65, 1.0)
+	var viewport_size := get_viewport().get_visible_rect().size
+	var ui_scale := clampf(minf(viewport_size.x / 720.0, viewport_size.y / 560.0), 0.55, 1.0)
 	var move_box := HBoxContainer.new()
 	move_box.position = Vector2(14, -112 * ui_scale)
 	move_box.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	move_box.add_theme_constant_override("separation", 7)
+	move_box.add_theme_constant_override("separation", 7 * ui_scale)
 	hud.add_child(move_box)
-	_add_hold_button(move_box, "◀", "move_left")
-	_add_hold_button(move_box, "▲", "move_forward")
-	_add_hold_button(move_box, "▼", "move_back")
-	_add_hold_button(move_box, "▶", "move_right")
+	_add_hold_button(move_box, "◀", "move_left", ui_scale)
+	_add_hold_button(move_box, "▲", "move_forward", ui_scale)
+	_add_hold_button(move_box, "▼", "move_back", ui_scale)
+	_add_hold_button(move_box, "▶", "move_right", ui_scale)
 	var break_button := Button.new()
 	break_button.text = "QUEBRAR"
 	break_button.position = Vector2(-218 * ui_scale, -112 * ui_scale)
 	break_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	break_button.custom_minimum_size = Vector2(96, 54) * ui_scale
+	break_button.add_theme_font_size_override("font_size", 10)
 	break_button.pressed.connect(func(): _interact(false))
 	hud.add_child(break_button)
 	var place_button := Button.new()
@@ -282,6 +285,7 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 	place_button.position = Vector2(-322 * ui_scale, -112 * ui_scale)
 	place_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	place_button.custom_minimum_size = Vector2(96, 54) * ui_scale
+	place_button.add_theme_font_size_override("font_size", 10)
 	place_button.pressed.connect(func(): _interact(true))
 	hud.add_child(place_button)
 	var jump := Button.new()
@@ -289,6 +293,7 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 	jump.position = Vector2(-112 * ui_scale, -112 * ui_scale)
 	jump.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	jump.custom_minimum_size = Vector2(88, 54) * ui_scale
+	jump.add_theme_font_size_override("font_size", 10)
 	jump.button_down.connect(func(): Input.action_press("jump"))
 	jump.button_up.connect(func(): Input.action_release("jump"))
 	hud.add_child(jump)
@@ -637,10 +642,10 @@ func _load_world() -> void:
 	if status_label:
 		status_label.text = "Mundo salvo carregado."
 
-func _add_hold_button(parent: HBoxContainer, caption: String, action: String) -> void:
+func _add_hold_button(parent: HBoxContainer, caption: String, action: String, ui_scale: float) -> void:
 	var button := Button.new()
 	button.text = caption
-	button.custom_minimum_size = Vector2(54, 54) * clampf(get_viewport().get_visible_rect().size.x / 720.0, 0.65, 1.0)
+	button.custom_minimum_size = Vector2(54, 54) * ui_scale
 	button.button_down.connect(func(): Input.action_press(action))
 	button.button_up.connect(func(): Input.action_release(action))
 	parent.add_child(button)
