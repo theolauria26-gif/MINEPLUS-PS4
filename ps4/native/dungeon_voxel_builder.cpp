@@ -177,11 +177,28 @@ bool DungeonVoxelBuilder::build_layout_chunk(const DungeonLayout& layout,
         const DungeonRoom* b = find_room(layout, edge.to);
         if (!a || !b || a == b || edge.corridor_width == 0 ||
             edge.corridor_width > 5) return false;
-        const bool adjacent = (a->grid_x == b->grid_x &&
-            (a->grid_y + 1 == b->grid_y || b->grid_y + 1 == a->grid_y)) ||
-            (a->grid_y == b->grid_y &&
-            (a->grid_x + 1 == b->grid_x || b->grid_x + 1 == a->grid_x));
-        if (!adjacent) return false;
+        const bool horizontal = a->grid_y == b->grid_y &&
+            (a->grid_x + 1 == b->grid_x || b->grid_x + 1 == a->grid_x);
+        const bool vertical = a->grid_x == b->grid_x &&
+            (a->grid_y + 1 == b->grid_y || b->grid_y + 1 == a->grid_y);
+        if (!horizontal && !vertical) return false;
+        if (horizontal) {
+            const DungeonRoom& left = a->x < b->x ? *a : *b;
+            const DungeonRoom& right = a->x < b->x ? *b : *a;
+            const std::int32_t overlap = std::min(
+                left.y + left.height - 1, right.y + right.height - 1) -
+                std::max(left.y, right.y) + 1;
+            if (left.x + left.width - 1 >= right.x ||
+                overlap < edge.corridor_width) return false;
+        } else {
+            const DungeonRoom& top = a->y < b->y ? *a : *b;
+            const DungeonRoom& bottom = a->y < b->y ? *b : *a;
+            const std::int32_t overlap = std::min(
+                top.x + top.width - 1, bottom.x + bottom.width - 1) -
+                std::max(top.x, bottom.x) + 1;
+            if (top.y + top.height - 1 >= bottom.y ||
+                overlap < edge.corridor_width) return false;
+        }
     }
 
     output.cells.fill(0);
