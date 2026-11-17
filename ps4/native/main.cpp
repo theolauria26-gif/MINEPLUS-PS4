@@ -1395,6 +1395,39 @@ void draw_world(){
     rect(sx-bodyW/2,sy-horn, std::max(2,bodyW/4),horn,rr+25,rr+12,rr+8);
     rect(sx+bodyW/4,sy-horn, std::max(2,bodyW/4),horn,rr+25,rr+12,rr+8);
    }
+   if(m.type==0){
+    // Mossbacks carry branching, bark-toned antlers.
+    const int antler=std::max(2,size/6);
+    rect(sx-bodyW/4,sy-antler,std::max(1,size/28),antler,142,119,76,190);
+    rect(sx-bodyW/4-size/12,sy-antler,std::max(1,size/24),std::max(2,antler/2),142,119,76,190);
+    rect(sx+bodyW/4,sy-antler,std::max(1,size/28),antler,142,119,76,190);
+    rect(sx+bodyW/4+size/12,sy-antler,std::max(1,size/24),std::max(2,antler/2),142,119,76,190);
+   }else if(m.type==2){
+    // Glimmer Hares have long upright ears with pale inner pixels.
+    const int ear=std::max(2,size/4);
+    rect(sx-bodyW/5,sy-ear,std::max(2,size/12),ear,rr+18,rr+10,rr+5);
+    rect(sx+bodyW/8,sy-ear,std::max(2,size/12),ear,rr+18,rr+10,rr+5);
+    rect(sx-bodyW/5+1,sy-ear+2,1,std::max(1,ear/2),225,190,175,175);
+   }else if(m.type==5){
+    // Frost Prowlers have a jagged icy dorsal ridge.
+    const int spike=std::max(2,size/7);
+    for(int plate=0;plate<3;++plate){
+     const int ox=-bodyW/4+plate*std::max(2,bodyW/4);
+     rect(sx+ox,sy-spike/2,std::max(2,size/13),spike,130,205,225,185);
+    }
+   }else if(m.type==7){
+    // Burrow Foxes carry a fuller, animated brush tail.
+    const int sway=int(std::sin(phase*4.0f)*std::max(1,size/10));
+    rect(sx-bodyW/2-size/7,sy+bodyH/3+sway,std::max(3,size/5),std::max(2,size/9),rr+24,rr+17,rr+12);
+    rect(sx-bodyW/2-size/7,sy+bodyH/3+sway,std::max(2,size/13),std::max(2,size/9),225,205,170,190);
+   }else if(m.type==10){
+    // Shardbacks carry three faceted crystal plates along the back.
+    for(int plate=0;plate<3;++plate){
+     const int ox=-bodyW/3+plate*std::max(2,bodyW/4);
+     rect(sx+ox,sy-std::max(2,size/10),std::max(2,size/10),std::max(2,size/7),
+          105,190+plate*12,205+plate*8,190);
+    }
+   }
    // Species silhouettes gain a readable head, ears/tail and breathing motion.
    const int headSize=std::max(2,size/(m.type==8||m.type==10?5:7));
    const int headX=sx+bodyW/3,headY=sy+bodyH/7+int(std::sin(phase*2.0f)*std::max(1,size/45));
