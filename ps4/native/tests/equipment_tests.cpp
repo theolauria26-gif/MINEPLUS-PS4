@@ -80,6 +80,7 @@ int main(){
  assert(EquipmentCatalog::mitigate_damage(1,armor,true)==1);
  assert(EquipmentCatalog::mitigate_damage(0,armor,true)==0);
  EquipmentState repairState{};int repairStock[31]{};repairStock[18]=2;repairStock[7]=1;
+ forgeStock[18]=3;forgeStock[14]=2;forgeStock[4]=1;
  assert(EquipmentCatalog::craft(repairState,EquipmentId::IronSword,forgeStock,31));
  const auto repairSword=static_cast<unsigned>(EquipmentId::IronSword);
  assert(EquipmentCatalog::equip(repairState,EquipmentId::IronSword));
