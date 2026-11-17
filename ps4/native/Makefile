@@ -33,13 +33,15 @@ $(INTDIR)/voxel_face_uv.o: voxel_face_uv.cpp voxel_face_uv.hpp voxel_mesher.hpp 
 	$(CXX) $(CXXFLAGS) -o $@ voxel_face_uv.cpp
 $(INTDIR)/voxel_mesh_vertices.o: voxel_mesh_vertices.cpp voxel_mesh_vertices.hpp voxel_face_uv.hpp material_atlas.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ voxel_mesh_vertices.cpp
+$(INTDIR)/dungeon_loot.o: dungeon_loot.cpp dungeon_loot.hpp dungeon_graph.hpp | $(INTDIR)
+	$(CXX) $(CXXFLAGS) -o $@ dungeon_loot.cpp
 $(INTDIR)/dungeon_graph.o: dungeon_graph.cpp dungeon_graph.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ dungeon_graph.cpp
 $(INTDIR)/dungeon_voxel_builder.o: dungeon_voxel_builder.cpp dungeon_voxel_builder.hpp dungeon_graph.hpp voxel_mesher.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ dungeon_voxel_builder.cpp
 $(INTDIR)/procedural_voxel_chunk.o: procedural_voxel_chunk.cpp procedural_voxel_chunk.hpp pcg_world.hpp voxel_mesher.hpp world_runtime.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ procedural_voxel_chunk.cpp
-$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o $(INTDIR)/save_codec.o $(INTDIR)/world_runtime.o $(INTDIR)/voxel_mesher.o $(INTDIR)/material_atlas.o $(INTDIR)/voxel_face_uv.o $(INTDIR)/voxel_mesh_vertices.o $(INTDIR)/dungeon_graph.o $(INTDIR)/dungeon_voxel_builder.o $(INTDIR)/procedural_voxel_chunk.o
+$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o $(INTDIR)/save_codec.o $(INTDIR)/world_runtime.o $(INTDIR)/voxel_mesher.o $(INTDIR)/material_atlas.o $(INTDIR)/voxel_face_uv.o $(INTDIR)/voxel_mesh_vertices.o $(INTDIR)/dungeon_graph.o $(INTDIR)/dungeon_voxel_builder.o $(INTDIR)/procedural_voxel_chunk.o $(INTDIR)/dungeon_loot.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 eboot.bin: $(INTDIR)/mineplus.elf
 	$(TOOLCHAIN)/bin/linux/create-fself -in=$< -out=$(INTDIR)/mineplus.oelf --eboot "$@" --paid 0x3800000000000011
