@@ -123,6 +123,27 @@ int main() {
                                            offsetNumerator / offsetDenominator);
             const int wingRadius = std::max(2, int(dungeon.radius) / wingDivisor);
             assert(mainRadius >= 2);
+
+            // Four rune pylons and their ember caps are deterministic, solid
+            // landmarks at the central chamber's diagonal corners.
+            const int pylonOffset = std::max(1, mainRadius / 2);
+            for (int signX : {-1, 1}) {
+                for (int signY : {-1, 1}) {
+                    const int px = dungeon.x + signX * pylonOffset;
+                    const int py = dungeon.y + signY * pylonOffset;
+                    const auto pylonSurface = worldA.sample_surface(px, py);
+                    const auto rune = worldA.sample_voxel(
+                        px, py, pylonSurface.height - 11);
+                    const auto ember = worldA.sample_voxel(
+                        px, py, pylonSurface.height - 10);
+                    const auto repeatedRune = worldB.sample_voxel(
+                        px, py, pylonSurface.height - 11);
+                    assert(rune.material == VoxelMaterial::Rune && rune.solid);
+                    assert(ember.material == VoxelMaterial::Ember && ember.solid);
+                    assert(repeatedRune.material == rune.material);
+                }
+            }
+
             const int wingX = dungeon.x + offset;
             const int wingY = dungeon.y;
             const auto eastSurface = worldA.sample_surface(wingX, wingY);
