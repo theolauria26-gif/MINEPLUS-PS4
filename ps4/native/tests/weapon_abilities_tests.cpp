@@ -13,7 +13,7 @@ int main() {
   assert(!weapon_art_ready(p,1000,0));
   assert(!weapon_art_ready(p,p.cooldown_ms-1,0));
   assert(weapon_art_ready(p,p.cooldown_ms,0));
-  assert(weapon_art_ready(p,50,0xffffffffu)); // unsigned tick wrap is safe
+  assert(weapon_art_ready(p,3000,0xfffffff0u)); // unsigned tick wrap is safe
  }
  assert(weapon_art(EquipmentId::RuneHelm).art==WeaponArt::None);
  assert(!weapon_art_ready(weapon_art(EquipmentId::None),5000,0));
