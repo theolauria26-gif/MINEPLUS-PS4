@@ -266,7 +266,7 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 	var move_box := HBoxContainer.new()
 	move_box.position = Vector2(14, -112 * ui_scale)
 	move_box.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	move_box.add_theme_constant_override("separation", 7 * ui_scale)
+	move_box.add_theme_constant_override("separation", maxi(3, roundi(7.0 * ui_scale)))
 	hud.add_child(move_box)
 	_add_hold_button(move_box, "◀", "move_left", ui_scale)
 	_add_hold_button(move_box, "▲", "move_forward", ui_scale)
