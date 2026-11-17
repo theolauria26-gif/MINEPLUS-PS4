@@ -19,3 +19,15 @@ This module is currently a portable combat director and is not yet connected to 
 ## Tests
 
 `tests/boss_combat_tests.cpp` covers initialization, telegraph/recovery timing, deterministic attack cycles, phase thresholds, damage clamping, one-time rewards, defeat lockout, small health pools, and timer wraparound.
+
+## Attack profiles
+
+Each attack exposes a phase-scaled damage and targeting profile for the gameplay layer:
+
+| Attack | Base damage by phase | Range | Area radius by phase |
+|---|---:|---:|---:|
+| Ground Slam | 4 / 5 / 6 | 1 tile | 2 / 3 / 4 tiles |
+| Rune Volley | 3 / 4 / 5 | 4 tiles | Single-target line |
+| Rift Charge | 5 / 6 / 7 | 3 tiles | 1 tile |
+
+The director exposes these values as data; the actual collision, projectile visuals and player-hit application still belong to the gameplay integration layer.
