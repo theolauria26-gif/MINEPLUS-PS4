@@ -79,5 +79,22 @@ int main(){
  assert(EquipmentCatalog::mitigate_damage(5,armor,true)==1);
  assert(EquipmentCatalog::mitigate_damage(1,armor,true)==1);
  assert(EquipmentCatalog::mitigate_damage(0,armor,true)==0);
+ EquipmentState repairState{};int repairStock[31]{};repairStock[18]=2;repairStock[7]=1;
+ assert(EquipmentCatalog::craft(repairState,EquipmentId::IronSword,forgeStock,31));
+ const auto repairSword=static_cast<unsigned>(EquipmentId::IronSword);
+ assert(EquipmentCatalog::equip(repairState,EquipmentId::IronSword));
+ EquipmentCatalog::wear(repairState,EquipmentSlot::Weapon,35);
+ assert(repairState.durability[repairSword]>0);
+ assert(EquipmentCatalog::repair(repairState,EquipmentId::IronSword,repairStock,31));
+ assert(repairState.durability[repairSword]==EquipmentCatalog::find(EquipmentId::IronSword)->durability);
+ assert(repairStock[18]==0&&repairStock[7]==0&&EquipmentCatalog::calculate(repairState).damage==12);
+ assert(!EquipmentCatalog::repair(repairState,EquipmentId::IronSword,repairStock,31));
+ EquipmentCatalog::wear(repairState,EquipmentSlot::Weapon,999);repairStock[18]=2;repairStock[7]=1;
+ assert(repairState.durability[repairSword]==0);
+ assert(EquipmentCatalog::repair(repairState,EquipmentId::IronSword,repairStock,31));
+ assert(!EquipmentCatalog::repair(repairState,EquipmentId::RuneSword,repairStock,31));
+ EquipmentCatalog::wear(repairState,EquipmentSlot::Weapon,1);repairStock[18]=1;repairStock[7]=1;
+ assert(!EquipmentCatalog::repair(repairState,EquipmentId::IronSword,repairStock,31));
+ assert(repairStock[18]==1&&repairStock[7]==1);
  std::cout<<"Equipment catalog tests passed\n";
 }
