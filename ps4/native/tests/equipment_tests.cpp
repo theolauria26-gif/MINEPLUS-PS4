@@ -97,5 +97,21 @@ int main(){
  EquipmentCatalog::wear(repairState,EquipmentSlot::Weapon,1);repairStock[18]=1;repairStock[7]=1;
  assert(!EquipmentCatalog::repair(repairState,EquipmentId::IronSword,repairStock,31));
  assert(repairStock[18]==1&&repairStock[7]==1);
+ // Every tier and slot must expose a valid repair path, including fully broken gear.
+ for(unsigned id=1;id<static_cast<unsigned>(EquipmentId::Count);++id){
+  const auto equipment=static_cast<EquipmentId>(id);
+  const auto* def=EquipmentCatalog::find(equipment);
+  assert(def!=nullptr);
+  EquipmentState tierState{};
+  int materials[31];for(int& amount:materials)amount=999;
+  assert(EquipmentCatalog::craft(tierState,equipment,materials,31));
+  const auto slot=def->slot;
+  EquipmentCatalog::wear(tierState,slot,static_cast<std::uint16_t>(def->durability+5));
+  assert(tierState.durability[id]==0);
+  int repairMaterials[31];for(int& amount:repairMaterials)amount=999;
+  assert(EquipmentCatalog::repair(tierState,equipment,repairMaterials,31));
+  assert(tierState.durability[id]==def->durability);
+  assert(!EquipmentCatalog::repair(tierState,equipment,repairMaterials,31));
+ }
  std::cout<<"Equipment catalog tests passed\n";
 }
