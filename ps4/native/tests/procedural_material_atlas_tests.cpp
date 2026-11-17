@@ -1,0 +1,33 @@
+#include "procedural_material_atlas.hpp"
+#include <cassert>
+#include <cstdint>
+#include <iostream>
+#include <vector>
+using namespace mineplus;
+int main() {
+    std::vector<std::uint8_t> first, second;
+    assert(build_procedural_material_atlas(first));
+    assert(build_procedural_material_atlas(second));
+    const std::size_t expected=static_cast<std::size_t>(MATERIAL_ATLAS_WIDTH)*MATERIAL_ATLAS_HEIGHT*4u;
+    assert(first.size()==expected && second.size()==expected);
+    assert(first==second); // deterministic across runs
+    bool transparent_unused=false, opaque_used=false;
+    for(unsigned y=0;y<MATERIAL_ATLAS_HEIGHT;++y) for(unsigned x=0;x<MATERIAL_ATLAS_WIDTH;++x) {
+        const unsigned id=(y/MATERIAL_ATLAS_TILE_SIZE)*MATERIAL_ATLAS_COLUMNS+
+                          (x/MATERIAL_ATLAS_TILE_SIZE)+MATERIAL_ATLAS_FIRST_ID;
+        const std::size_t at=(static_cast<std::size_t>(y)*MATERIAL_ATLAS_WIDTH+x)*4u;
+        if(id<=MATERIAL_ATLAS_LAST_ID) {
+            assert(first[at+3]==255u); opaque_used=true;
+        } else {
+            assert(first[at]==0u && first[at+1]==0u && first[at+2]==0u && first[at+3]==0u);
+            transparent_unused=true;
+        }
+    }
+    assert(opaque_used && transparent_unused);
+    bool differs=false;
+    for(std::size_t i=0;i<first.size();i+=4)
+        if(first[i]!=first[i+1] || first[i+1]!=first[i+2]) { differs=true; break; }
+    assert(differs);
+    std::cout << "MINEPLUS procedural material atlas tests: OK\n";
+    return 0;
+}
