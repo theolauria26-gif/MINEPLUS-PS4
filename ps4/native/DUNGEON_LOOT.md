@@ -21,4 +21,4 @@ Dungeon chest contents and their opened/closed state are now part of `WorldArchi
 - Version 1 and version 2 archives remain readable; they restore with an empty chest list.
 - Decode validates the complete archive before replacing the runtime's chest state.
 
-This adds persistent storage to the streamed-world runtime. The current legacy SDL gameplay loop still uses its separate version-8 world save and does not yet spawn dungeon chests or transfer loot into the player's live inventory.
+This adds persistent storage to the streamed-world runtime. The legacy SDL gameplay loop now places unopened treasure chests in ancient altar landmarks and keeps a chest in each generated citadel. Press F (or the existing mine action) while facing a closed chest to open it. Loot is generated from the world seed and chest coordinates, transferred into nine dedicated inventory slots, and the chest tile changes to an opened state. The player inventory and chest tile are written together by the version-9 gameplay save. Older gameplay saves remain readable; their new loot slots start empty.
