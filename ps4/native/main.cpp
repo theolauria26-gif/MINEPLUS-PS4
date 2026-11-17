@@ -697,7 +697,7 @@ void buy_selected_trade_offer(){
  if(!tradeOpen)return;
  if(mineplus::surface_trade_buy(tradeRole,selectedTradeOffer,stock.data(),stock.size())){
   const auto offer=mineplus::surface_trade_offer(tradeRole,selectedTradeOffer);
-  activeNpcName="TRADE COMPLETE";activeNpcLine=offer.name;npcDialogueUntil=SDL_GetTicks()+2600u;save_world(false);
+  activeNpcName="TRADE COMPLETE";activeNpcLine=offer.name;npcDialogueUntil=SDL_GetTicks()+2600u;mineplus::surface_quest_add_progress(surfaceQuestProgress,offer.item_id,1);save_world(false);
  }else{activeNpcName="NOT ENOUGH COINS";activeNpcLine="OR INVENTORY SLOT IS FULL";npcDialogueUntil=SDL_GetTicks()+2600u;}
 }
 void talk_to_nearest_npc(){
@@ -781,6 +781,7 @@ bool repair_selected_equipment(){
 }
 void craft_item(){
  // Five deterministic survival recipes, all using resources already in the world.
+ const int ironBarsBefore=stock[IronBar];
  switch(selectedRecipe){
   case 0: // Reinforced darkstone
    if(stock[Stone]>=3&&stock[Wood]>=2&&stock[DarkStone]<=9997){stock[Stone]-=3;stock[Wood]-=2;stock[DarkStone]+=2;}break;
@@ -797,6 +798,8 @@ void craft_item(){
   case 7: if(stock[Ember]>=3&&stock[Crystal]>=1&&stock[EmberCatalyst]<=9998){stock[Ember]-=3;stock[Crystal]-=1;stock[EmberCatalyst]+=1;}break;
   case 8: if(stock[Rune]>=2&&stock[Crystal]>=2&&stock[AncientRune]<=9998){stock[Rune]-=2;stock[Crystal]-=2;stock[AncientRune]+=1;}break;
  }
+ const int craftedIronBars=stock[IronBar]-ironBarsBefore;
+ if(craftedIronBars>0){mineplus::surface_quest_add_progress(surfaceQuestProgress,18,static_cast<std::uint16_t>(craftedIronBars));save_world(false);}
 }
 bool open_treasure_chest(int x,int y){
   if(tile_at(x,y)!=ChestClosed)return false;
