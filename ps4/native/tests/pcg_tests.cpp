@@ -213,6 +213,23 @@ int main() {
     assert(foundSurfaceCamp);
     assert(foundFrontierWatchPost);
 
+    // Road links select the same nearest landmark pair for identical seeds.
+    int roadLinks = 0;
+    for (int cy = -24; cy <= 24; ++cy) {
+        for (int cx = -24; cx <= 24; ++cx) {
+            StructureAnchor fromA{}, toA{}, fromB{}, toB{};
+            const bool linkA = worldA.surface_road_link_for_cell(cx, cy, fromA, toA);
+            const bool linkB = worldB.surface_road_link_for_cell(cx, cy, fromB, toB);
+            assert(linkA == linkB);
+            if (!linkA) continue;
+            ++roadLinks;
+            assert(fromA.x == fromB.x && fromA.y == fromB.y);
+            assert(toA.x == toB.x && toA.y == toB.y);
+            assert(fromA.x != toA.x || fromA.y != toA.y);
+        }
+    }
+    assert(roadLinks > 0);
+
     // Landmark anchors also create a deterministic primordial complex:
     // five chambers connected by a cross corridor, with a solid roof and floor.
     bool checkedDungeon = false;
