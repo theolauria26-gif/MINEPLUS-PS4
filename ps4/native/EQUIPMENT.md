@@ -19,7 +19,7 @@ There are 25 catalog entries. Every item has a stable ID, tier, slot, combat sta
 - Five slots are active: weapon, head, chest, legs and boots.
 - Three matching set pieces activate the set bonus; five pieces add the completion bonus.
 - Weapon damage changes creature hit damage. Armor defense and elemental resistance mitigate incoming hits.
-- Weapon durability decreases when striking creatures; armor durability decreases when the player is hit. Broken equipment remains owned but contributes no stats until repaired (repair is a future feature).
+- Weapon durability decreases when striking creatures; armor durability decreases when the player is hit. Broken equipment remains owned but contributes no stats; crafting the same item again consumes its recipe and reforges it to full durability. A dedicated repair station is still a future feature.
 
 ## Save compatibility
 
