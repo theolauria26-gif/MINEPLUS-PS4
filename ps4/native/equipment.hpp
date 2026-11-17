@@ -70,6 +70,7 @@ public:
     static bool consume_recipe(EquipmentId id,int* inventory,std::size_t inventory_count);
     static EquipmentTotals calculate(const EquipmentLoadout& loadout);
     static bool craft(EquipmentState& state,EquipmentId id,int* inventory,std::size_t inventory_count);
+    static bool repair(EquipmentState& state,EquipmentId id,int* inventory,std::size_t inventory_count);
     static bool equip(EquipmentState& state,EquipmentId id);
     static EquipmentTotals calculate(const EquipmentState& state);
     static void wear(EquipmentState& state,EquipmentSlot slot,std::uint16_t amount=1);
