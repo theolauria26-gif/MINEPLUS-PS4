@@ -32,7 +32,7 @@ constexpr EquipmentDefinition definitions[] = {
 };
 // Inventory indices follow main.cpp: Stone=3, Wood=4, Bone=7, IronOre=14,
 // Obsidian=15, Ember=16, Crystal=6, IronBar=18, ObsidianCore=19,
-// EmberCatalyst=20, AncientRune=21, special loot=22..30.
+// EmberCatalyst=20, AncientRune=21, special loot: Coins=22, Herbs=23, BoneShards=24, DungeonOre=25, CrystalShards=26, RuneFragments=27, EmberCores=28, Relics=29, BossSigils=30.
 constexpr EquipmentRecipe recipes[] = {
  {EquipmentId::StoneHatchet,{{{4,3},{3,2},{7,1},{0,0}}},3},
  {EquipmentId::BoneCap,{{{7,4},{4,2},{0,0},{0,0}}},2},
@@ -49,16 +49,16 @@ constexpr EquipmentRecipe recipes[] = {
  {EquipmentId::ObsidianChest,{{{15,9},{19,2},{16,4},{14,3}}},4},
  {EquipmentId::ObsidianLegs,{{{15,6},{19,1},{16,3},{7,3}}},4},
  {EquipmentId::ObsidianBoots,{{{15,4},{19,1},{16,2},{4,2}}},4},
- {EquipmentId::RuneSword,{{{21,2},{23,3},{20,1},{22,2}}},4},
- {EquipmentId::RuneHelm,{{{21,2},{23,2},{22,2},{6,3}}},4},
- {EquipmentId::RuneChest,{{{21,4},{23,4},{22,3},{6,5}}},4},
- {EquipmentId::RuneLegs,{{{21,3},{23,3},{22,2},{6,3}}},4},
- {EquipmentId::RuneBoots,{{{21,2},{23,2},{22,2},{6,2}}},4},
- {EquipmentId::PrimordialBlade,{{{29,1},{30,1},{23,5},{24,4}}},4},
- {EquipmentId::PrimordialHelm,{{{29,1},{30,1},{23,3},{24,3}}},4},
- {EquipmentId::PrimordialChest,{{{29,2},{30,1},{23,7},{24,6}}},4},
- {EquipmentId::PrimordialLegs,{{{29,1},{30,1},{23,5},{24,4}}},4},
- {EquipmentId::PrimordialBoots,{{{29,1},{30,1},{23,3},{24,3}}},4}
+ {EquipmentId::RuneSword,{{{21,2},{27,3},{28,1},{26,2}}},4},
+ {EquipmentId::RuneHelm,{{{21,2},{27,2},{26,2},{6,3}}},4},
+ {EquipmentId::RuneChest,{{{21,4},{27,4},{26,3},{6,5}}},4},
+ {EquipmentId::RuneLegs,{{{21,3},{27,3},{26,2},{6,3}}},4},
+ {EquipmentId::RuneBoots,{{{21,2},{27,2},{26,2},{6,2}}},4},
+ {EquipmentId::PrimordialBlade,{{{29,1},{30,1},{27,5},{26,4}}},4},
+ {EquipmentId::PrimordialHelm,{{{29,1},{30,1},{27,3},{26,3}}},4},
+ {EquipmentId::PrimordialChest,{{{29,2},{30,1},{27,7},{26,6}}},4},
+ {EquipmentId::PrimordialLegs,{{{29,1},{30,1},{27,5},{26,4}}},4},
+ {EquipmentId::PrimordialBoots,{{{29,1},{30,1},{27,3},{26,3}}},4}
 };
 const EquipmentDefinition* definition(EquipmentId id) {
  for(const auto& d:definitions)if(d.id==id)return &d;
