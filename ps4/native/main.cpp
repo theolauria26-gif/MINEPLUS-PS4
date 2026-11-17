@@ -728,6 +728,14 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
    default: break;
   }
   if(draw){color(r,g,b,alpha);SDL_RenderDrawPoint(renderer,sx,py);}
+  // Wind moves a sparse layer of canopy pixels by at most one screen pixel.
+  // The phase is coordinate-stable per tree and uses integer time buckets,
+  // avoiding per-pixel trigonometry and keeping the base material texture fixed.
+  if(t==Leaves && draw && (pattern&7u)==0u){
+   const unsigned gust=(worldVisualTicks/160u+cellX*3u+cellY*5u)&3u;
+   const int sway=gust==0u?-1:(gust==2u?1:0);
+   if(sway!=0){color(116,171,91,105);SDL_RenderDrawPoint(renderer,sx+sway,py);}
+  }
  }
 }
 bool solid_tile(int t){return t==DarkStone||t==Stone||t==Wood||t==Bone||t==Crystal||t==IronOre||t==Obsidian||t==Rune;}
