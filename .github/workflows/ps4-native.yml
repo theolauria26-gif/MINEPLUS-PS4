@@ -106,6 +106,13 @@ jobs:
             ps4/native/chunk_cache.cpp ps4/native/save_codec.cpp \
             ps4/native/tests/save_codec_tests.cpp -o "$RUNNER_TEMP/mineplus-save-tests"
           "$RUNNER_TEMP/mineplus-save-tests"
+      - name: Run equipment progression tests
+        run: |
+          set -euxo pipefail
+          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
+            ps4/native/equipment.cpp ps4/native/tests/equipment_tests.cpp \
+            -o "$RUNNER_TEMP/mineplus-equipment-tests"
+          "$RUNNER_TEMP/mineplus-equipment-tests"
       - name: Build native EBOOT and PKG
         run: |
           set -euxo pipefail
