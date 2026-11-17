@@ -24,10 +24,22 @@ int main() {
         }
     }
     assert(opaque_used && transparent_unused);
-    bool differs=false;
-    for(std::size_t i=0;i<first.size();i+=4)
-        if(first[i]!=first[i+1] || first[i+1]!=first[i+2]) { differs=true; break; }
-    assert(differs);
+    // Every material must contain more than a flat two-color fill.
+    for(unsigned id=MATERIAL_ATLAS_FIRST_ID;id<=MATERIAL_ATLAS_LAST_ID;++id) {
+        const unsigned tx=(id-MATERIAL_ATLAS_FIRST_ID)%MATERIAL_ATLAS_COLUMNS;
+        const unsigned ty=(id-MATERIAL_ATLAS_FIRST_ID)/MATERIAL_ATLAS_COLUMNS;
+        bool varied=false;
+        const std::size_t firstPixel=(static_cast<std::size_t>(ty*MATERIAL_ATLAS_TILE_SIZE)*
+            MATERIAL_ATLAS_WIDTH+tx*MATERIAL_ATLAS_TILE_SIZE)*4u;
+        for(unsigned y=0;y<MATERIAL_ATLAS_TILE_SIZE&&!varied;++y)
+            for(unsigned x=0;x<MATERIAL_ATLAS_TILE_SIZE;++x) {
+                const std::size_t at=firstPixel+
+                    (static_cast<std::size_t>(y)*MATERIAL_ATLAS_WIDTH+x)*4u;
+                if(first[at]!=first[firstPixel]||first[at+1]!=first[firstPixel+1]||
+                   first[at+2]!=first[firstPixel+2]) { varied=true; break; }
+            }
+        assert(varied);
+    }
     std::cout << "MINEPLUS procedural material atlas tests: OK\n";
     return 0;
 }
