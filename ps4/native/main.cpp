@@ -563,19 +563,26 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
   Uint8 r=0,g=0,b=0;bool draw=false;
   switch(t){
    case Grass:
-    // Sparse coordinate-locked wildflowers break up broad grass fields without
-    // spawning extra entities or changing collision, saves, or world generation.
-    if((pattern%43u)==0u){
+    // Small pixel-art grass tufts and four flower colors add foreground
+    // texture without spawning entities or changing collision/save data.
+    const unsigned tuft=hash2(int(cellX*37u+cellY*11u+unsigned(t)*97u+seed),
+                              int(cellY*19u+unsigned(t)*31u));
+    if((tuft%43u)==0u){
      draw=(v==1u||v==2u);
-     switch((pattern>>8)%4u){
+     switch((tuft>>8)%4u){
       case 0:r=242;g=218;b=126;break;
       case 1:r=218;g=166;b=194;break;
       case 2:r=225;g=229;b=205;break;
       default:r=173;g=188;b=232;break;
      }
     }else{
-     draw=(v==0u&&(pattern%3u)==0u);
-     r=126;g=178;b=86;
+     const unsigned blade=(tuft>>5)&7u;
+     draw=((v==blade||v==((blade+1u)&7u))&&((tuft>>12)%3u)!=0u)||
+          (v==0u&&(pattern%3u)==0u);
+     const unsigned shade=(tuft>>16)%4u;
+     r=static_cast<Uint8>(shade==0u?91u:shade==1u?112u:shade==2u?132u:151u);
+     g=static_cast<Uint8>(shade==0u?139u:shade==1u?163u:shade==2u?181u:193u);
+     b=static_cast<Uint8>(shade==0u?61u:shade==1u?72u:shade==2u?79u:88u);
     }
     break;
    case Dirt:
