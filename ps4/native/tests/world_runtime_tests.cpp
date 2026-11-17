@@ -112,10 +112,10 @@ int main() {
     assert(diskLoaded.get_tile(-1, -1, edited) && edited == 255);
     assert(diskLoaded.get_voxel(-1, -1, editedDepth, voxel));
     assert(voxel.material == mineplus::VoxelMaterial::Crystal);
-    mineplus::mineplus::DungeonChestState restoredChest{};
+    mineplus::DungeonChestState restoredChest{};
     assert(diskLoaded.get_dungeon_chest(123,restoredChest));
     assert(restoredChest.opened && restoredChest.contents.size()==2);
-    assert(restoredChest.contents[0].item==mineplus::mineplus::DungeonLootItem::CrystalShard &&
+    assert(restoredChest.contents[0].item==mineplus::DungeonLootItem::CrystalShard &&
            restoredChest.contents[0].count==5);
     auto corrupt = snapshot;
     corrupt.back() ^= 0x80;
