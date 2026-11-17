@@ -938,6 +938,58 @@ bool boss_visible_from_player(){
  for(int i=1;i<steps;++i){const int x=px+(dx*i)/steps,y=py+(dy*i)/steps;if(solid_tile(tile_at(x,y)))return false;}
  return true;
 }
+void draw_surface_event_effects(){
+ // Lightweight, deterministic screen-space weather and event particles.
+ // These effects are deliberately confined to the current SDL renderer path.
+ const Uint32 now=SDL_GetTicks();
+ const float pulse=0.5f+0.5f*std::sin(float(now)*0.006f);
+ if(currentSurfaceEvent.type==mineplus::SurfaceEventType::RuneStorm){
+  // Slanted cyan rune rain with a small bright head and a fading trail.
+  for(unsigned i=0;i<34u;++i){
+   const unsigned seed=hash2(int(i*73u+19u),int(worldSeed));
+   const int x=int((seed+now/5u*(1u+(i%3u)))%unsigned(W));
+   const int y=int((hash2(int(i*29u+7u),int(seed>>3))+now/3u*(2u+i%3u))%unsigned(H-90));
+   const int length=5+int(seed%13u);
+   color(49,150,159,75);SDL_RenderDrawLine(renderer,x,y-length,x-3,y);
+   color(135,245,220,static_cast<Uint8>(105u+(seed%90u)));
+   SDL_RenderDrawLine(renderer,x,y-2,x-2,y+2);
+   if((i%5u)==0u)rect(x-1,y-1,3,3,170,255,226,110);
+  }
+ }else if(currentSurfaceEvent.type==mineplus::SurfaceEventType::HarvestFestival){
+  // Warm pollen and drifting leaf motes; positions loop without per-frame allocation.
+  for(unsigned i=0;i<30u;++i){
+   const unsigned seed=hash2(int(i*97u+31u),int(worldSeed>>4));
+   const int x=int((seed+now/9u*(1u+i%2u))%unsigned(W));
+   const int y=90+int((hash2(int(seed),int(i*41u))+unsigned(H*4)-now/7u*(1u+i%3u))%unsigned(H-110));
+   if(i%3u==0u)rect(x,y,3,2,224,194,112,125);
+   else rect(x,y,2,2,151,197,113,105);
+  }
+ }else if(currentSurfaceEvent.type==mineplus::SurfaceEventType::PredatorWarning){
+  // Subtle pulsing edge warning communicates danger without obscuring the view.
+  const Uint8 alpha=static_cast<Uint8>(18u+unsigned(pulse*28.0f));
+  rect(0,64,W,7,154,38,43,alpha);rect(0,H-82,W,7,154,38,43,alpha);
+  rect(0,64,7,H-145,154,38,43,alpha);rect(W-7,64,7,H-145,154,38,43,alpha);
+  if((now/420u)%2u==0u){
+   color(224,91,77,145);
+   SDL_RenderDrawLine(renderer,18,88,31,101);SDL_RenderDrawLine(renderer,31,101,18,114);
+   SDL_RenderDrawLine(renderer,W-18,88,W-31,101);SDL_RenderDrawLine(renderer,W-31,101,W-18,114);
+  }
+ }else if(currentSurfaceEvent.type==mineplus::SurfaceEventType::CaravanMarket){
+  // A small animated market pennant reinforces the temporary trading event.
+  const int sway=int(std::sin(float(now)*0.004f)*4.0f);
+  rect(W-92,142,3,30,128,103,65,180);
+  rect(W-89,144+sway,22,12,211,165,76,205);
+  rect(W-89,156+sway,15,3,113,75,48,190);
+ }else if(currentSurfaceEvent.type==mineplus::SurfaceEventType::WildlifeMigration){
+  // A few soft drifting motes suggest movement across the open landscape.
+  for(unsigned i=0;i<16u;++i){
+   const unsigned seed=hash2(int(i*53u+11u),int(worldSeed>>7));
+   const int x=int((seed+now/13u*(1u+i%2u))%unsigned(W));
+   const int y=120+int((hash2(int(seed>>2),int(i*17u))+unsigned(H)-now/17u)%unsigned(H-180));
+   rect(x,y,2,2,187,204,151,75);
+  }
+ }
+}
 void draw_world(){
  // Perspective height-field renderer for the native PS4 build.
  // One inexpensive frame-wide pulse drives emissive materials without per-ray trig.
@@ -1037,9 +1089,21 @@ void draw_world(){
     rect(sx-bodyW/2,sy-horn, std::max(2,bodyW/4),horn,rr+25,rr+12,rr+8);
     rect(sx+bodyW/4,sy-horn, std::max(2,bodyW/4),horn,rr+25,rr+12,rr+8);
    }
+   // Species silhouettes gain a readable head, ears/tail and breathing motion.
+   const int headSize=std::max(2,size/(m.type==8||m.type==10?5:7));
+   const int headX=sx+bodyW/3,headY=sy+bodyH/7+int(std::sin(phase*2.0f)*std::max(1,size/45));
+   rect(headX-headSize/2,headY,headSize,headSize,recentlyHit?245:rr+12,recentlyHit?220:rr,recentlyHit?190:rr+7);
+   if(m.type==1||m.type==3||m.type==7||m.type==9){
+    rect(headX-headSize/2,headY-headSize/2,std::max(1,headSize/3),std::max(2,headSize/2),rr+18,rr+12,rr+5);
+    rect(headX+headSize/5,headY-headSize/2,std::max(1,headSize/3),std::max(2,headSize/2),rr+18,rr+12,rr+5);
+   }
+   if(m.type==0||m.type==4||m.type==5||m.type==8||m.type==10){
+    const int tailSwing=int(std::sin(phase*3.2f)*std::max(1,size/14));
+    rect(sx-bodyW/2-std::max(2,size/7),sy+bodyH/2+tailSwing,std::max(2,size/7),std::max(2,size/12),rr-12,rr-10,rr-7);
+   }
    const int eye=std::max(2,size/18);
-   rect(sx-bodyW/5,sy+bodyH/4,eye,eye,235,226,190);
-   rect(sx+bodyW/8,sy+bodyH/4,eye,eye,235,226,190);
+   rect(headX-headSize/4,headY+headSize/3,eye,eye,235,226,190);
+   rect(headX+headSize/8,headY+headSize/3,eye,eye,235,226,190);
   }
  }
  // Surface residents: role-colored pseudo-3D figures with an idle bob.
@@ -1066,6 +1130,8 @@ void draw_world(){
  }
  // Primordial Guardian: oversized pseudo-3D silhouette with glowing runic eyes.
  if(primordialBoss.state!=mineplus::BossState::Defeated&&boss_visible_from_player()){const float dx=float(BOSS_X-px),dy=float(BOSS_Y-py),forward=dx*dirX+dy*dirY,side=dx*rightX+dy*rightY;if(forward>0.7f&&forward<28.0f){const int sx=int(W*0.5f+(side/forward)*focal/fov),size=int(1050.0f/forward),sy=int(horizon+focal*0.72f/forward-size*0.78f);if(sx>12&&sx<W-12&&size>5){const int pulse=int((std::sin(float(SDL_GetTicks())*0.004f)+1.0f)*18.0f);const bool struck=SDL_GetTicks()-lastBossHitAt<180u;const int body= struck?130:53;rect(sx-size/3,sy+size/2,size*2/3,size/2,25,19,34);rect(sx-size/2,sy+size/5,size,size/2,body,43,67);rect(sx-size/3,sy-size/4,size*2/3,size/2,struck?185:74,60,89);rect(sx-size/2,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx+size/2-size/7,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx-size/5,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);rect(sx+size/10,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);}}}
+ // Event-specific weather and ambience overlays sit behind the first-person tools and HUD.
+ draw_surface_event_effects();
  // First-person blocky arms and tool silhouette.
  rect(W/2+115,H-158,75,180,91,65,49);rect(W/2+125,H-166,58,28,155,119,82);
  rect(W/2+164,H-190,12,95,151,159,163);rect(W/2+132,H-198,75,13,181,190,190);
