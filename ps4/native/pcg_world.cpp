@@ -143,6 +143,17 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
         if (inside && (depth == 8 || depth == 14))
             return {VoxelMaterial::DarkStone, true, false};
         if (inside && depth >= 9 && depth <= 13) {
+            // Four compact rune pylons mark the central chamber's corners.
+            // The ember cap and rune core are solid, mineable landmarks rather
+            // than decorative data that would require a separate entity system.
+            const std::int32_t pylon_offset = std::max(1, main_radius / 2);
+            const bool pylon = std::abs(dx) == pylon_offset &&
+                               std::abs(dy) == pylon_offset;
+            if (pylon && depth == 11)
+                return {VoxelMaterial::Rune, true, false};
+            if (pylon && depth == 10)
+                return {VoxelMaterial::Ember, true, false};
+
             // Sparse crystal seams make exploration and mining worthwhile without
             // filling the walkable chambers or changing the outer cave silhouette.
             // Floor-level crystal seams form small 2x2 deposits instead of
