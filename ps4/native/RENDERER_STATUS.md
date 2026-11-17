@@ -64,7 +64,7 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - Surface wildlife now uses a standalone deterministic species catalog for the twelve existing creature IDs. The catalog gives each species a name, biome affinity, climate bounds and behavior role (grazer, skittish, predator or territorial).
 - Initial placement now asks the ecology catalog to select a species compatible with the sampled biome, moisture, temperature and land surface. Ocean, water and sandy shoreline cells are rejected; if no species fits the sampled climate, the bounded spawn attempt is retried.
-- Creature movement reads the catalog behavior role: grazers and skittish wildlife flee when approached, while predators and territorial species pursue. This reuses the existing simple tile-step movement; it is not advanced pathfinding, pack coordination, animation or a new rendered model.
+- Creature movement reads the catalog behavior role: grazers and skittish wildlife flee when approached, while predators and territorial species pursue. Distant grazers now loosely regroup toward nearby members of the same species when at least two herd companions are within seven tiles; movement remains deterministic and uses the existing tile-step collision checks. This is a lightweight local cohesion rule, not advanced pathfinding, persistent herd identity, pack tactics or a new rendered model.
 - Portable tests cover all twelve species IDs, biome/climate eligibility, invalid surfaces, deterministic selection and behavior roles.
 
 
