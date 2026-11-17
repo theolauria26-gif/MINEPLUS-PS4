@@ -55,6 +55,10 @@ public:
     // Resolve one 96x96 macro-cell once, instead of testing every world tile.
     bool structure_anchor_for_cell(std::int32_t cell_x, std::int32_t cell_y,
                                    StructureAnchor& out) const;
+    // Deterministic nearest-neighbor links connect nearby overworld landmarks.
+    bool surface_road_link_for_cell(std::int32_t cell_x, std::int32_t cell_y,
+                                    StructureAnchor& from,
+                                    StructureAnchor& to) const;
 
 private:
     std::uint64_t seed_;
