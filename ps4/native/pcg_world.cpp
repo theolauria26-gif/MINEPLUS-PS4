@@ -227,6 +227,13 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
         return {};
     }
     if (z == surface_z) {
+        // Surface overrides represent actual river water and its sandy banks;
+        // retain the biome identity independently for temperature/moisture.
+        if (column.surface == 13)
+            return {VoxelMaterial::Water, false, true};
+        if (column.surface == 9 && biome != Biome::Desert &&
+            biome != Biome::Ocean)
+            return {VoxelMaterial::Sand, true, false};
         VoxelMaterial top = VoxelMaterial::Grass;
         switch (biome) {
             case Biome::Ocean: top = VoxelMaterial::Sand; break;
