@@ -1367,11 +1367,28 @@ void draw_world(){
    rect(sx+bodyW/8,sy+bodyH-std::max(2,size/8),std::max(2,bodyW/4),std::max(2,size/7)-legSwing,rr-17,rr-15,rr-10);
    rect(sx-bodyW/2,sy,bodyW,bodyH,recentlyHit?245:rr,recentlyHit?220:rr-8,recentlyHit?190:rr+5);
    if(recentlyHit&&size>9){draw_text("1",sx,sy-std::max(9,size/3),std::max(1,size/32),255,225,180);}
-   // Species 6/9 carry glowing mineral plates; 8/10 have raised horns.
-   if(m.type==6||m.type==9){
+   // Moths have fluttering translucent wings rather than the same plated
+   // silhouette as the larger crystal fauna.
+   if(m.type==6){
+    const int flutter=int(std::sin(phase*8.0f)*std::max(1,size/12));
+    const int wingW=std::max(2,bodyW/2);
+    const int wingH=std::max(2,bodyH/2);
+    rect(sx-bodyW/2-wingW/2,sy+bodyH/5-flutter,wingW,wingH,125,205,220,105);
+    rect(sx+bodyW/4,sy+bodyH/5+flutter,wingW,wingH,145,215,225,105);
+    const int glow=125+int((std::sin(phase*3.0f)+1.0f)*45.0f);
+    rect(sx-1,sy+bodyH/3,2,std::max(2,size/5),190,Uint8(glow),225,190);
+   }else if(m.type==9){
     const int glow=110+int((std::sin(phase*3.0f)+1.0f)*35.0f);
-    rect(sx-bodyW/2,sy+bodyH/3,bodyW, std::max(2,size/18),210,Uint8(glow),115,210);
+    rect(sx-bodyW/2,sy+bodyH/3,bodyW,std::max(2,size/18),210,Uint8(glow),115,210);
     rect(sx-1,sy-std::max(2,size/8),2,std::max(2,size/7),120,210,205,190);
+   }
+   if(m.type==11){
+    // Pale Wisps drift with a broken halo and a soft trailing afterimage.
+    const int drift=int(std::sin(phase*1.7f)*std::max(1,size/7));
+    const int halo=std::max(2,size/3);
+    rect(sx-halo/2+drift,sy-halo,halo, std::max(1,size/18),155,220,235,125);
+    rect(sx-halo/2-drift,sy-halo+std::max(2,size/9),halo,std::max(1,size/18),190,230,245,95);
+    rect(sx-bodyW/2,sy+bodyH,std::max(2,bodyW/2),std::max(2,size/8),105,185,205,85);
    }
    if(m.type==8||m.type==10){
     const int horn=std::max(2,size/5);
