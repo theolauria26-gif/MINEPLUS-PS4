@@ -610,13 +610,20 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
                               int(cellY*19u+unsigned(t)*31u));
     const unsigned blade=(tuft>>5)&7u;
     if((tuft%47u)==0u){
+     // Tiny wildflowers have a stem pixel and a brighter bloom at the crown.
      draw=(v==1u||v==2u);
      switch((tuft>>8)%4u){
-      case 0:r=242;g=218;b=126;break;
-      case 1:r=218;g=166;b=194;break;
-      case 2:r=225;g=229;b=205;break;
-      default:r=173;g=188;b=232;break;
+      case 0:r=v==1u?116:242;g=v==1u?157:218;b=v==1u?72:126;break;
+      case 1:r=v==1u?116:218;g=v==1u?157:166;b=v==1u?72:194;break;
+      case 2:r=v==1u?116:225;g=v==1u?157:229;b=v==1u?72:205;break;
+      default:r=v==1u?116:173;g=v==1u?157:188;b=v==1u?72:232;break;
      }
+    }else if((tuft%83u)==1u){
+     // Sparse fern-like fronds break up the uniform grass line.
+     draw=(v==blade||v==((blade+2u)&7u)||v==((blade+6u)&7u));
+     r=static_cast<Uint8>(79u+(tuft>>12)%35u);
+     g=static_cast<Uint8>(151u+(tuft>>17)%48u);
+     b=static_cast<Uint8>(63u+(tuft>>22)%23u);
     }else{
      draw=(v==blade||v==((blade+1u)&7u))&&((tuft>>12)%3u)!=0u;
      const unsigned shade=(tuft>>16)%4u;
@@ -673,6 +680,8 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     g=static_cast<Uint8>(patch==0u?112u:patch==1u?137u:patch==2u?163u:176u);
     b=static_cast<Uint8>(patch==0u?54u:patch==1u?63u:patch==2u?77u:83u);
     if((pattern%29u)==0u){r=151;g=211;b=174;}
+    // Rare cool-toned mycelium glints give shaded forest floors a subtle arcane feel.
+    if((pattern%71u)==0u){draw=true;r=119;g=202;b=218;alpha=205;}
     break;
    }
    case Crystal: case ObsidianCore: {
