@@ -26,7 +26,7 @@ int main() {
 
     for (unsigned seed = 0; seed < 64; ++seed) {
         const auto a = choose_surface_species(Biome::Forest, 190, 150, 1, seed);
-        const auto b = choose_surface_species(Biome::Forest, 190, 150, seed);
+        const auto b = choose_surface_species(Biome::Forest, 190, 150, 1, seed);
         assert(a == b);
         assert(a < 4);
     }
