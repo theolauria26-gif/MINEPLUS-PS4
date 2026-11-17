@@ -104,8 +104,9 @@ bool SaveCodec::encode(const WorldArchive& archive, std::vector<std::uint8_t>& b
         result.push_back(chest.opened ? 1U : 0U);
         result.push_back(static_cast<std::uint8_t>(chest.contents.size()));
         for(const auto& drop:chest.contents) {
-            result.push_back(static_cast<std::uint8_t>(drop.item));
-            result.push_back(static_cast<std::uint8_t>(drop.item >> 8U));
+            const auto item_id=static_cast<std::uint16_t>(drop.item);
+            result.push_back(static_cast<std::uint8_t>(item_id));
+            result.push_back(static_cast<std::uint8_t>(item_id >> 8U));
             result.push_back(static_cast<std::uint8_t>(drop.count));
             result.push_back(static_cast<std::uint8_t>(drop.count >> 8U));
         }
