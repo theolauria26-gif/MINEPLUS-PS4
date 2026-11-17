@@ -756,8 +756,9 @@ void draw_world(){
      std::snprintf(line,sizeof(line),"HP %u  ARC %u",unsigned(def->stats.vitality),unsigned(def->stats.arcane));draw_text(line,965,316,1,215,220,205);
      std::snprintf(line,sizeof(line),"RES %u",unsigned(def->stats.resistance));draw_text(line,965,336,1,215,220,205);
      std::snprintf(line,sizeof(line),"DUR %u/%u",unsigned(equipmentState.durability[static_cast<std::size_t>(id)]),unsigned(def->durability));draw_text(line,965,356,1,215,220,205);
+     static const char* materialNames[31]={"AIR","GRASS","DIRT","STONE","WOOD","MOSS","CRYSTAL","BONE","DARKSTONE","SAND","SNOW","ICE","LAVA","WATER","IRON ORE","OBSIDIAN","EMBER","RUNE","IRON BAR","OBS CORE","EMBER CAT","ANCIENT RUNE","COINS","HERBS","BONE SHARDS","DUNGEON ORE","CRYSTAL SHARDS","RUNE FRAG","EMBER CORES","ANCIENT RELIC","BOSS SIGIL"};
      const auto* recipe=mineplus::EquipmentCatalog::recipe(id);
-     if(recipe){draw_text("RECIPE",965,386,1,132,235,166);for(unsigned ri=0;ri<recipe->ingredient_count;++ri){char cost[40];std::snprintf(cost,sizeof(cost),"ITEM %u X %u",unsigned(recipe->ingredients[ri].inventory_index),unsigned(recipe->ingredients[ri].count));draw_text(cost,965,405+int(ri)*17,1,175,190,180);}}
+     if(recipe){draw_text("RECIPE",965,386,1,132,235,166);for(unsigned ri=0;ri<recipe->ingredient_count;++ri){const auto ingredient=recipe->ingredients[ri];char cost[48];std::snprintf(cost,sizeof(cost),"%s %u",materialNames[ingredient.inventory_index],unsigned(ingredient.count));draw_text(cost,965,405+int(ri)*17,1,175,190,180);}}
     }
     char totalsLine[64];std::snprintf(totalsLine,sizeof(totalsLine),"TOTAL DMG %u DEF %u",unsigned(totals.damage),unsigned(totals.defense));draw_text(totalsLine,265,510,1,170,220,185);
     std::snprintf(totalsLine,sizeof(totalsLine),"MAX HP %u ARC %u RES %u",unsigned(totals.max_health),unsigned(totals.arcane),unsigned(totals.resistance));draw_text(totalsLine,265,530,1,170,220,185);
