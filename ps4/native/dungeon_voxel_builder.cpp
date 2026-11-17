@@ -80,10 +80,6 @@ bool build_corridor(const DungeonRoom& a, const DungeonRoom& b,
                 const std::int32_t y = lane_min + lane;
                 set_global(output, settings, x, y, settings.floor_z,
                            settings.floor_material);
-                for (std::int32_t z = 1; z <= settings.wall_height; ++z) {
-                    set_global(output, settings, x, y, settings.floor_z + z,
-                               (x == x_min || x == x_max) ? 0 : 0);
-                }
             }
             for (std::int32_t z = 1; z <= settings.wall_height; ++z) {
                 set_global(output, settings, x, lane_min - 1,
