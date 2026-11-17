@@ -145,6 +145,20 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
         if (inside && depth >= 9 && depth <= 13) {
             // Sparse crystal seams make exploration and mining worthwhile without
             // filling the walkable chambers or changing the outer cave silhouette.
+            // Floor-level crystal seams form small 2x2 deposits instead of
+            // isolated floating blocks. Their macro-cell hash keeps clusters
+            // stable across chunk boundaries and negative world coordinates.
+            if (depth == 13) {
+                const std::int32_t vein_x = floor_div4(x);
+                const std::int32_t vein_y = floor_div4(y);
+                const std::uint32_t vein = hash(vein_x, vein_y, 0xC4A7E101u);
+                const std::int32_t local_x = x - vein_x * 4;
+                const std::int32_t local_y = y - vein_y * 4;
+                if ((vein % 29u) == 0u && local_x < 2 && local_y < 2)
+                    return {VoxelMaterial::Crystal, true, false};
+            }
+            // Rare wall crystals provide vertical points of interest without
+            // occupying the central walking volume.
             if (depth == 11 && (hash(x, y, 0xC4A7E001u) % 43u) == 0u)
                 return {VoxelMaterial::Crystal, true, false};
             return {};
