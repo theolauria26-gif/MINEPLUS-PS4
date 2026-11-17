@@ -116,6 +116,27 @@ int main() {
     }
     assert(foundLakePool);
 
+    // Mountain chains and valleys add a broader elevation silhouette while
+    // remaining deterministic at global coordinates and across world instances.
+    std::int16_t lowestSurface = PcgWorld::WORLD_HEIGHT;
+    std::int16_t highestSurface = 0;
+    std::uint32_t highlandColumns = 0;
+    for (int y = -4096; y <= 4096; y += 32) {
+        for (int x = -4096; x <= 4096; x += 32) {
+            const auto a = worldA.sample_surface(x, y);
+            const auto b = worldB.sample_surface(x, y);
+            assert(same_sample(a, b));
+            lowestSurface = std::min(lowestSurface, a.height);
+            highestSurface = std::max(highestSurface, a.height);
+            if (a.biome == static_cast<std::uint8_t>(Biome::Highlands)) {
+                ++highlandColumns;
+                assert(a.height >= 40);
+            }
+        }
+    }
+    assert(highlandColumns > 0);
+    assert(highestSurface - lowestSurface >= 20);
+
     // 3D voxel queries are deterministic and bounded to the world height.
     for (const auto& p : coords) {
         const auto column = worldA.sample_surface(p[0], p[1]);
