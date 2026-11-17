@@ -40,6 +40,15 @@ int main() {
     assert(BossCombatDirector::claim_reward(boss));
     assert(!BossCombatDirector::claim_reward(boss));
 
+    const auto slam = BossCombatDirector::attack_profile(BossAttack::GroundSlam, 3);
+    assert(slam.damage == 6 && slam.range == 1 && slam.area_radius == 4);
+    const auto volley = BossCombatDirector::attack_profile(BossAttack::RuneVolley, 2);
+    assert(volley.damage == 4 && volley.range == 4 && volley.area_radius == 0);
+    const auto charge = BossCombatDirector::attack_profile(BossAttack::RiftCharge, 1);
+    assert(charge.damage == 5 && charge.range == 3 && charge.area_radius == 1);
+    const auto none = BossCombatDirector::attack_profile(BossAttack::None, 1);
+    assert(none.damage == 0 && none.range == 0 && none.area_radius == 0);
+
     BossEncounter wrap{};
     assert(BossCombatDirector::start(wrap, 0xfffffff0u, 100));
     assert(BossCombatDirector::update(wrap, 0xfffffff0u) == BossEvent::TelegraphStarted);
