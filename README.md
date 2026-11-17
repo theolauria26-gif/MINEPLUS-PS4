@@ -92,12 +92,7 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 
 ## Direção visual: materiais pixel-art
 
-O renderer recebeu uma primeira camada de materiais procedurais com paletas mais vivas e padrões específicos por bloco (grama, terra, pedra, madeira, cristais, runas, gelo, água e lava). Também existe agora um gerador CPU de atlas RGBA8 pixel-art (8×4 tiles de 16×16), determinístico, com células não utilizadas transparentes e padrões distintos para 21 materiais. O módulo é compilado no EBOOT e coberto por teste automatizado; ainda não é carregado nem desenhado pelo renderer ativo. Não há shader, upload de textura ou renderização 3D de chunks integrada: a arquitetura jogável continua sendo um renderer SDL2 de colunas em perspectiva, e a evolução para malhas voxel, modelos cúbicos e iluminação avançada segue como trabalho pendente.
+O atlas procedural foi elevado para 32×32 pixels por material (256×128 no total), mantendo 21 materiais e geração determinística. Cada família agora tem linguagem própria: grama com lâminas, terra granular, pedra fraturada, madeira com veios, musgo em manchas, cristal facetado, osso estriado, areia em ondas, neve cristalina, gelo rachado, lava em canais, água ondulada, minério incrustado, obsidiana facetada e runas/catalisadores luminosos. Um bevel discreto reforça a leitura de volume em pixel-art. Os testes verificam determinismo, transparência das células vazias e variação de cor em cada material.
 
+**Limite visual ainda importante:** este atlas é uma base de materiais CPU e ainda não está conectado ao renderer SDL2 ativo. O jogo atual continua desenhando colunas em perspectiva; portanto, o atlas aprimora os dados prontos para o renderer futuro, mas não muda sozinho a aparência que aparece durante a partida. O próximo passo é integrar carregamento/amostragem de textura no caminho de desenho sem quebrar o cliente jogável.
 
-## Próximos passos para o sandbox completo
-
-O diagnóstico de arquitetura, as lacunas reais e o plano priorizado de evolução estão em [docs/ROADMAP_HYTALE_PLUS.md](docs/ROADMAP_HYTALE_PLUS.md). O roteiro separa o que já existe do que ainda depende de renderer 3D, streaming integrado, IA, animações, áudio e progressão.
-
-
-O contrato técnico do backend gráfico está em [docs/RENDERER_GPU_CONTRACT.md](docs/RENDERER_GPU_CONTRACT.md). O atlas CPU inicial fica em `ps4/native/procedural_material_atlas.cpp`, com testes em `ps4/native/tests/procedural_material_atlas_tests.cpp`.
