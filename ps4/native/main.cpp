@@ -113,7 +113,7 @@ void init_world(){
   const auto column=pcg.sample_surface(wx,wy);
   if(!pcg.surface_tree_at(wx,wy,column))continue;
   for(int oy=-2;oy<=2;++oy)for(int ox=-2;ox<=2;++ox){
-   if(ox==0&&oy==0||ox*ox+oy*oy>5)continue;
+   if((ox==0&&oy==0)||ox*ox+oy*oy>5)continue;
    const int nx=x+ox,ny=y+oy;
    const auto ground=world[ny*COLS+nx];
    if(ground==Grass||ground==Moss)world[ny*COLS+nx]=Leaves;
@@ -402,7 +402,7 @@ void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){
  case ObsidianCore:r=82;g=55;b=116;break;case EmberCatalyst:r=255;g=133;b=49;break;
  case AncientRune:r=124;g=231;b=190;break;
   case ChestClosed:r=154;g=91;b=48;break;case ChestOpened:r=78;g=58;b=42;break;case Leaves:r=48;g=116;b=55;break;
-  case 24:r=235;g=190;b=72;break;case 25:r=100;g=190;b=105;break;case 26:r=190;g=181;b=150;break;
+  case 25:r=100;g=190;b=105;break;case 26:r=190;g=181;b=150;break;
   case 27:r=150;g=158;b=168;break;case 28:r=105;g=190;b=210;break;case 29:r=150;g=105;b=210;break;case 30:r=245;g=125;b=55;break;default:r=16;g=23;b=29;break;
 }}
 void inventory_item_color(int id,Uint8& r,Uint8& g,Uint8& b){
