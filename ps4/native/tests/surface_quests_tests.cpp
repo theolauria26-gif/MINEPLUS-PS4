@@ -9,12 +9,13 @@ int main() {
     for(std::uint8_t role=0;role<SURFACE_QUEST_ROLES;++role) {
         const auto def=surface_quest_definition(role);
         assert(def.required>0 && def.reward_amount>0 && def.title && def.description);
+        const int rewardBefore=inventory[def.reward_item_id];
         assert(surface_quest_interact(role,progress,inventory.data(),inventory.size())==SurfaceQuestAction::Accepted);
         surface_quest_add_progress(progress,def.item_id,static_cast<std::uint16_t>(def.required-1));
         assert(surface_quest_interact(role,progress,inventory.data(),inventory.size())==SurfaceQuestAction::Progress);
         surface_quest_add_progress(progress,def.item_id,1);
         assert(surface_quest_interact(role,progress,inventory.data(),inventory.size())==SurfaceQuestAction::Claimed);
-        assert(inventory[def.reward_item_id]==def.reward_amount);
+        assert(inventory[def.reward_item_id]==rewardBefore+def.reward_amount);
         assert(surface_quest_interact(role,progress,inventory.data(),inventory.size())==SurfaceQuestAction::AlreadyClaimed);
     }
     assert(surface_quest_progress_valid(progress));
