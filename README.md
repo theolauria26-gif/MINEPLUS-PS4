@@ -85,9 +85,10 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 - Os testes portáveis verificam as quatro alas e a continuidade da geração. Isso ainda é geometria voxel procedural, não uma implementação final de renderização 3D, iluminação volumétrica, chefes ou decoração avançada.
 
 ## Último build automatizado
-- Em 17/11/2026, o workflow [Build MINEPLUS PS4 PKG](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44170200444) concluiu com sucesso para o commit `bd780d2d` (inclui a correção de ordem das nuvens e o vento sutil nas copas): testes portáveis, compilação do EBOOT/PKG, validação estrutural do pacote e upload do artefato `MINEPLUS-PS4-PKG`.
-- O ajuste visual seguinte, com variações raras de folhagem âmbar e ferrugem (`50c6ae5b`), está em validação no [workflow](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44171203498). O pacote precisa ser instalado e testado em um PS4 compatível antes de ser considerado funcional.
-- [Acessar o artefato validado no GitHub Actions](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44170200444)
+- Em 17/11/2026, o workflow [Build MINEPLUS PS4 PKG](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44171203498) concluiu com sucesso para o commit `50c6ae5b`, incluindo testes portáveis, compilação do EBOOT/PKG, validação estrutural e publicação do artefato.
+- A atualização documental desse marco também passou no workflow [de documentação](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44171215115).
+- A melhoria visual mais recente (`23fb65e3`) acrescenta pequenas flores com caule, frondes e brilhos de micélio ciano no musgo. A nova compilação será validada pelo CI após este commit; ainda não há confirmação de teste em hardware PS4.
+- [Acessar o último artefato já validado](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44171203498)
 
 
 ## Direção visual: materiais pixel-art
