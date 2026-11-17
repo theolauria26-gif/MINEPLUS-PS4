@@ -105,6 +105,7 @@ int main(){
   EquipmentState tierState{};
   int materials[31];for(int& amount:materials)amount=999;
   assert(EquipmentCatalog::craft(tierState,equipment,materials,31));
+  assert(EquipmentCatalog::equip(tierState,equipment));
   const auto slot=def->slot;
   EquipmentCatalog::wear(tierState,slot,static_cast<std::uint16_t>(def->durability+5));
   assert(tierState.durability[id]==0);
