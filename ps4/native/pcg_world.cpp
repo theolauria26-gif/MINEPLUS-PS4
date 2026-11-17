@@ -96,6 +96,17 @@ SurfaceSample PcgWorld::sample_surface(std::int32_t x,std::int32_t y) const {
         case Biome::Volcanic: tile=16; height+=5; break;
         case Biome::CrystalWastes: tile=6; break;
     }
+    // A narrow continental shelf transition creates beaches along the
+    // inland edge of the ocean mask, without turning the desert biome into
+    // a universal coastline. Cold regions retain snow/ice rather than sand.
+    const bool coastalBeach = continent >= 0.18f && continent < 0.34f &&
+        elevation < 0.20f && temperature > -0.58f &&
+        biome != Biome::Desert && biome != Biome::Volcanic &&
+        biome != Biome::CrystalWastes;
+    if (coastalBeach) {
+        tile = 9;
+        height = std::max(20, height - 1);
+    }
     // Small inland lakes are placed from a global macro-cell grid. Each
     // cell derives one stable basin center and radius from the world seed,
     // so lakes remain identical across chunk borders and save/reload cycles.
