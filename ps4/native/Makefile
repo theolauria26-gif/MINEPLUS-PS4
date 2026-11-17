@@ -13,7 +13,7 @@ LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr -L$(TO
 all: eboot.bin
 $(INTDIR):
 	mkdir -p $(INTDIR)
-$(INTDIR)/main.o: main.cpp pcg_world.hpp world_grid.hpp world_runtime.hpp dungeon_loot.hpp dungeon_graph.hpp equipment.hpp boss_combat.hpp surface_ecology.hpp surface_settlements.hpp | $(INTDIR)
+$(INTDIR)/main.o: main.cpp pcg_world.hpp world_grid.hpp world_runtime.hpp dungeon_loot.hpp dungeon_graph.hpp equipment.hpp boss_combat.hpp surface_ecology.hpp surface_settlements.hpp surface_npcs.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ main.cpp
 $(INTDIR)/pcg_world.o: pcg_world.cpp pcg_world.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ pcg_world.cpp
@@ -43,13 +43,15 @@ $(INTDIR)/surface_ecology.o: surface_ecology.cpp surface_ecology.hpp pcg_world.h
 	$(CXX) $(CXXFLAGS) -o $@ surface_ecology.cpp
 $(INTDIR)/surface_settlements.o: surface_settlements.cpp surface_settlements.hpp pcg_world.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ surface_settlements.cpp
+$(INTDIR)/surface_npcs.o: surface_npcs.cpp surface_npcs.hpp | $(INTDIR)
+	$(CXX) $(CXXFLAGS) -o $@ surface_npcs.cpp
 $(INTDIR)/dungeon_graph.o: dungeon_graph.cpp dungeon_graph.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ dungeon_graph.cpp
 $(INTDIR)/dungeon_voxel_builder.o: dungeon_voxel_builder.cpp dungeon_voxel_builder.hpp dungeon_graph.hpp voxel_mesher.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ dungeon_voxel_builder.cpp
 $(INTDIR)/procedural_voxel_chunk.o: procedural_voxel_chunk.cpp procedural_voxel_chunk.hpp pcg_world.hpp voxel_mesher.hpp world_runtime.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ procedural_voxel_chunk.cpp
-$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o $(INTDIR)/save_codec.o $(INTDIR)/world_runtime.o $(INTDIR)/voxel_mesher.o $(INTDIR)/material_atlas.o $(INTDIR)/voxel_face_uv.o $(INTDIR)/voxel_mesh_vertices.o $(INTDIR)/dungeon_graph.o $(INTDIR)/dungeon_voxel_builder.o $(INTDIR)/procedural_voxel_chunk.o $(INTDIR)/dungeon_loot.o $(INTDIR)/equipment.o $(INTDIR)/boss_combat.o $(INTDIR)/surface_ecology.o $(INTDIR)/surface_settlements.o
+$(INTDIR)/mineplus.elf: $(INTDIR)/main.o $(INTDIR)/pcg_world.o $(INTDIR)/chunk_generator.o $(INTDIR)/chunk_cache.o $(INTDIR)/save_codec.o $(INTDIR)/world_runtime.o $(INTDIR)/voxel_mesher.o $(INTDIR)/material_atlas.o $(INTDIR)/voxel_face_uv.o $(INTDIR)/voxel_mesh_vertices.o $(INTDIR)/dungeon_graph.o $(INTDIR)/dungeon_voxel_builder.o $(INTDIR)/procedural_voxel_chunk.o $(INTDIR)/dungeon_loot.o $(INTDIR)/equipment.o $(INTDIR)/boss_combat.o $(INTDIR)/surface_ecology.o $(INTDIR)/surface_settlements.o $(INTDIR)/surface_npcs.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 eboot.bin: $(INTDIR)/mineplus.elf
 	$(TOOLCHAIN)/bin/linux/create-fself -in=$< -out=$(INTDIR)/mineplus.oelf --eboot "$@" --paid 0x3800000000000011
