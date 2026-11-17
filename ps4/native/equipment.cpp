@@ -68,6 +68,28 @@ const EquipmentRecipe* find_recipe(EquipmentId id) {
  for(const auto& r:recipes)if(r.output==id)return &r;
  return nullptr;
 }
+
+constexpr EquipmentRecipe repair_recipes[] = {
+ {EquipmentId::StoneHatchet,{{{4,2},{7,1},{0,0},{0,0}}},2},{EquipmentId::BoneCap,{{{4,2},{7,1},{0,0},{0,0}}},2},
+ {EquipmentId::HideVest,{{{4,2},{7,1},{0,0},{0,0}}},2},{EquipmentId::TrailLeggings,{{{4,2},{7,1},{0,0},{0,0}}},2},
+ {EquipmentId::MossBoots,{{{4,2},{7,1},{0,0},{0,0}}},2},
+ {EquipmentId::IronSword,{{{18,2},{7,1},{0,0},{0,0}}},2},{EquipmentId::IronHelm,{{{18,2},{7,1},{0,0},{0,0}}},2},
+ {EquipmentId::IronChest,{{{18,3},{7,1},{0,0},{0,0}}},2},{EquipmentId::IronLegs,{{{18,2},{7,1},{0,0},{0,0}}},2},
+ {EquipmentId::IronBoots,{{{18,2},{7,1},{0,0},{0,0}}},2},
+ {EquipmentId::ObsidianBlade,{{{15,2},{16,1},{0,0},{0,0}}},2},{EquipmentId::ObsidianHelm,{{{15,2},{16,1},{0,0},{0,0}}},2},
+ {EquipmentId::ObsidianChest,{{{15,3},{16,2},{0,0},{0,0}}},2},{EquipmentId::ObsidianLegs,{{{15,2},{16,1},{0,0},{0,0}}},2},
+ {EquipmentId::ObsidianBoots,{{{15,2},{16,1},{0,0},{0,0}}},2},
+ {EquipmentId::RuneSword,{{{21,1},{27,2},{0,0},{0,0}}},2},{EquipmentId::RuneHelm,{{{21,1},{27,2},{0,0},{0,0}}},2},
+ {EquipmentId::RuneChest,{{{21,2},{27,3},{0,0},{0,0}}},2},{EquipmentId::RuneLegs,{{{21,1},{27,2},{0,0},{0,0}}},2},
+ {EquipmentId::RuneBoots,{{{21,1},{27,2},{0,0},{0,0}}},2},
+ {EquipmentId::PrimordialBlade,{{{29,1},{30,1},{0,0},{0,0}}},2},{EquipmentId::PrimordialHelm,{{{29,1},{30,1},{0,0},{0,0}}},2},
+ {EquipmentId::PrimordialChest,{{{29,1},{30,1},{0,0},{0,0}}},2},{EquipmentId::PrimordialLegs,{{{29,1},{30,1},{0,0},{0,0}}},2},
+ {EquipmentId::PrimordialBoots,{{{29,1},{30,1},{0,0},{0,0}}},2}
+};
+const EquipmentRecipe* find_repair_recipe(EquipmentId id) {
+ for(const auto& r:repair_recipes)if(r.output==id)return &r;
+ return nullptr;
+}
 }
 
 const EquipmentDefinition* EquipmentCatalog::find(EquipmentId id){return definition(id);}
@@ -129,6 +151,13 @@ bool EquipmentCatalog::craft(EquipmentState& state,EquipmentId id,int* inventory
  state.owned[raw]=1;
  state.durability[raw]=d->durability;
  return true;
+}
+bool EquipmentCatalog::repair(EquipmentState& state,EquipmentId id,int* inventory,std::size_t n){
+ const auto raw=static_cast<std::size_t>(id);const auto* d=definition(id);const auto* r=find_repair_recipe(id);
+ if(!d||!r||!inventory||raw>=state.owned.size()||!state.owned[raw]||state.durability[raw]>=d->durability)return false;
+ for(std::size_t i=0;i<r->ingredient_count;++i){const auto v=r->ingredients[i];if(v.inventory_index>=n||inventory[v.inventory_index]<v.count)return false;}
+ for(std::size_t i=0;i<r->ingredient_count;++i){const auto v=r->ingredients[i];inventory[v.inventory_index]-=v.count;}
+ state.durability[raw]=d->durability;return true;
 }
 bool EquipmentCatalog::equip(EquipmentState& state,EquipmentId id){
  const auto raw=static_cast<std::size_t>(id);
