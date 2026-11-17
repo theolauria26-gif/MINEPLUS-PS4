@@ -624,9 +624,19 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     draw=(cellX%3u==0u&&(pattern%2u)==0u)||
          (cellX==4u&&(v%3u==0u));
     r=174;g=119;b=69;break;
-   case Leaves:
-    draw=(pattern%3u)!=0u || v==1u;
-    r=static_cast<Uint8>(70u+(pattern%38u));g=static_cast<Uint8>(132u+(pattern%62u));b=static_cast<Uint8>(48u+(pattern%24u));break;
+   case Leaves: {
+    // Layered leaf pixels use four restrained canopy palettes and scattered
+    // bright tips, giving neighboring crowns more depth without new tile IDs.
+    const unsigned palette=(pattern>>7)&3u;
+    draw=(pattern%4u)!=0u || v==1u || (v==5u&&(pattern%7u)==0u);
+    const unsigned shade=(pattern>>13)&15u;
+    if(palette==0u){r=static_cast<Uint8>(43u+shade);g=static_cast<Uint8>(104u+shade*3u);b=static_cast<Uint8>(39u+shade);}
+    else if(palette==1u){r=static_cast<Uint8>(56u+shade*2u);g=static_cast<Uint8>(132u+shade*3u);b=static_cast<Uint8>(49u+shade);}
+    else if(palette==2u){r=static_cast<Uint8>(83u+shade*2u);g=static_cast<Uint8>(119u+shade*2u);b=static_cast<Uint8>(43u+shade);}
+    else{r=static_cast<Uint8>(116u+shade*2u);g=static_cast<Uint8>(91u+shade*2u);b=static_cast<Uint8>(48u+shade);}
+    if((pattern%19u)==0u){r=static_cast<Uint8>(std::min(255,int(r)+35));g=static_cast<Uint8>(std::min(255,int(g)+38));b=static_cast<Uint8>(std::min(255,int(b)+24));}
+    break;
+   }
    case Moss:
     draw=(pattern%4u)==0u;r=111;g=151;b=76;break;
    case Crystal: case ObsidianCore:
