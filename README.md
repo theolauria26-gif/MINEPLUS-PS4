@@ -85,10 +85,10 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 - Os testes portáveis verificam as quatro alas e a continuidade da geração. Isso ainda é geometria voxel procedural, não uma implementação final de renderização 3D, iluminação volumétrica, chefes ou decoração avançada.
 
 ## Último build automatizado
-- Em 17/11/2026, o workflow [Build MINEPLUS PS4 PKG](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44163159779) concluiu com sucesso para o commit `328973cb` (nuvens móveis e amostragem horizontal em resolução integral): testes portáveis, compilação do EBOOT/PKG, validação estrutural do pacote e upload do artefato `MINEPLUS-PS4-PKG`.
-- O PKG validado pelo script tinha 6.619.136 bytes. O ZIP do artefato publicado tem 5.978.577 bytes; SHA-256 do ZIP: `ec2aa5c254fabecd83cf9d51c6ccaee002957b96772f19cc9054bd509879cac2`.
-- Esse build verde não inclui ainda os commits posteriores de iluminação direcional/névoa e ajuste da camada de nuvens; eles estão em validação. O pacote precisa ser instalado e testado em um PS4 compatível antes de ser considerado funcional.
-- [Baixar/abrir o artefato no GitHub Actions](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44163159779)
+- Em 17/11/2026, o workflow [Build MINEPLUS PS4 PKG](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44163218046) concluiu com sucesso para o commit `927e3d93` (amostragem horizontal integral, iluminação direcional do relevo e névoa de distância): testes portáveis, compilação do EBOOT/PKG, validação estrutural do pacote e upload do artefato `MINEPLUS-PS4-PKG`.
+- O PKG validado pelo script tinha 6.619.136 bytes. O ZIP do artefato publicado tem 5.978.576 bytes; SHA-256 do ZIP: `239be9425409239bf7178625913dcb73ca914007efc5c3d68b4b0deb2152c302`.
+- O ajuste posterior da camada de nuvens (commit `0cf75dfe`) está em validação no [workflow mais recente](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44163348161). O pacote precisa ser instalado e testado em um PS4 compatível antes de ser considerado funcional.
+- [Baixar/abrir o artefato validado no GitHub Actions](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44163218046)
 
 
 ## Direção visual: materiais pixel-art
