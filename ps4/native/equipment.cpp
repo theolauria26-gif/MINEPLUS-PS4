@@ -118,4 +118,44 @@ EquipmentTotals EquipmentCatalog::calculate(const EquipmentLoadout& loadout){
  }
  return total;
 }
+
+bool EquipmentCatalog::craft(EquipmentState& state,EquipmentId id,int* inventory,std::size_t n){
+ const auto raw=static_cast<std::size_t>(id);
+ const auto* d=definition(id);
+ if(!d||raw>=state.owned.size()||state.owned[raw])return false;
+ if(!consume_recipe(id,inventory,n))return false;
+ state.owned[raw]=1;
+ state.durability[raw]=d->durability;
+ return true;
+}
+bool EquipmentCatalog::equip(EquipmentState& state,EquipmentId id){
+ const auto raw=static_cast<std::size_t>(id);
+ const auto* d=definition(id);
+ if(!d||raw>=state.owned.size()||!state.owned[raw]||state.durability[raw]==0)return false;
+ state.equipped[static_cast<std::size_t>(d->slot)]=id;
+ return true;
+}
+EquipmentTotals EquipmentCatalog::calculate(const EquipmentState& state){
+ EquipmentLoadout loadout{};
+ for(std::size_t slot=0;slot<loadout.slots.size();++slot){
+  const auto id=state.equipped[slot];
+  const auto raw=static_cast<std::size_t>(id);
+  if(raw<state.owned.size()&&state.owned[raw]&&state.durability[raw]>0)loadout.slots[slot]=id;
+ }
+ return calculate(loadout);
+}
+void EquipmentCatalog::wear(EquipmentState& state,EquipmentSlot slot,std::uint16_t amount){
+ const auto index=static_cast<std::size_t>(slot);
+ if(index>=state.equipped.size()||amount==0)return;
+ const auto id=state.equipped[index];
+ const auto raw=static_cast<std::size_t>(id);
+ if(raw>=state.durability.size()||!state.owned[raw])return;
+ state.durability[raw]=state.durability[raw]>amount?static_cast<std::uint16_t>(state.durability[raw]-amount):0;
+}
+std::uint16_t EquipmentCatalog::mitigate_damage(std::uint16_t incoming,const EquipmentTotals& totals,bool elemental){
+ if(incoming==0)return 0;
+ const unsigned mitigation=static_cast<unsigned>(totals.defense)/8u+
+                           (elemental?static_cast<unsigned>(totals.resistance)/10u:0u);
+ return static_cast<std::uint16_t>(incoming>mitigation?incoming-mitigation:1u);
+}
 } // namespace mineplus
