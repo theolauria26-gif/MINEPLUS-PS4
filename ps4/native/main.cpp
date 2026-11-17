@@ -27,7 +27,8 @@ std::array<unsigned char,COLS*ROWS> heightMap{};
 // Keep migration and restore scratch space out of stack frames on every save version.
 std::array<unsigned char,COLS*ROWS> loadWorldBuffer{};
 std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> legacyWorldBuffer{};
-int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0,selectedEquipment=0;\nmineplus::EquipmentState equipmentState{};\nbool equipmentPage=false;
+int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0,selectedEquipment=0;
+mineplus::EquipmentState equipmentState{};\nbool equipmentPage=false;
 std::uint64_t worldSeed=4839201ULL;
 Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0,lastSaveAt=0;bool lastSaveSucceeded=true;int lastCreatureHitX=-100,lastCreatureHitY=-100;
 struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};std::array<int,31> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
@@ -297,7 +298,8 @@ bool load_world(){
   stock.fill(0);
   for(int i=0;i<9;i++)stock[i]=std::clamp(h.stock[i],0,9999);
   for(int i=0;i<13;i++)stock[i+9]=std::clamp(extraStock[i],0,9999);
-   for(int i=0;i<9;i++)stock[i+22]=std::clamp(extraLoot[i],0,9999);\n  equipmentState=restoredEquipment;
+   for(int i=0;i<9;i++)stock[i+22]=std::clamp(extraLoot[i],0,9999);
+  equipmentState=restoredEquipment;
   return true;
 }
 void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){
