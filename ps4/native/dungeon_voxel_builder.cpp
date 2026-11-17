@@ -52,6 +52,61 @@ void set_global(VoxelChunk& output, const DungeonVoxelSettings& settings,
         output.set(lx, ly, z, material);
 }
 
+void stamp_room_details(const DungeonRoom& room,
+                         const DungeonVoxelSettings& settings,
+                         VoxelChunk& output) {
+    const std::int32_t cx = room.x + room.width / 2;
+    const std::int32_t cy = room.y + room.height / 2;
+    const std::int32_t z = settings.floor_z + 1;
+    switch (room.type) {
+        case DungeonRoomType::Start:
+            set_global(output, settings, cx, cy, z, 8);
+            set_global(output, settings, cx, cy, z + 1, 16);
+            set_global(output, settings, cx, cy, z + 2, 16);
+            break;
+        case DungeonRoomType::Combat:
+            // Four bone spike markers form a readable hazard cluster.
+            set_global(output, settings, cx - 2, cy, z, 7);
+            set_global(output, settings, cx + 2, cy, z, 7);
+            set_global(output, settings, cx, cy - 2, z, 7);
+            set_global(output, settings, cx, cy + 2, z, 7);
+            break;
+        case DungeonRoomType::Treasure:
+            // A compact two-block chest with an iron latch.
+            set_global(output, settings, cx - 1, cy, z, 4);
+            set_global(output, settings, cx, cy, z, 4);
+            set_global(output, settings, cx, cy, z + 1, 14);
+            break;
+        case DungeonRoomType::Puzzle:
+            for (std::int32_t dy = -1; dy <= 1; ++dy)
+                for (std::int32_t dx = -1; dx <= 1; ++dx)
+                    set_global(output, settings, cx + dx, cy + dy, z, 17);
+            set_global(output, settings, cx, cy, z + 1, 6);
+            break;
+        case DungeonRoomType::Boss:
+            for (const std::int32_t dx : {-2, 2}) {
+                for (const std::int32_t dy : {-2, 2}) {
+                    for (std::int32_t dz = 0; dz < 4; ++dz)
+                        set_global(output, settings, cx + dx, cy + dy,
+                                   z + dz, 15);
+                    set_global(output, settings, cx + dx, cy + dy,
+                               z + 4, 16);
+                }
+            }
+            break;
+        case DungeonRoomType::Exit:
+            // Crystal gate posts and lintel mark the dungeon's exit.
+            for (std::int32_t dz = 0; dz < 3; ++dz) {
+                set_global(output, settings, cx - 1, cy, z + dz, 8);
+                set_global(output, settings, cx + 1, cy, z + dz, 8);
+            }
+            set_global(output, settings, cx - 1, cy, z + 3, 6);
+            set_global(output, settings, cx, cy, z + 3, 6);
+            set_global(output, settings, cx + 1, cy, z + 3, 6);
+            break;
+    }
+}
+
 bool build_corridor(const DungeonRoom& a, const DungeonRoom& b,
                     const DungeonConnection& edge,
                     const DungeonVoxelSettings& settings,
@@ -158,6 +213,7 @@ bool DungeonVoxelBuilder::build_room(const DungeonRoom& room,
                            settings.wall_material);
         }
     }
+    stamp_room_details(room, settings, output);
     return true;
 }
 
