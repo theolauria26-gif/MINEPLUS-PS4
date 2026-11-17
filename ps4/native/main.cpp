@@ -351,7 +351,8 @@ void init_world(){
    if(biome==mineplus::Biome::Ocean)continue;
    const unsigned family=hash2(sx,sy);
    const auto species=mineplus::choose_surface_species(
-       biome,surface.moisture,surface.temperature,family);
+       biome,surface.moisture,surface.temperature,
+       surface.surface,family);
    if(species>=12u)continue;
    m.type=static_cast<int>(species);
    m.x=sx;m.y=sy;m.hp=3;
