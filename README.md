@@ -85,10 +85,9 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 - Os testes portáveis verificam as quatro alas e a continuidade da geração. Isso ainda é geometria voxel procedural, não uma implementação final de renderização 3D, iluminação volumétrica, chefes ou decoração avançada.
 
 ## Último build automatizado
-- Em 17/11/2026, o workflow [Build MINEPLUS PS4 PKG](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44163218046) concluiu com sucesso para o commit `927e3d93` (amostragem horizontal integral, iluminação direcional do relevo e névoa de distância): testes portáveis, compilação do EBOOT/PKG, validação estrutural do pacote e upload do artefato `MINEPLUS-PS4-PKG`.
-- O PKG validado pelo script tinha 6.619.136 bytes. O ZIP do artefato publicado tem 5.978.576 bytes; SHA-256 do ZIP: `239be9425409239bf7178625913dcb73ca914007efc5c3d68b4b0deb2152c302`.
-- O ajuste posterior da camada de nuvens (commit `0cf75dfe`) está em validação no [workflow mais recente](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44163348161). O pacote precisa ser instalado e testado em um PS4 compatível antes de ser considerado funcional.
-- [Baixar/abrir o artefato validado no GitHub Actions](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44163218046)
+- Em 17/11/2026, o workflow [Build MINEPLUS PS4 PKG](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44170200444) concluiu com sucesso para o commit `bd780d2d` (inclui a correção de ordem das nuvens e o vento sutil nas copas): testes portáveis, compilação do EBOOT/PKG, validação estrutural do pacote e upload do artefato `MINEPLUS-PS4-PKG`.
+- O ajuste visual seguinte, com variações raras de folhagem âmbar e ferrugem (`50c6ae5b`), está em validação no [workflow](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44171203498). O pacote precisa ser instalado e testado em um PS4 compatível antes de ser considerado funcional.
+- [Acessar o artefato validado no GitHub Actions](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44170200444)
 
 
 ## Direção visual: materiais pixel-art
