@@ -17,4 +17,5 @@ std::uint8_t surface_event_trade_discount(SurfaceEventType type);
 std::uint8_t surface_event_gather_bonus(SurfaceEventType type,std::uint8_t item_id);
 std::uint32_t surface_event_creature_interval(SurfaceEventType type);
 std::uint8_t surface_event_alert_distance(SurfaceEventType type,bool passive);
+std::uint32_t surface_event_time_remaining(std::uint64_t elapsed_ms);
 } // namespace mineplus
