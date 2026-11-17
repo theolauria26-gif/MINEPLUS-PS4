@@ -470,7 +470,7 @@ void update_primordial_boss(Uint32 now){
  const int distance=abs(BOSS_X-px)+abs(BOSS_Y-py);
  if(primordialBoss.state==mineplus::BossState::Dormant&&distance>9)return;
  const auto event=mineplus::BossCombatDirector::update(primordialBoss,now);
- if(event==mineplus::BossEvent::AttackResolved){const auto attack=mineplus::BossCombatDirector::attack_profile(primordialBoss.pending_attack,primordialBoss.phase);const int dx=abs(BOSS_X-px),dy=abs(BOSS_Y-py);const bool hit=mineplus::BossCombatDirector::attack_hits_player(attack,static_cast<std::uint16_t>(dx),static_cast<std::uint16_t>(dy));lastBossAttack=attack.attack;lastBossAttackAt=now;lastBossAttackHitPlayer=hit;
+ if(event==mineplus::BossEvent::AttackResolved){const auto attack=mineplus::BossCombatDirector::attack_profile(primordialBoss.pending_attack,primordialBoss.phase);const int dx=abs(BOSS_X-px),dy=abs(BOSS_Y-py);const bool hit=mineplus::BossCombatDirector::attack_hits_player(attack,static_cast<std::uint16_t>(dx),static_cast<std::uint16_t>(dy));lastBossAttack=attack.attack;lastBossAttackAt=SDL_GetTicks();lastBossAttackHitPlayer=hit;
   if(hit){const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);const int incoming=mineplus::EquipmentCatalog::mitigate_damage(attack.damage,stats,true);playerHealth=std::max(0,playerHealth-incoming);for(std::size_t slot=1;slot<equipmentState.equipped.size();++slot)mineplus::EquipmentCatalog::wear(equipmentState,static_cast<mineplus::EquipmentSlot>(slot),1);}
  }
  if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);save_world(false);return;}
