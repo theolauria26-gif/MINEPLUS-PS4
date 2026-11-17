@@ -113,6 +113,10 @@ jobs:
             ps4/native/equipment.cpp ps4/native/tests/equipment_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-equipment-tests"
           "$RUNNER_TEMP/mineplus-equipment-tests"
+          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
+            ps4/native/tests/weapon_abilities_tests.cpp \
+            -o "$RUNNER_TEMP/mineplus-weapon-art-tests"
+          "$RUNNER_TEMP/mineplus-weapon-art-tests"
       - name: Build native EBOOT and PKG
         run: |
           set -euxo pipefail
