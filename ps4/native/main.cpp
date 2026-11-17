@@ -28,7 +28,8 @@ std::array<unsigned char,COLS*ROWS> heightMap{};
 std::array<unsigned char,COLS*ROWS> loadWorldBuffer{};
 std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> legacyWorldBuffer{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0,selectedEquipment=0;
-mineplus::EquipmentState equipmentState{};\nbool equipmentPage=false;
+mineplus::EquipmentState equipmentState{};
+bool equipmentPage=false;
 std::uint64_t worldSeed=4839201ULL;
 Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0,lastSaveAt=0;bool lastSaveSucceeded=true;int lastCreatureHitX=-100,lastCreatureHitY=-100;
 struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};std::array<int,31> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
@@ -275,12 +276,31 @@ bool load_world(){
   }else if(ok&&h.version>=4)ok=std::fread(restoredCreatures.data(),sizeof(Creature),restoredCreatures.size(),f)==restoredCreatures.size();
   int restoredHealth=10;if(ok&&h.version>=3)ok=std::fread(&restoredHealth,sizeof(restoredHealth),1,f)==1;
   std::array<int,13> extraStock{};if(ok&&h.version>=6){size_t extraCount=h.version>=7?13:9;ok=std::fread(extraStock.data(),sizeof(int),extraCount,f)==extraCount;}
-   std::array<int,9> extraLoot{};if(ok&&h.version>=9)ok=std::fread(extraLoot.data(),sizeof(int),extraLoot.size(),f)==extraLoot.size();\n  mineplus::EquipmentState restoredEquipment{};\n  if(ok&&h.version>=10){\n   ok=std::fread(restoredEquipment.owned.data(),sizeof(std::uint8_t),restoredEquipment.owned.size(),f)==restoredEquipment.owned.size()&&\n      std::fread(restoredEquipment.equipped.data(),sizeof(mineplus::EquipmentId),restoredEquipment.equipped.size(),f)==restoredEquipment.equipped.size()&&\n      std::fread(restoredEquipment.durability.data(),sizeof(std::uint16_t),restoredEquipment.durability.size(),f)==restoredEquipment.durability.size();\n  }
+   std::array<int,9> extraLoot{};if(ok&&h.version>=9)ok=std::fread(extraLoot.data(),sizeof(int),extraLoot.size(),f)==extraLoot.size();
+  mineplus::EquipmentState restoredEquipment{};
+  if(ok&&h.version>=10){
+   ok=std::fread(restoredEquipment.owned.data(),sizeof(std::uint8_t),restoredEquipment.owned.size(),f)==restoredEquipment.owned.size()&&
+      std::fread(restoredEquipment.equipped.data(),sizeof(mineplus::EquipmentId),restoredEquipment.equipped.size(),f)==restoredEquipment.equipped.size()&&
+      std::fread(restoredEquipment.durability.data(),sizeof(std::uint16_t),restoredEquipment.durability.size(),f)==restoredEquipment.durability.size();
+  }
   if(ok&&std::fgetc(f)!=EOF)ok=false;
   std::fclose(f);if(!ok)return false;
   // Reject impossible tile IDs before they reach rendering, collision or inventory.
   // This protects the live world from structurally valid but semantically corrupt saves.
-  for(const auto tile:restored)if(tile>ChestOpened)return false;\n  for(std::size_t i=0;i<restoredEquipment.owned.size();++i){\n   if(restoredEquipment.owned[i]>1)return false;\n   const auto* def=mineplus::EquipmentCatalog::find(static_cast<mineplus::EquipmentId>(i));\n   if(i==0){if(restoredEquipment.durability[i]!=0)return false;continue;}\n   if(!def||restoredEquipment.durability[i]>def->durability)return false;\n   if(!restoredEquipment.owned[i]&&restoredEquipment.durability[i]!=0)return false;\n  }\n  for(std::size_t slot=0;slot<restoredEquipment.equipped.size();++slot){\n   const auto id=restoredEquipment.equipped[slot];const auto raw=static_cast<std::size_t>(id);\n   if(id==mineplus::EquipmentId::None)continue;\n   const auto* def=mineplus::EquipmentCatalog::find(id);\n   if(!def||raw>=restoredEquipment.owned.size()||!restoredEquipment.owned[raw]||static_cast<std::size_t>(def->slot)!=slot)return false;\n  }
+  for(const auto tile:restored)if(tile>ChestOpened)return false;
+  for(std::size_t i=0;i<restoredEquipment.owned.size();++i){
+   if(restoredEquipment.owned[i]>1)return false;
+   const auto* def=mineplus::EquipmentCatalog::find(static_cast<mineplus::EquipmentId>(i));
+   if(i==0){if(restoredEquipment.durability[i]!=0)return false;continue;}
+   if(!def||restoredEquipment.durability[i]>def->durability)return false;
+   if(!restoredEquipment.owned[i]&&restoredEquipment.durability[i]!=0)return false;
+  }
+  for(std::size_t slot=0;slot<restoredEquipment.equipped.size();++slot){
+   const auto id=restoredEquipment.equipped[slot];const auto raw=static_cast<std::size_t>(id);
+   if(id==mineplus::EquipmentId::None)continue;
+   const auto* def=mineplus::EquipmentCatalog::find(id);
+   if(!def||raw>=restoredEquipment.owned.size()||!restoredEquipment.owned[raw]||static_cast<std::size_t>(def->slot)!=slot)return false;
+  }
   if(h.version>=2){
    for(auto &m:restoredCreatures){
     if(m.type<0||m.type>(h.version>=4?11:5)||m.hp<0||m.hp>3||m.x< -100||m.x>=(legacy?LEGACY_COLS:COLS)||m.y< -100||m.y>=(legacy?LEGACY_ROWS:ROWS))return false;
