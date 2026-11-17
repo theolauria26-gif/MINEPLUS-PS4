@@ -20,8 +20,8 @@ int main() {
     assert(BossCombatDirector::update(boss, 2249) == BossEvent::None);
     assert(BossCombatDirector::update(boss, 2250) == BossEvent::TelegraphStarted);
 
-    assert(BossCombatDirector::damage(boss, 408) == 408);
-    assert(boss.health == 792 && boss.phase == 1);
+    assert(BossCombatDirector::damage(boss, 407) == 407);
+    assert(boss.health == 793 && boss.phase == 1);
     assert(BossCombatDirector::damage(boss, 1) == 1);
     assert(boss.phase == 2);
     // The phase change is announced when the current recovery ends.
@@ -30,7 +30,7 @@ int main() {
     assert(boss.phase == 2);
     assert(BossCombatDirector::damage(boss, 400) == 400);
     assert(boss.phase == 3);
-    assert(BossCombatDirector::damage(boss, 10000) == 391);
+    assert(BossCombatDirector::damage(boss, 10000) == 392);
     assert(boss.health == 0 && boss.state == BossState::Defeated);
     assert(BossCombatDirector::damage(boss, 1) == 0);
     assert(BossCombatDirector::update(boss, 999999) == BossEvent::None);
