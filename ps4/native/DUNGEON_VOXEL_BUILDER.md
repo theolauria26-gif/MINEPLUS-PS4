@@ -5,11 +5,19 @@
 walls, and optional ceilings. Connected orthogonally adjacent rooms receive
 walkable floor corridors, side walls, and two-voxel-high door openings.
 
+Room identity now adds recognizable CPU-generated landmarks:
+- Start: ember beacon.
+- Combat: four bone hazard markers.
+- Treasure: wooden chest with an iron latch.
+- Puzzle: rune altar with a crystal focus.
+- Boss: four obsidian pillars with ember caps.
+- Exit: darkstone gate with a crystal lintel.
+
 `build_layout_chunk` clears its output and assembles every room and corridor
 that intersects the requested chunk. Global coordinates are clipped against
 the chunk origin, so callers can request neighboring chunks independently.
 Invalid room IDs, duplicate room IDs, non-adjacent graph edges, unsupported
-corridor widths, and invalid materials/heights are rejected.
+corridor widths, and invalid materials/heights are rejected before stamping.
 
 The assembled chunk can be passed to the CPU greedy mesher. This remains a
 procedural geometry module, not yet connected to the live game renderer,
