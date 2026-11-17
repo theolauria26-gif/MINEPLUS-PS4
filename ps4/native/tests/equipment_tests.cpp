@@ -70,6 +70,10 @@ int main(){
  EquipmentCatalog::wear(state,EquipmentSlot::Weapon,1);
  assert(state.durability[swordIndex]==0);
  assert(EquipmentCatalog::calculate(state).damage==0);
+ forgeStock[18]=3;forgeStock[14]=2;forgeStock[4]=1;
+ assert(EquipmentCatalog::craft(state,EquipmentId::IronSword,forgeStock,31));
+ assert(state.durability[swordIndex]==EquipmentCatalog::find(EquipmentId::IronSword)->durability);
+ assert(EquipmentCatalog::calculate(state).damage==12);
  EquipmentTotals armor{};armor.defense=16;armor.resistance=20;
  assert(EquipmentCatalog::mitigate_damage(5,armor,false)==3);
  assert(EquipmentCatalog::mitigate_damage(5,armor,true)==1);
