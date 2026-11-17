@@ -8,8 +8,23 @@ The equipment catalog defines five progression tiers and five loadout slots:
 4. Runic — arcane power and rune resistance.
 5. Primordial — the strongest mixed defense, vitality and arcane bonuses.
 
-Each definition has stable numeric identity, tier, slot, combat stats, set ID and durability budget. Recipes use the existing 31-slot gameplay inventory indices; crafting validates every ingredient before consuming any, so failed crafts never partially spend materials.
+There are 25 catalog entries. Every item has a stable ID, tier, slot, combat stats, set ID, recipe and durability budget. Recipes use the existing 31-slot gameplay inventory indices. Crafting validates all ingredients before consuming any and currently allows one owned copy of each catalog item.
 
-Three matching pieces activate a tier bonus. A complete five-piece set receives an additional completion bonus. Wrong-slot equipment is ignored by stat calculation, and unknown IDs are rejected.
+## Live gameplay integration
 
-This is currently a tested CPU gameplay-data module. It is not yet wired to the live inventory UI, player combat, durability wear, equipment persistence or save format. Existing save version 9 is deliberately unchanged until the complete equipped-item ownership and migration design is integrated atomically.
+- Open the inventory with E / Triangle, then switch to the equipment page with V / left-stick click.
+- Navigate the 25-item grid with left/right or controller shoulders.
+- Enter / controller A crafts the selected item.
+- U / controller right-stick equips an owned item. Newly crafted gear automatically fills an empty matching slot.
+- Five slots are active: weapon, head, chest, legs and boots.
+- Three matching set pieces activate the set bonus; five pieces add the completion bonus.
+- Weapon damage changes creature hit damage. Armor defense and elemental resistance mitigate incoming hits.
+- Weapon durability decreases when striking creatures; armor durability decreases when the player is hit. Broken equipment remains owned but contributes no stats until repaired (repair is a future feature).
+
+## Save compatibility
+
+Save version 10 appends equipment ownership flags, equipped slot IDs and per-item durability after the version-9 loot payload. The loader still accepts versions 1–9; those saves start with an empty equipment state. Version-10 equipment payloads are validated before applying them to the live state. The previous save header layout and world/inventory payload remain unchanged.
+
+## Remaining work
+
+This system is now connected to the inventory UI, crafting, equipped stats, combat and save/load. Equipment-specific attack animations, repair stations, richer weapon moves, visual armor models and additional accessory slots are not implemented yet. The current renderer remains the existing pseudo-3D SDL2 renderer; this catalog does not imply a GPU voxel renderer.
