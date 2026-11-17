@@ -48,6 +48,13 @@ int main() {
     assert(charge.damage == 5 && charge.range == 3 && charge.area_radius == 1);
     const auto none = BossCombatDirector::attack_profile(BossAttack::None, 1);
     assert(none.damage == 0 && none.range == 0 && none.area_radius == 0);
+    assert(BossCombatDirector::attack_hits_player(slam, 0, 4));
+    assert(!BossCombatDirector::attack_hits_player(slam, 3, 2));
+    assert(BossCombatDirector::attack_hits_player(volley, 4, 0));
+    assert(!BossCombatDirector::attack_hits_player(volley, 2, 2));
+    assert(BossCombatDirector::attack_hits_player(charge, 4, 0));
+    assert(!BossCombatDirector::attack_hits_player(charge, 4, 2));
+    assert(!BossCombatDirector::attack_hits_player(none, 0, 0));
 
     BossEncounter wrap{};
     assert(BossCombatDirector::start(wrap, 0xfffffff0u, 100));
