@@ -6,7 +6,7 @@
 - The `WorldRuntime` overload streams the required 3x3 neighborhood and applies player voxel/surface edits before meshing.
 - Both fill the one-voxel horizontal halo for seam-aware greedy meshing.
 - Both build into a temporary chunk and replace output only on success; coordinate overflow is rejected.
-- Solid materials include primordial-cave darkstone and crystal seams. Each primordial complex now has a guaranteed mineable crystal seam on the central chamber floor, deterministic clustered floor deposits, rare wall crystals, and four rune pylons with ember caps in the central chamber.
+- Solid materials include primordial-cave darkstone and crystal seams. Each primordial complex now has a guaranteed mineable crystal seam on the central chamber floor, deterministic clustered floor deposits, rare wall crystals, four rune pylons with ember caps in the central chamber, plus distinct north/south/east/west chamber landmarks (crystal growth, rune-and-ember altar, obsidian monolith, and bone relic).
 - Liquids are omitted because the current chunk format and opaque mesher have no translucent liquid pass.
 
 This is a CPU generation bridge, not renderer integration. It does not yet replace the resident world path in `main.cpp`.
