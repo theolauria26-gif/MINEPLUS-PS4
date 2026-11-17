@@ -26,6 +26,7 @@ bool surface_species_can_spawn(std::uint8_t id, Biome biome,
                                std::uint8_t surface);
 std::uint8_t choose_surface_species(Biome biome, std::uint8_t moisture,
                                     std::uint8_t temperature,
+                                    std::uint8_t surface,
                                     std::uint32_t variant);
 
 } // namespace mineplus
