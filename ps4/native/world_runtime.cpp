@@ -1,6 +1,7 @@
 #include "world_runtime.hpp"
 #include "save_codec.hpp"
 #include <array>
+#include <algorithm>
 
 namespace mineplus {
 
@@ -70,6 +71,34 @@ std::size_t WorldRuntime::saved_edits() const {
 }
 std::uint64_t WorldRuntime::seed() const { return chunks_.seed(); }
 
+bool WorldRuntime::set_dungeon_chest(const DungeonChestState& chest) {
+    if(chest.contents.size()>SaveCodec::MAX_CHEST_DROPS) return false;
+    for(std::size_t i=0;i<chest.contents.size();++i) {
+        const auto item=static_cast<std::uint16_t>(chest.contents[i].item);
+        if(item<1 || item>9 || chest.contents[i].count==0 || chest.contents[i].count>999) return false;
+        for(std::size_t j=i+1;j<chest.contents.size();++j)
+            if(chest.contents[i].item==chest.contents[j].item) return false;
+    }
+    auto found=std::find_if(dungeon_chests_.begin(),dungeon_chests_.end(),[&](const DungeonChestState& entry){
+        return entry.room_id==chest.room_id;
+    });
+    if(found!=dungeon_chests_.end()) { *found=chest; return true; }
+    if(dungeon_chests_.size()>=SaveCodec::MAX_DUNGEON_CHESTS) return false;
+    dungeon_chests_.push_back(chest);
+    return true;
+}
+
+bool WorldRuntime::get_dungeon_chest(std::uint32_t room_id, DungeonChestState& chest) const {
+    const auto found=std::find_if(dungeon_chests_.begin(),dungeon_chests_.end(),[&](const DungeonChestState& entry){
+        return entry.room_id==room_id;
+    });
+    if(found==dungeon_chests_.end()) return false;
+    chest=*found;
+    return true;
+}
+
+const std::vector<DungeonChestState>& WorldRuntime::dungeon_chests() const { return dungeon_chests_; }
+
 bool WorldRuntime::encode_save(std::vector<std::uint8_t>& bytes) const {
     // Save scratch buffers are heap-backed: the 4096-entry voxel journal must
     // never consume the constrained PS4 main-thread stack.
@@ -85,14 +114,17 @@ bool WorldRuntime::encode_save(std::vector<std::uint8_t>& bytes) const {
     if (voxel_count != chunks_.voxel_delta_count()) return false;
     voxel_edits.resize(voxel_count);
     archive.voxel_edits.swap(voxel_edits);
+    archive.dungeon_chests=dungeon_chests_;
     return SaveCodec::encode(archive, bytes);
 }
 
 bool WorldRuntime::decode_save(const std::uint8_t* bytes, std::size_t size) {
     WorldArchive archive;
     if (!SaveCodec::decode(bytes, size, archive)) return false;
-    return chunks_.restore(archive.seed, archive.edits.data(), archive.edits.size(),
-                           archive.voxel_edits.data(), archive.voxel_edits.size());
+    if(!chunks_.restore(archive.seed, archive.edits.data(), archive.edits.size(),
+                        archive.voxel_edits.data(), archive.voxel_edits.size())) return false;
+    dungeon_chests_.swap(archive.dungeon_chests);
+    return true;
 }
 
 } // namespace mineplus
