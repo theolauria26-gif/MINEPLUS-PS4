@@ -105,16 +105,27 @@ void init_world(){
   world[y*COLS+x]=tile;
   heightMap[y*COLS+x]=static_cast<unsigned char>(std::clamp<int>(sample.height,0,255));
  }
- // Build a broad leaf canopy around natural forest trunks. Leaves are walk-through
- // foliage, while the taller trunk remains the tree's collision point.
- for(int y=3;y<ROWS-3;++y)for(int x=3;x<COLS-3;++x){
+ // Build varied leaf crowns around natural forest trunks. Crown width, depth
+ // and silhouette come from the trunk's world coordinate, so groves contain
+ // compact round trees, broad oaks and narrow wind-shaped crowns consistently.
+ // Leaves remain walk-through foliage; the trunk is the collision point.
+ for(int y=4;y<ROWS-4;++y)for(int x=4;x<COLS-4;++x){
   if(world[y*COLS+x]!=Wood)continue;
   const int wx=x-COLS/2,wy=y-ROWS/2;
   const auto column=pcg.sample_surface(wx,wy);
   if(!pcg.surface_tree_at(wx,wy,column))continue;
-  for(int oy=-2;oy<=2;++oy)for(int ox=-2;ox<=2;++ox){
-   if((ox==0&&oy==0)||ox*ox+oy*oy>5)continue;
+  const unsigned crownSeed=hash2(wx,wy);
+  const int radiusX=1+static_cast<int>(crownSeed%3u);
+  const int radiusY=1+static_cast<int>((crownSeed>>5)%2u);
+  const int crownStyle=static_cast<int>((crownSeed>>9)%3u);
+  for(int oy=-3;oy<=3;++oy)for(int ox=-3;ox<=3;++ox){
+   if((ox==0&&oy==0)||std::abs(ox)>radiusX||std::abs(oy)>radiusY)continue;
    const int nx=x+ox,ny=y+oy;
+   const int ellipse=ox*ox*radiusY*radiusY+oy*oy*radiusX*radiusX;
+   const int limit=radiusX*radiusX*radiusY*radiusY;
+   if(ellipse>limit+(crownStyle==0?0:radiusX*radiusY))continue;
+   if(crownStyle==1&&((ox+oy+crownSeed)%5u)==0u)continue;
+   if(crownStyle==2&&std::abs(ox)==radiusX&&std::abs(oy)==radiusY)continue;
    const auto ground=world[ny*COLS+nx];
    if(ground==Grass||ground==Moss)world[ny*COLS+nx]=Leaves;
   }
