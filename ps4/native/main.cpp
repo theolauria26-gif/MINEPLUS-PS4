@@ -10,9 +10,10 @@
 #include <unistd.h>
 #include "pcg_world.hpp"
 #include "world_grid.hpp"
+#include "dungeon_loot.hpp"
 namespace {
 constexpr int W=1280,H=720,COLS=2048,ROWS=2048,LEGACY_COLS=1024,LEGACY_ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
-enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21};
+enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21,ChestClosed=22,ChestOpened=23};
 std::array<unsigned char,COLS*ROWS> world{};
 mineplus::FixedWorldGrid fixedWorldGrid(world.data(), COLS, ROWS);
 mineplus::WorldGridView& worldGrid = fixedWorldGrid;
@@ -28,7 +29,7 @@ std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> legacyWorldBuffer{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0;
 std::uint64_t worldSeed=4839201ULL;
 Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0,lastSaveAt=0;bool lastSaveSucceeded=true;int lastCreatureHitX=-100,lastCreatureHitY=-100;
-struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};std::array<int,22> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
+struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};std::array<int,31> stock{{24,18,12,8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
 unsigned hash2(int x,int y){unsigned n=(unsigned)(x*374761393u+y*668265263u+0x9e3779b9u);n=(n^(n>>13))*1274126177u;return n^(n>>16);}
 bool running=true,playing=false,inventory=false,paused=false;
 Uint32 lastMove=0,lastTurn=0;
@@ -117,7 +118,8 @@ void init_world(){
     default: // Bone altar, dark ring and central ancient relic.
      if(d>=r2-2)tile=Bone;
      else if(cardinal&&d>r2/4)tile=DarkStone;
-     else if(d<5)tile=AncientRune;
+     else if(d==0)tile=ChestClosed;
+      else if(d<5)tile=AncientRune;
      break;
    }
    if(tile!=Air)world[ly*COLS+lx]=tile;
@@ -128,7 +130,7 @@ void init_world(){
   unsigned seed=hash2(cx,cy);int w=9+(seed%13),h=8+(hash2(cy,cx)%11);
   for(int y=cy;y<cy+h;y++)for(int x=cx;x<cx+w;x++)
    if(x==cx||x==cx+w-1||y==cy||y==cy+h-1)world[y*COLS+x]=DarkStone;
-  world[(cy+h/2)*COLS+cx+w/2]=Air;
+  world[(cy+h/2)*COLS+cx+w/2]=ChestClosed;
   world[(cy+1)*COLS+cx+1]=Crystal;
   for(int k=0;k<6;k++){int tx=cx+(int)(hash2(cx+k,cy)%w),ty=cy+(int)(hash2(cy+k,cx)%h);world[ty*COLS+tx]=Bone;}
   // Four corner towers.
@@ -236,9 +238,9 @@ bool save_world(bool feedback=true){
  mkdir(SAVE_DIR,0777);
  const char* temp="/data/MINEPLUS/world.sav.tmp";
  FILE* f=std::fopen(temp,"wb");if(!f){if(feedback){lastSaveSucceeded=false;lastSaveAt=SDL_GetTicks();}return false;}
- SaveHeader h{{'M','P','L','U','S','3','D','\0'},8,px,py,selected,faceX,faceY,{}};
+ SaveHeader h{{'M','P','L','U','S','3','D','\0'},9,px,py,selected,faceX,faceY,{}};
  for(int i=0;i<9;i++)h.stock[i]=stock[i];
- bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(&worldSeed,sizeof(worldSeed),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size()&&std::fwrite(&playerHealth,sizeof(playerHealth),1,f)==1&&std::fwrite(stock.data()+9,sizeof(int),13,f)==13;
+ bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(&worldSeed,sizeof(worldSeed),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size()&&std::fwrite(&playerHealth,sizeof(playerHealth),1,f)==1&&std::fwrite(stock.data()+9,sizeof(int),13,f)==13&&std::fwrite(stock.data()+22,sizeof(int),9,f)==9;
  if(std::fflush(f)!=0)ok=false;
  if(ok&&::fsync(::fileno(f))!=0)ok=false;
  if(std::fclose(f)!=0)ok=false;
@@ -271,11 +273,12 @@ bool load_world(){
   }else if(ok&&h.version>=4)ok=std::fread(restoredCreatures.data(),sizeof(Creature),restoredCreatures.size(),f)==restoredCreatures.size();
   int restoredHealth=10;if(ok&&h.version>=3)ok=std::fread(&restoredHealth,sizeof(restoredHealth),1,f)==1;
   std::array<int,13> extraStock{};if(ok&&h.version>=6){size_t extraCount=h.version>=7?13:9;ok=std::fread(extraStock.data(),sizeof(int),extraCount,f)==extraCount;}
+   std::array<int,9> extraLoot{};if(ok&&h.version>=9)ok=std::fread(extraLoot.data(),sizeof(int),extraLoot.size(),f)==extraLoot.size();
   if(ok&&std::fgetc(f)!=EOF)ok=false;
   std::fclose(f);if(!ok)return false;
   // Reject impossible tile IDs before they reach rendering, collision or inventory.
   // This protects the live world from structurally valid but semantically corrupt saves.
-  for(const auto tile:restored)if(tile>AncientRune)return false;
+  for(const auto tile:restored)if(tile>ChestOpened)return false;
   if(h.version>=2){
    for(auto &m:restoredCreatures){
     if(m.type<0||m.type>(h.version>=4?11:5)||m.hp<0||m.hp>3||m.x< -100||m.x>=(legacy?LEGACY_COLS:COLS)||m.y< -100||m.y>=(legacy?LEGACY_ROWS:ROWS))return false;
@@ -292,6 +295,7 @@ bool load_world(){
   if(abs(faceX)+abs(faceY)!=1){faceX=1;faceY=0;}
   for(int i=0;i<9;i++)stock[i]=std::clamp(h.stock[i],0,9999);
   for(int i=0;i<13;i++)stock[i+9]=std::clamp(extraStock[i],0,9999);
+   for(int i=0;i<9;i++)stock[i+22]=std::clamp(extraLoot[i],0,9999);
   return true;
 }
 void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){
@@ -305,7 +309,10 @@ void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){
  case Obsidian:r=53;g=43;b=82;break;case Ember:r=235;g=103;b=43;break;
  case Rune:r=90;g=190;b=166;break;case IronBar:r=183;g=192;b=197;break;
  case ObsidianCore:r=82;g=55;b=116;break;case EmberCatalyst:r=255;g=133;b=49;break;
- case AncientRune:r=124;g=231;b=190;break;default:r=16;g=23;b=29;break;
+ case AncientRune:r=124;g=231;b=190;break;
+  case ChestClosed:r=154;g=91;b=48;break;case ChestOpened:r=78;g=58;b=42;break;
+  case 24:r=235;g=190;b=72;break;case 25:r=100;g=190;b=105;break;case 26:r=190;g=181;b=150;break;
+  case 27:r=150;g=158;b=168;break;case 28:r=105;g=190;b=210;break;case 29:r=150;g=105;b=210;break;case 30:r=245;g=125;b=55;break;default:r=16;g=23;b=29;break;
 }}
 void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigned seed){
  // Tiny deterministic pixel-art motifs: no external assets, no per-frame allocation.
@@ -360,6 +367,8 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     r=231;g=239;b=240;break;
    case Rune: case AncientRune:
     draw=(pattern%3u)==0u;r=168;g=255;b=216;break;
+    case ChestClosed: draw=(v==2u||v==6u||cellX==1u||cellX==6u);r=224;g=151;b=73;break;
+    case ChestOpened: draw=(v==2u||v==6u);r=139;g=103;b=73;break;
    default: break;
   }
   if(draw){color(r,g,b, t==Lava||t==Crystal||t==Rune||t==AncientRune?210:155);SDL_RenderDrawPoint(renderer,sx,py);}
@@ -439,7 +448,17 @@ void craft_item(){
   case 8: if(stock[Rune]>=2&&stock[Crystal]>=2&&stock[AncientRune]<=9998){stock[Rune]-=2;stock[Crystal]-=2;stock[AncientRune]+=1;}break;
  }
 }
-void mine_block(){int x=0,y=0;if(!target_tile(x,y))return;for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){lastCreatureHit=SDL_GetTicks();lastCreatureHitX=x;lastCreatureHitY=y;if(--m.hp<=0){if(m.type<4)add_stock(Bone,2);else if(m.type<8)add_stock(Crystal);else add_stock(DarkStone);m.x=-100;m.y=-100;}return;}int block=tile_at(x,y);if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)add_stock(drop);else if(drop>=IronOre&&drop<=Rune)add_stock(drop);set_tile_at(x,y,Air);}}
+bool open_treasure_chest(int x,int y){
+  if(tile_at(x,y)!=ChestClosed)return false;
+  mineplus::DungeonRoom room{};room.id=hash2(x,y);room.x=x;room.y=y;room.width=7;room.height=7;room.type=mineplus::DungeonRoomType::Treasure;
+  mineplus::DungeonChestState chest{};
+  if(!mineplus::DungeonLootGenerator::generate_chest(worldSeed,room,chest))return false;
+  for(const auto& drop:chest.contents)add_stock(21+static_cast<int>(drop.item),drop.count);
+  if(!set_tile_at(x,y,ChestOpened))return false;
+  save_world();
+  return true;
+}
+void mine_block(){int x=0,y=0;if(!target_tile(x,y))return;if(tile_at(x,y)==ChestClosed){open_treasure_chest(x,y);return;}for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){lastCreatureHit=SDL_GetTicks();lastCreatureHitX=x;lastCreatureHitY=y;if(--m.hp<=0){if(m.type<4)add_stock(Bone,2);else if(m.type<8)add_stock(Crystal);else add_stock(DarkStone);m.x=-100;m.y=-100;}return;}int block=tile_at(x,y);if(block>0){int drop=block;if(drop==Sand||drop==Snow||drop==Water||drop==Ice)drop=Dirt;else if(drop==Lava)drop=Stone;if(drop>=1&&drop<=8)add_stock(drop);else if(drop>=IronOre&&drop<=Rune)add_stock(drop);set_tile_at(x,y,Air);}}
 void draw_menu(){
  // Dark-fantasy title screen: moonlit ruins, distant towers and drifting embers.
  rect(0,0,W,H,5,8,14);
@@ -620,18 +639,20 @@ void draw_world(){
  color(225,232,222);SDL_RenderDrawLine(renderer,W/2-9,H/2,W/2+9,H/2);SDL_RenderDrawLine(renderer,W/2,H/2-9,W/2,H/2+9);
  rect(0,0,W,64,7,12,16,235);rect(20,13,7,38,52,212,132);draw_text("MINEPLUS  /  THE FORGOTTEN WILDS",44,15,3);draw_text("3D VOXEL SURVIVAL",45,43,1,160,190,174);
  draw_text("HP",500,20,2,210,218,208);rect(535,19,110,14,36,25,26);rect(537,21,playerHealth*10+6,10,playerHealth>3?75:190,playerHealth>3?183:66,playerHealth>3?111:53);
- draw_text("MOVE  /  R-STICK LOOK  /  F BREAK  /  E BAG",650,25,2,190,198,192);
+ draw_text("MOVE  /  R-STICK LOOK  /  F OPEN/BREAK  /  E BAG",650,25,2,190,198,192);
  if(lastSaveAt&&SDL_GetTicks()-lastSaveAt<2400u)draw_text(lastSaveSucceeded?"WORLD SAVED":"SAVE FAILED",44,84,2,lastSaveSucceeded?120:235,lastSaveSucceeded?220:100,lastSaveSucceeded?165:90);
  draw_minimap();
  int start=(W-8*62)/2;for(int i=0;i<8;i++){int x=start+i*62;rect(x,H-72,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-72,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-57,24,24,r,g,b);char qty[8];std::snprintf(qty,sizeof(qty),"%d",stock[i+1]);draw_text(qty,x+17,H-20,1,225,230,220);}
- if(inventory||paused){rect(250,150,780,430,8,14,18,245);outline(250,150,780,430,68,166,111);draw_text(inventory?"INVENTORY":"PAUSED",310,195,5,132,235,166);
+ if(inventory||paused){rect(240,130,1000,480,8,14,18,245);outline(240,130,1000,480,68,166,111);draw_text(inventory?"INVENTORY":"PAUSED",310,195,5,132,235,166);
   if(inventory){
-   static const int itemIds[16]={Grass,Dirt,Stone,Wood,Moss,Crystal,Bone,DarkStone,IronOre,Obsidian,Ember,Rune,IronBar,ObsidianCore,EmberCatalyst,AncientRune};
-   static const char* itemNames[16]={"GRASS","DIRT","STONE","WOOD","MOSS","CRYSTAL","BONE","DARKSTONE","IRON ORE","OBSIDIAN","EMBER","RUNE","IRON BARS","OBSIDIAN CORE","EMBER CATALYST","ANCIENT RUNE"};
-   for(int i=0;i<16;i++){int x=265+(i%4)*188,y=245+(i/4)*49,id=itemIds[i];rect(x,y,170,43,27,43,43);Uint8 r,g,b;tile_color(id,r,g,b);rect(x+7,y+6,30,30,r,g,b);outline(x,y,170,43,75,145,98);draw_text(itemNames[i],x+43,y+7,1,208,215,208);char amount[12];std::snprintf(amount,sizeof(amount),"%d",stock[id]);draw_text(amount,x+43,y+24,1,160,220,174);}
-   static const char* recipes[9]={"DARKSTONE  3 STONE + 2 WOOD","MOSS  3 DIRT + 1 WOOD","CRYSTAL  4 STONE + 1 BONE","BONE  2 WOOD + 1 STONE","STONE  3 DIRT + 1 BONE","IRON BARS  3 ORE + 1 EMBER","OBSIDIAN CORE  3 OBSIDIAN + 1 ORE","EMBER CATALYST  3 EMBER + 1 CRYSTAL","ANCIENT RUNE  2 RUNES + 2 CRYSTAL"};
-   for(int ri=0;ri<9;ri++)draw_text(recipes[ri],292,448+ri*13,1,ri==selectedRecipe?245:145,ri==selectedRecipe?220:165,ri==selectedRecipe?145:160);
-   draw_text("L/R SELECT RECIPE  /  A CRAFT  /  BACK CLOSE",650,565,1,184,205,184);
+    static const int itemIds[25]={Grass,Dirt,Stone,Wood,Moss,Crystal,Bone,DarkStone,IronOre,Obsidian,Ember,Rune,IronBar,ObsidianCore,EmberCatalyst,AncientRune,22,23,24,25,26,27,28,29,30};
+    static const char* itemNames[25]={"GRASS","DIRT","STONE","WOOD","MOSS","CRYSTAL","BONE","DARKSTONE","IRON ORE","OBSIDIAN","EMBER","RUNE","IRON BARS","OBSIDIAN CORE","EMBER CATALYST","ANCIENT RUNE","COINS","HERBS","BONE SHARDS","IRON ORE","CRYSTAL SHARDS","RUNE FRAGMENTS","EMBER CORES","ANCIENT RELICS","BOSS SIGILS"};
+    for(int i=0;i<25;i++){int x=265+(i%4)*188,y=245+(i/4)*40,id=itemIds[i];rect(x,y,170,36,27,43,43);Uint8 r,g,b;tile_color(id,r,g,b);rect(x+7,y+4,27,27,r,g,b);outline(x,y,170,36,75,145,98);draw_text(itemNames[i],x+41,y+5,1,208,215,208);char amount[12];std::snprintf(amount,sizeof(amount),"%d",stock[id]);draw_text(amount,x+41,y+21,1,160,220,174);}
+    static const char* recipes[9]={"DARKSTONE: 3 STONE + 2 WOOD","MOSS: 3 DIRT + 1 WOOD","CRYSTAL: 4 STONE + 1 BONE","BONE: 2 WOOD + 1 STONE","STONE: 3 DIRT + 1 BONE","IRON BARS: 3 ORE + 1 EMBER","OBSIDIAN CORE: 3 OBSIDIAN + 1 ORE","EMBER CATALYST: 3 EMBER + 1 CRYSTAL","ANCIENT RUNE: 2 RUNES + 2 CRYSTAL"};
+    draw_text("CRAFTING",1010,218,2,132,235,166);
+    for(int ri=0;ri<9;ri++)draw_text(recipes[ri],1010,245+ri*25,1,ri==selectedRecipe?245:145,ri==selectedRecipe?220:165,ri==selectedRecipe?145:160);
+    draw_text("L/R SELECT  /  A CRAFT",1010,485,1,184,205,184);
+    draw_text("F OPENS TREASURE CHESTS  /  BACK CLOSE",650,565,1,184,205,184);
   }
   else{draw_text("A / ENTER  CONTINUE",350,310,3);draw_text("X / F5  SAVE WORLD",350,375,3);draw_text("B / ESC  BACK TO WORLD",350,440,2);}
  }
