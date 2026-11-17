@@ -22,7 +22,8 @@ int main(){
   for(unsigned i=0;i<recipe->ingredient_count;++i)assert(recipe->ingredients[i].inventory_index<31);
  }
  int insufficient[31]{};insufficient[4]=2;insufficient[3]=1;
- const int before[31]={};
+ int before[31]{};
+ for(int i=0;i<31;++i)before[i]=insufficient[i];
  assert(!EquipmentCatalog::consume_recipe(EquipmentId::StoneHatchet,insufficient,31));
  for(int i=0;i<31;++i)assert(insufficient[i]==before[i]);
 
