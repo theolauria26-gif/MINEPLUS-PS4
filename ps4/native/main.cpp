@@ -667,7 +667,14 @@ void draw_minimap(){
  // Player marker remains visible over every terrain type.
  rect(ox+radius*cell+2,oy+radius*cell+2,5,5,245,240,210);
  rect(ox+radius*cell+2+faceX*3,oy+radius*cell+2+faceY*3,3,3,245,190,110);
+ if(primordialBoss.state!=mineplus::BossState::Defeated){
+  const int bx=std::clamp(BOSS_X-px,-radius,radius),by=std::clamp(BOSS_Y-py,-radius,radius);
+  const int markerX=ox+(bx+radius)*cell+2,markerY=oy+(by+radius)*cell+2;
+  rect(markerX,markerY,5,5,225,65,92);
+  color(255,175,180);SDL_RenderDrawLine(renderer,markerX-2,markerY+2,markerX+6,markerY+2);
+ }
  draw_text("MAP",ox,oy+cell*17+7,1,190,204,190);
+ if(primordialBoss.state!=mineplus::BossState::Defeated)draw_text("GUARDIAN",ox+38,oy+cell*17+7,1,220,105,120);
  char coords[32];std::snprintf(coords,sizeof(coords),"%d %d",px,py);
  draw_text(coords,ox+35,oy+cell*17+7,1,190,204,190);
 }
