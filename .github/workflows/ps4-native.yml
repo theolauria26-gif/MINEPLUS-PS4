@@ -131,6 +131,13 @@ jobs:
           set -euxo pipefail
           clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native ps4/native/surface_trade.cpp ps4/native/tests/surface_trade_tests.cpp -o "$RUNNER_TEMP/mineplus-surface-trade-tests"
           "$RUNNER_TEMP/mineplus-surface-trade-tests"
+      - name: Run surface event tests
+        run: |
+          set -euxo pipefail
+          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
+            ps4/native/surface_events.cpp ps4/native/tests/surface_events_tests.cpp \
+            -o "$RUNNER_TEMP/mineplus-surface-event-tests"
+          "$RUNNER_TEMP/mineplus-surface-event-tests"
       - name: Run surface quest tests
         run: |
           set -euxo pipefail
