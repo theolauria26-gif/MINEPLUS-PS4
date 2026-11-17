@@ -78,7 +78,7 @@ case ' ':return "00000""00000""00000""00000""00000""00000""00000";
 default:return "00000""00000""00000""00000""00000""00000""00000";}}
 void draw_text(const char*s,int x,int y,int scale,Uint8 r=230,Uint8 g=240,Uint8 b=236){color(r,g,b);for(;*s;s++,x+=6*scale){const char*p=glyph(*s);for(int yy=0;yy<7;yy++)for(int xx=0;xx<5;xx++)if(p[yy*5+xx]=='1'){SDL_Rect q{x+xx*scale,y+yy*scale,scale,scale};SDL_RenderFillRect(renderer,&q);}}}
 void build_boss_arena(){
- for(int oy=-8;oy<=8;++oy)for(int ox=-8;ox<=8;++ox){const int d=ox*ox+oy*oy,x=BOSS_X+ox,y=BOSS_Y+oy;if(d>64||x<2||y<2||x>=COLS-2||y>=ROWS-2)continue;if(d>=49){if(!(ox==-7&&oy==0))world[y*COLS+x]=DarkStone;}else if(d<=4)world[y*COLS+x]=(d==0)?AncientRune:ObsidianCore;else if((ox==0||oy==0)&&d<49)world[y*COLS+x]=Rune;else world[y*COLS+x]=Moss;}
+ for(int oy=-8;oy<=8;++oy)for(int ox=-8;ox<=8;++ox){const int d=ox*ox+oy*oy,x=BOSS_X+ox,y=BOSS_Y+oy;if(d>64||x<2||y<2||x>=COLS-2||y>=ROWS-2)continue;if(d>=49){if(!(ox==-7&&oy==0))world[y*COLS+x]=DarkStone;}else if(d<=4)world[y*COLS+x]=(d==0)?AncientRune:ObsidianCore;else if((ox==0||oy==0)&&d<49)world[y*COLS+x]=AncientRune;else world[y*COLS+x]=Moss;}
  world[BOSS_Y*COLS+BOSS_X]=AncientRune;
 }
 void init_world(){
