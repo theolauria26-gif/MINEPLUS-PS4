@@ -154,6 +154,29 @@ VoxelSample PcgWorld::sample_voxel(std::int32_t x, std::int32_t y,
             if (pylon && depth == 10)
                 return {VoxelMaterial::Ember, true, false};
 
+            // Each cardinal wing receives a distinct landmark at its center.
+            // These compact formations make the five-room complex readable:
+            // crystal growth, rune altar, obsidian monolith and bone relic.
+            if (dx == 0 && dy == -offset) {
+                if (depth == 11 || depth == 12)
+                    return {VoxelMaterial::Crystal, true, false};
+            } else if (dx == 0 && dy == offset) {
+                if (depth == 11)
+                    return {VoxelMaterial::Rune, true, false};
+                if (depth == 10)
+                    return {VoxelMaterial::Ember, true, false};
+            } else if (dx == -offset && dy == 0) {
+                if (depth == 11)
+                    return {VoxelMaterial::Obsidian, true, false};
+                if (depth == 10)
+                    return {VoxelMaterial::DarkStone, true, false};
+            } else if (dx == offset && dy == 0) {
+                if (depth == 11)
+                    return {VoxelMaterial::Bone, true, false};
+                if (depth == 10)
+                    return {VoxelMaterial::Crystal, true, false};
+            }
+
             // Sparse crystal seams make exploration and mining worthwhile without
             // filling the walkable chambers or changing the outer cave silhouette.
             // Floor-level crystal seams form small 2x2 deposits instead of
