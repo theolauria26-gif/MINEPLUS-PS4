@@ -15,13 +15,16 @@ struct DungeonVoxelSettings {
     bool build_ceiling = false;
 };
 
-// Stamps one logical dungeon room into a 16x16x128 voxel chunk.
-// Global room coordinates are clipped to the requested chunk origin.
+// Stamps rooms and their connected corridors into one clipped 16x16x128 chunk.
+// The output chunk is cleared before a valid layout is assembled.
 class DungeonVoxelBuilder {
 public:
     static bool build_room(const DungeonRoom& room,
                            const DungeonVoxelSettings& settings,
                            VoxelChunk& output);
+    static bool build_layout_chunk(const DungeonLayout& layout,
+                                   const DungeonVoxelSettings& settings,
+                                   VoxelChunk& output);
 };
 
 } // namespace mineplus
