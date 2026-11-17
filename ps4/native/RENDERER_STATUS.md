@@ -119,3 +119,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Leaf and shrub pixels now select among four restrained deterministic palettes (deep woodland, emerald, olive and muted bronze), with scattered brighter leaf tips and denser cluster patterns.
 - Palette and highlight placement are hash-derived from the existing material texture pattern, so the pass adds canopy depth without extra entities, tile IDs, collision or save changes.
 - This remains procedural SDL material detail on the existing height-field renderer; it is not imported foliage art, individual 3D leaves, seasonal simulation or wind animation.
+
+
+## Moss and sand material refinement
+
+- Moss now uses four restrained green variations with rare cool spore flecks, while sand adds deterministic fine-grain and pebble pixels. Both patterns are anchored to world/tile texture coordinates and reuse the existing SDL material pass.
+- This is surface material detail only: it adds no new tile IDs, entities, collision, save fields, imported texture assets or 3D geometry.
