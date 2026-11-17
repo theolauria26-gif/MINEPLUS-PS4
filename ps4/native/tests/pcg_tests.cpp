@@ -2,6 +2,7 @@
 #include "chunk_cache.hpp"
 #include "pcg_world.hpp"
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 
