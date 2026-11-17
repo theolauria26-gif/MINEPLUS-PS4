@@ -28,3 +28,7 @@ Save version 10 appends equipment ownership flags, equipped slot IDs and per-ite
 ## Remaining work
 
 This system is now connected to the inventory UI, crafting, equipped stats, combat and save/load. Equipment-specific attack animations, repair stations, richer weapon moves, visual armor models and additional accessory slots are not implemented yet. The current renderer remains the existing pseudo-3D SDL2 renderer; this catalog does not imply a GPU voxel renderer.
+
+## Repair and maintenance
+
+The equipment catalog now supports full-durability repairs without changing the save format. Repairing requires an owned, damaged item and consumes a tier-specific material pair atomically: primitive gear uses wood/bone, iron uses iron bars/bone, obsidian uses obsidian/ember, runic uses ancient runes/rune fragments, and primordial gear uses ancient relics/boss sigils. Full-durability items, unowned items, and repairs with insufficient materials are rejected without consumption. This is currently a catalog API; a dedicated in-world forge station and its UI interaction remain to be integrated.
