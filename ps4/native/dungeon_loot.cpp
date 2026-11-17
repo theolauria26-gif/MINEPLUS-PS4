@@ -119,4 +119,14 @@ bool DungeonLootGenerator::generate(std::uint64_t world_seed, const DungeonRoom&
     return true;
 }
 
+bool DungeonLootGenerator::generate_chest(std::uint64_t world_seed, const DungeonRoom& room,
+                                          DungeonChestState& output, std::uint8_t max_drops) {
+    DungeonChestState candidate;
+    candidate.room_id=room.id;
+    candidate.opened=false;
+    if(!generate(world_seed,room,candidate.contents,max_drops)) return false;
+    output=std::move(candidate);
+    return true;
+}
+
 } // namespace mineplus
