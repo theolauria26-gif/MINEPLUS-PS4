@@ -167,6 +167,16 @@ void init_world(){
      else if((ox==0&&abs(oy)<=3)||(oy==0&&abs(ox)<=3))tile=Wood;
      else if(d<r2/3&&((ox+oy)&1)==0)tile=Moss;
      break;
+    case 6: // Ruined frontier watch-post with a timber lookout and a marked approach.
+     if(d>=r2-2)tile=DarkStone;
+     else if(d==0)tile=ChestClosed;
+     else if((abs(ox)<=1&&abs(oy)<=radius/2)||
+             (abs(oy)<=1&&abs(ox)<=radius/2))tile=Wood;
+     else if(oy>radius/2&&abs(ox)<=1)tile=AncientRune;
+     else if((ox==0&&abs(oy)==radius-2)||(oy==0&&abs(ox)==radius-2))
+      tile=Crystal;
+     else if(d<r2/4&&((ox+oy+int(anchor.x))&3)==0)tile=Moss;
+     break;
     default: // Bone altar, dark ring and central ancient relic.
      if(d>=r2-2)tile=Bone;
      else if(cardinal&&d>r2/4)tile=DarkStone;
