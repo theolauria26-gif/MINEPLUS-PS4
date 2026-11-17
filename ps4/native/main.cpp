@@ -13,6 +13,7 @@
 #include "dungeon_loot.hpp"
 #include "equipment.hpp"
 #include "weapon_abilities.hpp"
+#include "boss_combat.hpp"
 namespace {
 constexpr int W=1280,H=720,COLS=2048,ROWS=2048,LEGACY_COLS=1024,LEGACY_ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
 enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21,ChestClosed=22,ChestOpened=23};
@@ -30,6 +31,8 @@ std::array<unsigned char,COLS*ROWS> loadWorldBuffer{};
 std::array<unsigned char,LEGACY_COLS*LEGACY_ROWS> legacyWorldBuffer{};
 int px=COLS/2,py=ROWS/2,selected=0,faceX=1,faceY=0,playerHealth=10,selectedRecipe=0,selectedEquipment=0;
 mineplus::EquipmentState equipmentState{};
+mineplus::BossEncounter primordialBoss{};
+constexpr int BOSS_X=COLS/2+16,BOSS_Y=ROWS/2;
 bool equipmentPage=false;
 std::uint64_t worldSeed=4839201ULL;
 Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0,lastSaveAt=0,lastWeaponArtAt=0,weaponArtFlashUntil=0;bool lastSaveSucceeded=true;int lastCreatureHitX=-100,lastCreatureHitY=-100;
@@ -74,6 +77,10 @@ case '5':return "11111""10000""10000""11110""00001""00001""11110";
 case ' ':return "00000""00000""00000""00000""00000""00000""00000";
 default:return "00000""00000""00000""00000""00000""00000""00000";}}
 void draw_text(const char*s,int x,int y,int scale,Uint8 r=230,Uint8 g=240,Uint8 b=236){color(r,g,b);for(;*s;s++,x+=6*scale){const char*p=glyph(*s);for(int yy=0;yy<7;yy++)for(int xx=0;xx<5;xx++)if(p[yy*5+xx]=='1'){SDL_Rect q{x+xx*scale,y+yy*scale,scale,scale};SDL_RenderFillRect(renderer,&q);}}}
+void build_boss_arena(){
+ for(int oy=-8;oy<=8;++oy)for(int ox=-8;ox<=8;++ox){const int d=ox*ox+oy*oy,x=BOSS_X+ox,y=BOSS_Y+oy;if(d>64||x<2||y<2||x>=COLS-2||y>=ROWS-2)continue;if(d>=49){if(!(ox==-7&&oy==0))world[y*COLS+x]=DarkStone;}else if(d<=4)world[y*COLS+x]=(d==0)?AncientRune:ObsidianCore;else if((ox==0||oy==0)&&d<49)world[y*COLS+x]=Rune;else world[y*COLS+x]=Moss;}
+ world[BOSS_Y*COLS+BOSS_X]=AncientRune;
+}
 void init_world(){
  // PS4-native PCG sampling. Every coordinate is reproducible from one seed;
  // this 2048x2048 resident window is a transitional cache, not the final world limit.
@@ -234,6 +241,7 @@ void init_world(){
   }
  }
  for(int i=0;i<(int)creatures.size();i++){auto &m=creatures[i];m.x=8+(int)(hash2(i,91)%(COLS-16));m.y=8+(int)(hash2(91,i)%(ROWS-16));m.type=(int)(hash2(m.x,m.y)%12);m.hp=3;}
+ build_boss_arena();
  world[py*COLS+px]=Air;
 }
 constexpr const char* SAVE_DIR="/data/MINEPLUS";
@@ -243,9 +251,10 @@ bool save_world(bool feedback=true){
  mkdir(SAVE_DIR,0777);
  const char* temp="/data/MINEPLUS/world.sav.tmp";
  FILE* f=std::fopen(temp,"wb");if(!f){if(feedback){lastSaveSucceeded=false;lastSaveAt=SDL_GetTicks();}return false;}
- SaveHeader h{{'M','P','L','U','S','3','D','\0'},10,px,py,selected,faceX,faceY,{}};
+ SaveHeader h{{'M','P','L','U','S','3','D','\0'},11,px,py,selected,faceX,faceY,{}};
  for(int i=0;i<9;i++)h.stock[i]=stock[i];
- bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(&worldSeed,sizeof(worldSeed),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size()&&std::fwrite(&playerHealth,sizeof(playerHealth),1,f)==1&&std::fwrite(stock.data()+9,sizeof(int),13,f)==13&&std::fwrite(stock.data()+22,sizeof(int),9,f)==9&&std::fwrite(equipmentState.owned.data(),sizeof(std::uint8_t),equipmentState.owned.size(),f)==equipmentState.owned.size()&&std::fwrite(equipmentState.equipped.data(),sizeof(mineplus::EquipmentId),equipmentState.equipped.size(),f)==equipmentState.equipped.size()&&std::fwrite(equipmentState.durability.data(),sizeof(std::uint16_t),equipmentState.durability.size(),f)==equipmentState.durability.size();
+ bool ok=std::fwrite(&h,sizeof(h),1,f)==1&&std::fwrite(&worldSeed,sizeof(worldSeed),1,f)==1&&std::fwrite(world.data(),1,world.size(),f)==world.size()&&std::fwrite(creatures.data(),sizeof(Creature),creatures.size(),f)==creatures.size()&&std::fwrite(&playerHealth,sizeof(playerHealth),1,f)==1&&std::fwrite(stock.data()+9,sizeof(int),13,f)==13&&std::fwrite(stock.data()+22,sizeof(int),9,f)==9&&std::fwrite(equipmentState.owned.data(),sizeof(std::uint8_t),equipmentState.owned.size(),f)==equipmentState.owned.size()&&std::fwrite(equipmentState.equipped.data(),sizeof(mineplus::EquipmentId),equipmentState.equipped.size(),f)==equipmentState.equipped.size()&&std::fwrite(equipmentState.durability.data(),sizeof(std::uint16_t),equipmentState.durability.size(),f)==equipmentState.durability.size()&&
+   std::fwrite(&primordialBoss.max_health,sizeof(primordialBoss.max_health),1,f)==1&&std::fwrite(&primordialBoss.health,sizeof(primordialBoss.health),1,f)==1&&std::fwrite(&primordialBoss.state_started_at,sizeof(primordialBoss.state_started_at),1,f)==1&&std::fwrite(&primordialBoss.state_duration_ms,sizeof(primordialBoss.state_duration_ms),1,f)==1&&std::fwrite(&primordialBoss.attack_index,sizeof(primordialBoss.attack_index),1,f)==1&&std::fwrite(&primordialBoss.phase,sizeof(primordialBoss.phase),1,f)==1&&std::fwrite(&primordialBoss.state,sizeof(primordialBoss.state),1,f)==1&&std::fwrite(&primordialBoss.pending_attack,sizeof(primordialBoss.pending_attack),1,f)==1&&[&](){const std::uint8_t claimed=primordialBoss.reward_claimed?1u:0u;return std::fwrite(&claimed,sizeof(claimed),1,f)==1;}();
  if(std::fflush(f)!=0)ok=false;
  if(ok&&::fsync(::fileno(f))!=0)ok=false;
  if(std::fclose(f)!=0)ok=false;
@@ -257,7 +266,7 @@ bool save_world(bool feedback=true){
 bool load_world(){
   FILE* f=std::fopen(SAVE_FILE,"rb");if(!f)return false;
   SaveHeader h{};
-  bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version>=1&&h.version<=10);
+  bool ok=std::fread(&h,sizeof(h),1,f)==1&&std::memcmp(h.magic,"MPLUS3D",7)==0&&(h.version>=1&&h.version<=11);
   const bool legacy=h.version<5;
   auto &restored=loadWorldBuffer;
   restored.fill(0);
@@ -285,11 +294,14 @@ bool load_world(){
       std::fread(restoredEquipment.equipped.data(),sizeof(mineplus::EquipmentId),restoredEquipment.equipped.size(),f)==restoredEquipment.equipped.size()&&
       std::fread(restoredEquipment.durability.data(),sizeof(std::uint16_t),restoredEquipment.durability.size(),f)==restoredEquipment.durability.size();
   }
+  mineplus::BossEncounter restoredBoss{};std::uint8_t restoredRewardClaimed=0;
+  if(ok&&h.version>=11){ok=std::fread(&restoredBoss.max_health,sizeof(restoredBoss.max_health),1,f)==1&&std::fread(&restoredBoss.health,sizeof(restoredBoss.health),1,f)==1&&std::fread(&restoredBoss.state_started_at,sizeof(restoredBoss.state_started_at),1,f)==1&&std::fread(&restoredBoss.state_duration_ms,sizeof(restoredBoss.state_duration_ms),1,f)==1&&std::fread(&restoredBoss.attack_index,sizeof(restoredBoss.attack_index),1,f)==1&&std::fread(&restoredBoss.phase,sizeof(restoredBoss.phase),1,f)==1&&std::fread(&restoredBoss.state,sizeof(restoredBoss.state),1,f)==1&&std::fread(&restoredBoss.pending_attack,sizeof(restoredBoss.pending_attack),1,f)==1&&std::fread(&restoredRewardClaimed,sizeof(restoredRewardClaimed),1,f)==1;restoredBoss.reward_claimed=restoredRewardClaimed!=0;}
   if(ok&&std::fgetc(f)!=EOF)ok=false;
   std::fclose(f);if(!ok)return false;
   // Reject impossible tile IDs before they reach rendering, collision or inventory.
   // This protects the live world from structurally valid but semantically corrupt saves.
   for(const auto tile:restored)if(tile>ChestOpened)return false;
+  if(restoredRewardClaimed>1||restoredBoss.max_health==0||restoredBoss.max_health>100000000u||restoredBoss.health>restoredBoss.max_health||restoredBoss.phase<1||restoredBoss.phase>3||static_cast<unsigned>(restoredBoss.state)>static_cast<unsigned>(mineplus::BossState::Defeated)||static_cast<unsigned>(restoredBoss.pending_attack)>static_cast<unsigned>(mineplus::BossAttack::RiftCharge)||(restoredBoss.state==mineplus::BossState::Defeated&&restoredBoss.health!=0)||(restoredBoss.health==0&&restoredBoss.state!=mineplus::BossState::Defeated))return false;
   for(std::size_t i=0;i<restoredEquipment.owned.size();++i){
    if(restoredEquipment.owned[i]>1)return false;
    const auto* def=mineplus::EquipmentCatalog::find(static_cast<mineplus::EquipmentId>(i));
@@ -321,7 +333,7 @@ bool load_world(){
   for(int i=0;i<9;i++)stock[i]=std::clamp(h.stock[i],0,9999);
   for(int i=0;i<13;i++)stock[i+9]=std::clamp(extraStock[i],0,9999);
    for(int i=0;i<9;i++)stock[i+22]=std::clamp(extraLoot[i],0,9999);
-  equipmentState=restoredEquipment;
+  equipmentState=restoredEquipment;primordialBoss=restoredBoss;
   playerHealth=std::clamp(playerHealth,1,static_cast<int>(mineplus::EquipmentCatalog::calculate(equipmentState).max_health));
   return true;
 }
@@ -447,6 +459,17 @@ void update_player_combat(){
   }
  }
 }
+void update_primordial_boss(){
+ const Uint32 now=SDL_GetTicks();const int distance=abs(BOSS_X-px)+abs(BOSS_Y-py);
+ if(primordialBoss.state==mineplus::BossState::Dormant&&distance>9)return;
+ const auto event=mineplus::BossCombatDirector::update(primordialBoss,now);
+ if(event==mineplus::BossEvent::AttackResolved){const auto attack=mineplus::BossCombatDirector::attack_profile(primordialBoss.pending_attack,primordialBoss.phase);const int dx=abs(BOSS_X-px),dy=abs(BOSS_Y-py),range=dx+dy;bool hit=false;
+  if(attack.attack==mineplus::BossAttack::GroundSlam)hit=range<=attack.area_radius;else if(attack.attack==mineplus::BossAttack::RuneVolley)hit=range<=attack.range&&(dx==0||dy==0);else if(attack.attack==mineplus::BossAttack::RiftCharge)hit=range<=attack.range+attack.area_radius;
+  if(hit){const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);const int incoming=mineplus::EquipmentCatalog::mitigate_damage(attack.damage,stats,true);playerHealth=std::max(0,playerHealth-incoming);for(std::size_t slot=1;slot<equipmentState.equipped.size();++slot)mineplus::EquipmentCatalog::wear(equipmentState,static_cast<mineplus::EquipmentSlot>(slot),1);}
+ }
+ if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);save_world(false);return;}
+ if(event!=mineplus::BossEvent::None)save_world(false);
+}
 void update_creatures(){
  Uint32 now=SDL_GetTicks();if(now-lastCreatureUpdate<650)return;lastCreatureUpdate=now;
  const unsigned tick=now/650u;
@@ -539,6 +562,7 @@ bool open_treasure_chest(int x,int y){
 void mine_block(){
  int x=0,y=0;if(!target_tile(x,y))return;
  if(tile_at(x,y)==ChestClosed){open_treasure_chest(x,y);return;}
+ if(x==BOSS_X&&y==BOSS_Y&&primordialBoss.state!=mineplus::BossState::Defeated){const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);const auto damage=static_cast<std::uint32_t>(std::max(1,static_cast<int>(stats.damage)/6));mineplus::BossCombatDirector::damage(primordialBoss,damage);mineplus::EquipmentCatalog::wear(equipmentState,mineplus::EquipmentSlot::Weapon,1);if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);}save_world(false);return;}
  for(auto &m:creatures)if(m.x==x&&m.y==y&&m.hp>0){
   lastCreatureHit=SDL_GetTicks();lastCreatureHitX=x;lastCreatureHitY=y;
   const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);
@@ -561,7 +585,7 @@ bool use_weapon_art(){
  const auto stats=mineplus::EquipmentCatalog::calculate(equipmentState);
  const int damage=std::max(1,static_cast<int>(stats.damage)/6)+profile.bonus_damage;
  bool hit=false;
- for(unsigned step=1;step<=profile.range;++step){
+ for(unsigned step=1;step<=profile.range;++step){const int bx=px+faceX*static_cast<int>(step),by=py+faceY*static_cast<int>(step);if(bx==BOSS_X&&by==BOSS_Y&&primordialBoss.state!=mineplus::BossState::Defeated){mineplus::BossCombatDirector::damage(primordialBoss,static_cast<std::uint32_t>(damage));hit=true;if(primordialBoss.state==mineplus::BossState::Defeated&&mineplus::BossCombatDirector::claim_reward(primordialBoss)){add_stock(30,1);add_stock(29,3);add_stock(28,2);}}
   const int tx=px+faceX*static_cast<int>(step),ty=py+faceY*static_cast<int>(step);
   for(auto &m:creatures)if(m.hp>0&&m.x==tx&&m.y==ty){
    m.hp=std::max(0,m.hp-damage);lastCreatureHit=now;lastCreatureHitX=tx;lastCreatureHitY=ty;hit=true;
@@ -746,6 +770,8 @@ void draw_world(){
    rect(sx+bodyW/8,sy+bodyH/4,eye,eye,235,226,190);
   }
  }
+ // Primordial Guardian: oversized pseudo-3D silhouette with glowing runic eyes.
+ if(primordialBoss.state!=mineplus::BossState::Defeated){const float dx=float(BOSS_X-px),dy=float(BOSS_Y-py),forward=dx*dirX+dy*dirY,side=dx*rightX+dy*rightY;if(forward>0.7f&&forward<28.0f){const int sx=int(W*0.5f+(side/forward)*focal/fov),size=int(1050.0f/forward),sy=int(horizon+focal*0.72f/forward-size*0.78f);if(sx>12&&sx<W-12&&size>5){const int pulse=int((std::sin(float(SDL_GetTicks())*0.004f)+1.0f)*18.0f);rect(sx-size/3,sy+size/2,size*2/3,size/2,25,19,34);rect(sx-size/2,sy+size/5,size,size/2,53,43,67);rect(sx-size/3,sy-size/4,size*2/3,size/2,74,60,89);rect(sx-size/2,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx+size/2-size/7,sy-size/5,std::max(2,size/7),size/3,92,67,106);rect(sx-size/5,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);rect(sx+size/10,sy-size/10,std::max(2,size/9),std::max(2,size/14),210,83+pulse,116);}}}
  // First-person blocky arms and tool silhouette.
  rect(W/2+115,H-158,75,180,91,65,49);rect(W/2+125,H-166,58,28,155,119,82);
  rect(W/2+164,H-190,12,95,151,159,163);rect(W/2+132,H-198,75,13,181,190,190);
@@ -757,6 +783,7 @@ void draw_world(){
  draw_text("HP",500,20,2,210,218,208);rect(535,19,110,14,36,25,26);const int maxHealth=static_cast<int>(mineplus::EquipmentCatalog::calculate(equipmentState).max_health);rect(537,21,std::clamp(playerHealth*110/maxHealth,0,110),10,playerHealth>3?75:190,playerHealth>3?183:66,playerHealth>3?111:53);
  draw_text("MOVE  /  R-STICK LOOK  /  F OPEN/BREAK  /  E BAG",650,25,2,190,198,192);
  draw_text("G / R3 SPECIAL ATTACK",650,47,1,145,215,190);
+ if(primordialBoss.state!=mineplus::BossState::Dormant&&primordialBoss.state!=mineplus::BossState::Defeated){draw_text("PRIMORDIAL GUARDIAN",490,82,2,220,180,210);rect(490,101,300,13,34,25,38);rect(492,103,std::max(0,296*int(primordialBoss.health)/int(primordialBoss.max_health)),9,165,65,112);if(primordialBoss.state==mineplus::BossState::Telegraph)draw_text("DODGE THE ATTACK",490,119,1,245,180,135);}
  if(lastSaveAt&&SDL_GetTicks()-lastSaveAt<2400u)draw_text(lastSaveSucceeded?"WORLD SAVED":"SAVE FAILED",44,84,2,lastSaveSucceeded?120:235,lastSaveSucceeded?220:100,lastSaveSucceeded?165:90);
  draw_minimap();
  int start=(W-8*62)/2;for(int i=0;i<8;i++){int x=start+i*62;rect(x,H-72,54,54,i==selected?44:23,i==selected?66:34,i==selected?49:40);outline(x,H-72,54,54,i==selected?90:55,i==selected?224:77,i==selected?142:91);Uint8 r,g,b;tile_color(i+1,r,g,b);rect(x+15,H-57,24,24,r,g,b);char qty[8];std::snprintf(qty,sizeof(qty),"%d",stock[i+1]);draw_text(qty,x+17,H-20,1,225,230,220);}
@@ -841,4 +868,4 @@ void handle_key(SDL_Keycode k){
  if(k==SDLK_SPACE)place_block();if(k==SDLK_f)mine_block();
 }
 }
-int main(int,char**){if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_EVENTS)!=0)return 1;window=SDL_CreateWindow("MINEPLUS",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,W,H,SDL_WINDOW_SHOWN);if(!window){SDL_Quit();return 2;}renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);SDL_RenderSetLogicalSize(renderer,W,H);if(SDL_NumJoysticks()>0&&SDL_IsGameController(0))pad=SDL_GameControllerOpen(0);init_world();load_world();Uint32 lastAutosave=SDL_GetTicks();while(running){const Uint32 frameStart=SDL_GetTicks();SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;if(e.type==SDL_KEYDOWN&&e.key.repeat==0)handle_key(e.key.keysym.sym);if(e.type==SDL_MOUSEBUTTONDOWN&&playing&&!paused&&!inventory){if(e.button.button==SDL_BUTTON_LEFT)mine_block();else if(e.button.button==SDL_BUTTON_RIGHT)place_block();}if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_START:if(!playing)playing=true;else{paused=!paused;inventory=false;}break;case SDL_CONTROLLER_BUTTON_BACK:if(playing&&!paused)inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_A:if(!playing)playing=true;else if(paused)paused=false;else if(inventory){if(equipmentPage)craft_equipment();else craft_item();}else place_block();break;case SDL_CONTROLLER_BUTTON_X:if(paused)save_world();else if(playing&&inventory&&equipmentPage)repair_selected_equipment();else if(playing&&!inventory)mine_block();break;case SDL_CONTROLLER_BUTTON_B:if(inventory)inventory=false;else if(paused)paused=false;else if(playing)paused=true;else running=false;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:if(playing&&!paused&&!inventory)move_player(0,-1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(playing&&!paused&&!inventory)move_player(0,1);break;case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(playing&&!paused&&!inventory)move_player(-1,0);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(playing&&!paused&&!inventory)move_player(1,0);break;case SDL_CONTROLLER_BUTTON_Y:if(playing&&!paused)inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(inventory){if(equipmentPage)equip_selected_equipment();else craft_item();}else if(playing&&!paused)use_weapon_art();break;case SDL_CONTROLLER_BUTTON_LEFTSTICK:if(inventory)equipmentPage=!equipmentPage;break;case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(inventory){if(equipmentPage)change_equipment(-1);else change_recipe(-1);}else selected=(selected+7)%8;break;case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(inventory){if(equipmentPage)change_equipment(1);else change_recipe(1);}else selected=(selected+1)%8;break;default:break;}}}if(playing&&!paused&&!inventory)update_creatures();if(playing&&!paused&&!inventory)update_player_combat();if(playing&&!paused&&!inventory&&pad){Uint32 now=SDL_GetTicks();if(now-lastTurn>230){Sint16 rx=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_RIGHTX);if(rx>18000){turn_player(1);lastTurn=now;}else if(rx< -18000){turn_player(-1);lastTurn=now;}}if(now-lastMove>155){Sint16 ax=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX),ay=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTY);if(ax>18000){move_player(1,0);lastMove=now;}else if(ax< -18000){move_player(-1,0);lastMove=now;}else if(ay>18000){move_player(0,1);lastMove=now;}else if(ay< -18000){move_player(0,-1);lastMove=now;}}}if(playing&&!paused&&SDL_GetTicks()-lastAutosave>30000){save_world(false);lastAutosave=SDL_GetTicks();}if(playing)draw_world();else draw_menu();SDL_RenderPresent(renderer);const Uint32 frameElapsed=SDL_GetTicks()-frameStart;if(frameElapsed<16u)SDL_Delay(16u-frameElapsed);}save_world(false);if(pad)SDL_GameControllerClose(pad);SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;}
+int main(int,char**){if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_EVENTS)!=0)return 1;window=SDL_CreateWindow("MINEPLUS",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,W,H,SDL_WINDOW_SHOWN);if(!window){SDL_Quit();return 2;}renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);SDL_RenderSetLogicalSize(renderer,W,H);if(SDL_NumJoysticks()>0&&SDL_IsGameController(0))pad=SDL_GameControllerOpen(0);init_world();load_world();build_boss_arena();Uint32 lastAutosave=SDL_GetTicks();while(running){const Uint32 frameStart=SDL_GetTicks();SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;if(e.type==SDL_KEYDOWN&&e.key.repeat==0)handle_key(e.key.keysym.sym);if(e.type==SDL_MOUSEBUTTONDOWN&&playing&&!paused&&!inventory){if(e.button.button==SDL_BUTTON_LEFT)mine_block();else if(e.button.button==SDL_BUTTON_RIGHT)place_block();}if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_START:if(!playing)playing=true;else{paused=!paused;inventory=false;}break;case SDL_CONTROLLER_BUTTON_BACK:if(playing&&!paused)inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_A:if(!playing)playing=true;else if(paused)paused=false;else if(inventory){if(equipmentPage)craft_equipment();else craft_item();}else place_block();break;case SDL_CONTROLLER_BUTTON_X:if(paused)save_world();else if(playing&&inventory&&equipmentPage)repair_selected_equipment();else if(playing&&!inventory)mine_block();break;case SDL_CONTROLLER_BUTTON_B:if(inventory)inventory=false;else if(paused)paused=false;else if(playing)paused=true;else running=false;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:if(playing&&!paused&&!inventory)move_player(0,-1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(playing&&!paused&&!inventory)move_player(0,1);break;case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(playing&&!paused&&!inventory)move_player(-1,0);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(playing&&!paused&&!inventory)move_player(1,0);break;case SDL_CONTROLLER_BUTTON_Y:if(playing&&!paused)inventory=!inventory;break;case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(inventory){if(equipmentPage)equip_selected_equipment();else craft_item();}else if(playing&&!paused)use_weapon_art();break;case SDL_CONTROLLER_BUTTON_LEFTSTICK:if(inventory)equipmentPage=!equipmentPage;break;case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(inventory){if(equipmentPage)change_equipment(-1);else change_recipe(-1);}else selected=(selected+7)%8;break;case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(inventory){if(equipmentPage)change_equipment(1);else change_recipe(1);}else selected=(selected+1)%8;break;default:break;}}}if(playing&&!paused&&!inventory){update_creatures();update_primordial_boss();}if(playing&&!paused&&!inventory)update_player_combat();if(playing&&!paused&&!inventory&&pad){Uint32 now=SDL_GetTicks();if(now-lastTurn>230){Sint16 rx=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_RIGHTX);if(rx>18000){turn_player(1);lastTurn=now;}else if(rx< -18000){turn_player(-1);lastTurn=now;}}if(now-lastMove>155){Sint16 ax=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX),ay=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTY);if(ax>18000){move_player(1,0);lastMove=now;}else if(ax< -18000){move_player(-1,0);lastMove=now;}else if(ay>18000){move_player(0,1);lastMove=now;}else if(ay< -18000){move_player(0,-1);lastMove=now;}}}if(playing&&!paused&&SDL_GetTicks()-lastAutosave>30000){save_world(false);lastAutosave=SDL_GetTicks();}if(playing)draw_world();else draw_menu();SDL_RenderPresent(renderer);const Uint32 frameElapsed=SDL_GetTicks()-frameStart;if(frameElapsed<16u)SDL_Delay(16u-frameElapsed);}save_world(false);if(pad)SDL_GameControllerClose(pad);SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;}
