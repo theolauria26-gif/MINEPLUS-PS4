@@ -20,3 +20,21 @@
 ## Honesty boundary
 
 A successful CI PKG proves that the native application compiles and packages. It does not prove that voxel chunks are rendered in-game or that the package has been tested on a physical PS4. The current material-pattern improvements affect the existing height-field renderer; the CPU voxel mesh remains a separate pipeline.
+
+## OpenOrbis GPU API audit
+
+The pinned OpenOrbis toolchain source tree was inspected directly:
+
+- `include/orbis/GnmDriver.h` declares low-level GNM entry points including `sceGnmDrawIndex`, `sceGnmDrawIndexAuto`, `sceGnmSetVsShader`, `sceGnmSetPsShader`, `sceGnmSubmitCommandBuffers`, and `sceGnmSubmitDone`.
+- The declarations confirm that a native GNM draw/submit route exists in the toolchain. They do not, by themselves, provide a complete renderer: the header contains many untyped/empty declarations, and the project does not yet own command-buffer allocation, GPU memory mapping, shader binaries, pipeline state, render targets, synchronization, or presentation.
+- The OpenOrbis SDL2 sample confirms SDL2 is packaged and linked as `-lSDL2`; it is a 2D SDL sample, not evidence of a voxel GPU mesh renderer.
+- The current MINEPLUS Makefile links `-lSDL2` and PS4 system libraries, but not a GNM rendering module. No GNM calls are made by the game.
+
+### Safe implementation sequence
+
+1. Obtain and inspect the exact v0.5.4 SDK headers and import libraries used by CI, including GNM and kernel memory APIs; confirm exported symbols and signatures rather than relying on placeholder declarations.
+2. Build a tiny isolated GNM triangle proof-of-concept with a known shader binary, command buffers, GPU-visible allocations and a video-out flip. Keep it outside the gameplay renderer until it compiles and is device-validated.
+3. Only then add voxel vertex/index uploads, depth-tested opaque geometry, atlas sampling, and separate translucent passes.
+4. Retain SDL2 as the fallback and UI path. Do not link speculative GNM calls into the shipping game.
+
+This audit narrows the next task: the toolchain exposes low-level GNM draw/submit symbols, but a safe GPU renderer still needs a verified memory/command/shader/presentation foundation. A CI package alone cannot validate GPU execution on PS4 hardware.
