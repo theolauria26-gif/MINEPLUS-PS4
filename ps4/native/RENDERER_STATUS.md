@@ -125,3 +125,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - Moss now uses four restrained green variations with rare cool spore flecks, while sand adds deterministic fine-grain and pebble pixels. Both patterns are anchored to world/tile texture coordinates and reuse the existing SDL material pass.
 - This is surface material detail only: it adds no new tile IDs, entities, collision, save fields, imported texture assets or 3D geometry.
+
+
+## Narrow river road fords
+
+- Deterministic landmark roads can now cross narrow water channels using a short sand causeway, while lava and water stretches wider than five tiles remain barriers. This makes some surface routes continuous without allowing roads to erase lakes or broad rivers.
+- The ford reuses the existing walkable sand tile and therefore adds no new tile ID, save migration, bridge mesh or water simulation. It is a simple low-profile crossing, not a timber bridge model.
