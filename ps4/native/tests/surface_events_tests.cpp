@@ -21,5 +21,11 @@ int main() {
  assert(surface_event_creature_interval(SurfaceEventType::WildlifeMigration)<650u);
  assert(surface_event_creature_interval(SurfaceEventType::PredatorWarning)<650u);
  assert(surface_event_creature_interval(SurfaceEventType::None)==650u);
+ assert(surface_event_alert_distance(SurfaceEventType::WildlifeMigration,true)==11u);
+ assert(surface_event_alert_distance(SurfaceEventType::WildlifeMigration,false)==14u);
+ assert(surface_event_alert_distance(SurfaceEventType::PredatorWarning,false)==20u);
+ assert(surface_event_alert_distance(SurfaceEventType::PredatorWarning,true)==7u);
+ assert(surface_event_alert_distance(SurfaceEventType::None,true)==7u);
+ assert(surface_event_alert_distance(SurfaceEventType::None,false)==14u);
  std::puts("Surface event tests passed");
 }
