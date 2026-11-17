@@ -148,3 +148,10 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - The active SDL world initialization uses narrow, layered crown silhouettes for tundra/highland trees and the broader randomized crowns for temperate forest trees. Existing snow and stone ground tiles can host these trunks/canopies without adding material IDs.
 - Portable PCG regression coverage now checks deterministic placement and confirms that tundra and highlands both contain tree candidates while the excluded biomes remain tree-free.
 - This is still a 2D tile-map representation with billboard/column projection. It does not yet create species-specific 3D tree meshes, branches, roots, collision volumes or seasonal growth.
+
+
+## Distinct moth and wisp silhouettes
+
+- Glasswing Moths now render with two translucent fluttering wings and a pulsing luminous body accent. Pale Wisps receive a broken drifting halo and a faint trailing afterimage, separating their silhouettes from grounded fauna.
+- Both effects use the existing species IDs, deterministic world placement and time-based SDL projection. No new save fields, tile IDs, entity types, imported assets or per-frame allocations were added.
+- These remain stylized 2D projected sprites in the current renderer; they are not skeletal animations, volumetric particles or full 3D creature models.
