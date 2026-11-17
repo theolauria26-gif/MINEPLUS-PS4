@@ -113,6 +113,14 @@ jobs:
             ps4/native/surface_ecology.cpp ps4/native/tests/surface_ecology_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-surface-ecology-tests"
           "$RUNNER_TEMP/mineplus-surface-ecology-tests"
+      - name: Run surface settlement tests
+        run: |
+          set -euxo pipefail
+          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
+            ps4/native/pcg_world.cpp ps4/native/surface_settlements.cpp \
+            ps4/native/tests/surface_settlements_tests.cpp \
+            -o "$RUNNER_TEMP/mineplus-surface-settlement-tests"
+          "$RUNNER_TEMP/mineplus-surface-settlement-tests"
       - name: Run equipment progression tests
         run: |
           set -euxo pipefail
