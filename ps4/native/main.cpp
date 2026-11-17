@@ -562,7 +562,7 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
                                int(v*53u+cellY*19u+unsigned(t)*31u));
   Uint8 r=0,g=0,b=0;bool draw=false;
   switch(t){
-   case Grass:
+   case Grass: {
     // Small pixel-art grass tufts and four flower colors add foreground
     // texture without spawning entities or changing collision/save data.
     const unsigned tuft=hash2(int(cellX*37u+cellY*11u+unsigned(t)*97u+seed),
@@ -585,6 +585,7 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
      b=static_cast<Uint8>(shade==0u?61u:shade==1u?72u:shade==2u?79u:88u);
     }
     break;
+   }
    case Dirt:
     draw=(pattern%7u)==0u;r=190;g=132;b=83;
     if((pattern%11u)==0u){r=77;g=54;b=43;}break;
