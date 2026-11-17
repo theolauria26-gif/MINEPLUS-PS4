@@ -27,5 +27,10 @@ int main() {
  assert(surface_event_alert_distance(SurfaceEventType::PredatorWarning,true)==7u);
  assert(surface_event_alert_distance(SurfaceEventType::None,true)==7u);
  assert(surface_event_alert_distance(SurfaceEventType::None,false)==14u);
+ assert(surface_event_time_remaining(0)==SURFACE_EVENT_ACTIVE_MS);
+ assert(surface_event_time_remaining(15000)==45000u);
+ assert(surface_event_time_remaining(SURFACE_EVENT_ACTIVE_MS)==120000u);
+ assert(surface_event_time_remaining(SURFACE_EVENT_CYCLE_MS-1)==1u);
+ assert(surface_event_time_remaining(SURFACE_EVENT_CYCLE_MS)==SURFACE_EVENT_ACTIVE_MS);
  std::puts("Surface event tests passed");
 }
