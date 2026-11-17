@@ -130,7 +130,7 @@ void init_world(){
   unsigned seed=hash2(cx,cy);int w=9+(seed%13),h=8+(hash2(cy,cx)%11);
   for(int y=cy;y<cy+h;y++)for(int x=cx;x<cx+w;x++)
    if(x==cx||x==cx+w-1||y==cy||y==cy+h-1)world[y*COLS+x]=DarkStone;
-  world[(cy+h/2)*COLS+cx+w/2]=ChestClosed;
+  world[(cy+h/2)*COLS+cx+w/2]=(seed%7u==0u)?ChestClosed:Air;
   world[(cy+1)*COLS+cx+1]=Crystal;
   for(int k=0;k<6;k++){int tx=cx+(int)(hash2(cx+k,cy)%w),ty=cy+(int)(hash2(cy+k,cx)%h);world[ty*COLS+tx]=Bone;}
   // Four corner towers.
@@ -293,6 +293,7 @@ bool load_world(){
   py=std::clamp(legacy?h.y+ROWS/2-LEGACY_ROWS/2:h.y,1,ROWS-2);
   selected=std::clamp(h.selected,0,7);faceX=h.fx;faceY=h.fy;
   if(abs(faceX)+abs(faceY)!=1){faceX=1;faceY=0;}
+  stock.fill(0);
   for(int i=0;i<9;i++)stock[i]=std::clamp(h.stock[i],0,9999);
   for(int i=0;i<13;i++)stock[i+9]=std::clamp(extraStock[i],0,9999);
    for(int i=0;i<9;i++)stock[i+22]=std::clamp(extraLoot[i],0,9999);
