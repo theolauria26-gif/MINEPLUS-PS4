@@ -83,6 +83,13 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Wildlife billboards now include a separately animated head, species-dependent ears and tails, and retain their idle bob/leg swing. This improves readability but does not turn the billboard figures into rigged 3D models or skeletal animation.
 - This is a first visual pass toward the larger art/animation/atmosphere upgrade. It does not yet add imported texture assets, a texture atlas, full 3D meshes, GPU particles, dynamic lighting, shadows, water simulation, or a true voxel renderer.
 
+## Biome-aware surface weather
+
+- The overworld now selects a deterministic weather state in 90-second windows using the player's local biome, climate sample and world seed.
+- Temperate plains/forests/highlands can receive rain, tundra and cold highlands can receive snowfall, and volcanic regions can receive drifting ash; other climates remain clear.
+- Rain uses slanted droplets and rare, brief lightning flashes; snow uses drifting flakes; volcanic ash uses warm embers. Particle positions are derived from stable hashes and the game clock, with no per-frame particle allocation.
+- This is a screen-space weather presentation layer. It does not yet change moisture, crop growth, visibility, movement, water levels, or world simulation, and it is not volumetric weather or a GPU particle system.
+
 ## Dynamic surface sky cycle
 
 - The current SDL height-field presentation now has a 480-second visual day/night cycle.
