@@ -123,9 +123,11 @@ void init_world(){
  }
  // Build varied leaf crowns around natural forest trunks. Crown width, depth
  // and silhouette come from the trunk's world coordinate, so groves contain
- // compact round trees, broad oaks and narrow wind-shaped crowns consistently.
+ // compact round trees, broad oaks, ancient giants and narrow wind-shaped crowns.
+ // Rare old-growth trees are restricted to Forest; their broad crowns make
+ // distant woodland silhouettes more varied without adding tile or save IDs.
  // Leaves remain walk-through foliage; the trunk is the collision point.
- for(int y=4;y<ROWS-4;++y)for(int x=4;x<COLS-4;++x){
+ for(int y=5;y<ROWS-5;++y)for(int x=5;x<COLS-5;++x){
   if(world[y*COLS+x]!=Wood)continue;
   const int wx=x-COLS/2,wy=y-ROWS/2;
   const auto column=pcg.sample_surface(wx,wy);
@@ -134,19 +136,26 @@ void init_world(){
   const auto biome=static_cast<mineplus::Biome>(column.biome);
   const bool conifer=biome==mineplus::Biome::Tundra||
                      biome==mineplus::Biome::Highlands;
-  const int radiusX=conifer?1:1+static_cast<int>(crownSeed%3u);
-  const int radiusY=conifer?2:1+static_cast<int>((crownSeed>>5)%2u);
+  const bool ancient=biome==mineplus::Biome::Forest&&
+                     (crownSeed%31u)==0u;
+  const int radiusX=conifer?1:(ancient?4+static_cast<int>((crownSeed>>3)%2u):
+                                      1+static_cast<int>(crownSeed%3u));
+  const int radiusY=conifer?2:(ancient?3:
+                                      1+static_cast<int>((crownSeed>>5)%2u));
   const int crownStyle=static_cast<int>((crownSeed>>9)%3u);
-  for(int oy=-3;oy<=3;++oy)for(int ox=-3;ox<=3;++ox){
+  for(int oy=-3;oy<=3;++oy)for(int ox=-5;ox<=5;++ox){
    if((ox==0&&oy==0)||std::abs(oy)>radiusY)continue;
-   const int rowWidth=conifer?std::max(1,radiusX+radiusY-std::abs(oy)-1):radiusX;
+   const int rowWidth=conifer?std::max(1,radiusX+radiusY-std::abs(oy)-1):
+                     (ancient?std::max(1,radiusX-(std::abs(oy)/2)):radiusX);
    if(std::abs(ox)>rowWidth)continue;
    const int nx=x+ox,ny=y+oy;
    const int ellipse=ox*ox*radiusY*radiusY+oy*oy*radiusX*radiusX;
    const int limit=radiusX*radiusX*radiusY*radiusY;
-   if(!conifer&&ellipse>limit+(crownStyle==0?0:radiusX*radiusY))continue;
-   if(!conifer&&crownStyle==1&&((ox+oy+crownSeed)%5u)==0u)continue;
-   if(!conifer&&crownStyle==2&&std::abs(ox)==radiusX&&std::abs(oy)==radiusY)continue;
+   if(!conifer&&!ancient&&ellipse>limit+(crownStyle==0?0:radiusX*radiusY))continue;
+   if(ancient&&((ox+2*oy+int(crownSeed>>16))%11u)==0u&&
+      std::abs(ox)>radiusX-2)continue;
+   if(!conifer&&!ancient&&crownStyle==1&&((ox+oy+crownSeed)%5u)==0u)continue;
+   if(!conifer&&!ancient&&crownStyle==2&&std::abs(ox)==radiusX&&std::abs(oy)==radiusY)continue;
    const auto ground=world[ny*COLS+nx];
    if(ground==Grass||ground==Moss||ground==Snow||
       (conifer&&ground==Stone))world[ny*COLS+nx]=Leaves;
