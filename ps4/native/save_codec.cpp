@@ -187,7 +187,7 @@ bool SaveCodec::decode(const std::uint8_t* bytes, std::size_t size, WorldArchive
                                 (static_cast<std::uint16_t>(bytes[pos+1])<<8U); pos+=2;
                 const auto count=static_cast<std::uint16_t>(bytes[pos]) |
                                  (static_cast<std::uint16_t>(bytes[pos+1])<<8U); pos+=2;
-                chest.contents.push_back({static_cast<DungeonLootItem>(item),count});
+                chest.contents.push_back({static_cast<DungeonLootItem>(item),static_cast<std::uint16_t>(count)});
             }
             candidate.dungeon_chests.push_back(std::move(chest));
         }
