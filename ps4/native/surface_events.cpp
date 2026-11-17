@@ -33,6 +33,10 @@ std::uint32_t surface_event_creature_interval(SurfaceEventType type) {
     if(type==SurfaceEventType::PredatorWarning)return 460u;
     return 650u;
 }
+std::uint32_t surface_event_time_remaining(std::uint64_t elapsed_ms) {
+    const auto phase=static_cast<std::uint32_t>(elapsed_ms%SURFACE_EVENT_CYCLE_MS);
+    return phase<SURFACE_EVENT_ACTIVE_MS?SURFACE_EVENT_ACTIVE_MS-phase:SURFACE_EVENT_CYCLE_MS-phase;
+}
 std::uint8_t surface_event_alert_distance(SurfaceEventType type,bool passive) {
     if(type==SurfaceEventType::WildlifeMigration&&passive)return 11u;
     if(type==SurfaceEventType::PredatorWarning&&!passive)return 20u;
