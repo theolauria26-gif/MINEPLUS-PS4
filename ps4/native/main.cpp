@@ -161,6 +161,12 @@ void init_world(){
      else if((abs(ox)<=1&&abs(oy)>2)||(abs(oy)<=1&&abs(ox)>2))tile=Crystal;
      else if(d<4)tile=ObsidianCore;
      break;
+    case 5: // Abandoned surface camp with a fire pit and timber crossbeams.
+     if(d>=r2-2)tile=DarkStone;
+     else if(d<3)tile=Ember;
+     else if((ox==0&&abs(oy)<=3)||(oy==0&&abs(ox)<=3))tile=Wood;
+     else if(d<r2/3&&((ox+oy)&1)==0)tile=Moss;
+     break;
     default: // Bone altar, dark ring and central ancient relic.
      if(d>=r2-2)tile=Bone;
      else if(cardinal&&d>r2/4)tile=DarkStone;
