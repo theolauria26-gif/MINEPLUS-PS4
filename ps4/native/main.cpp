@@ -468,8 +468,8 @@ bool open_treasure_chest(int x,int y){
   mineplus::DungeonRoom room{};room.id=hash2(x,y);room.x=x;room.y=y;room.width=7;room.height=7;room.type=mineplus::DungeonRoomType::Treasure;
   mineplus::DungeonChestState chest{};
   if(!mineplus::DungeonLootGenerator::generate_chest(worldSeed,room,chest))return false;
-  for(const auto& drop:chest.contents)add_stock(21+static_cast<int>(drop.item),drop.count);
   if(!set_tile_at(x,y,ChestOpened))return false;
+  for(const auto& drop:chest.contents)add_stock(21+static_cast<int>(drop.item),drop.count);
   save_world();
   return true;
 }
