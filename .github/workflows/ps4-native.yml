@@ -55,6 +55,11 @@ jobs:
             -o "$RUNNER_TEMP/mineplus-material-atlas-tests"
           "$RUNNER_TEMP/mineplus-material-atlas-tests"
           clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
+            ps4/native/material_atlas.cpp ps4/native/procedural_material_atlas.cpp \
+            ps4/native/tests/procedural_material_atlas_tests.cpp \
+            -o "$RUNNER_TEMP/mineplus-procedural-material-atlas-tests"
+          "$RUNNER_TEMP/mineplus-procedural-material-atlas-tests"
+          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
             ps4/native/voxel_face_uv.cpp ps4/native/tests/voxel_face_uv_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-voxel-face-uv-tests"
           "$RUNNER_TEMP/mineplus-voxel-face-uv-tests"
