@@ -61,7 +61,7 @@ int main() {
     assert(assembled.get(17, 5, 25) == 0);
     assert(assembled.get(10, 4, 25) == 8); // corridor side wall
     assert(assembled.get(10, 5, 25) == 0); // passage remains walkable
-    assert(assembled.get(15, 5, 24) == 0); // outside this chunk
+    assert(assembled.get(15, 5, 24) == 3); // corridor clipped at chunk edge
 
     DungeonVoxelSettings far_chunk = settings;
     far_chunk.chunk_origin_x = 16;
