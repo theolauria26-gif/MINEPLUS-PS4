@@ -538,7 +538,7 @@ void mine_block(){
   const int damage=std::max(1,static_cast<int>(stats.damage)/6);
   m.hp-=damage;
   mineplus::EquipmentCatalog::wear(equipmentState,mineplus::EquipmentSlot::Weapon,1);
-  if(m.hp<=0){if(m.type<4)add_stock(Bone,2);else if(m.type<8)add_stock(Crystal);else add_stock(DarkStone);m.x=-100;m.y=-100;}
+  if(m.hp<=0){m.hp=0;if(m.type<4)add_stock(Bone,2);else if(m.type<8)add_stock(Crystal);else add_stock(DarkStone);m.x=-100;m.y=-100;}
   save_world(false);return;
  }
  int block=tile_at(x,y);
