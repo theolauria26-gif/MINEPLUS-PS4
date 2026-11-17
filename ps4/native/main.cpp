@@ -45,7 +45,7 @@ bool lastBossAttackHitPlayer=false;
 constexpr int BOSS_X=COLS/2+16,BOSS_Y=ROWS/2;
 bool equipmentPage=false;
 std::uint64_t worldSeed=4839201ULL;
-Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0,lastBossHitAt=0,lastSaveAt=0,lastWeaponArtAt=0,weaponArtFlashUntil=0;
+Uint32 lastDamage=0,damageCooldown=0,lastCreatureHit=0,lastBossHitAt=0,lastSaveAt=0,lastWeaponArtAt=0,weaponArtFlashUntil=0,worldVisualTicks=0;
 Uint32 bossClockMs=0,lastBossClockTick=0;bool lastSaveSucceeded=true;int lastCreatureHitX=-100,lastCreatureHitY=-100;
 struct Creature{int x,y,type,hp;};std::array<Creature,96> creatures{};
 std::array<mineplus::SettlementNpc,64> settlementNpcs{};std::size_t settlementNpcCount=0;
@@ -616,8 +616,14 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     draw=(pattern%5u)==0u;r=245;g=250;b=255;break;
    case Lava: case Ember: case EmberCatalyst:
     draw=(v%4u==0u&&(pattern%2u)==0u);r=255;g=t==Lava?170:204;b=75;break;
-   case Water:
-    draw=(v%3u==0u&&(pattern%3u)==0u);r=103;g=177;b=204;break;
+   case Water: {
+    // Thin moving highlights suggest river/lake surface ripples in the distance.
+    const unsigned phase=(worldVisualTicks/180u+cellX*3u+cellY*5u)&7u;
+    const bool crest=((v+phase)&7u)==0u;
+    draw=crest||(v%3u==0u&&(pattern%5u)==0u);
+    r=crest?157:103;g=crest?211:177;b=crest?226:204;
+    break;
+   }
    case IronOre:
     draw=(pattern%4u)==0u;r=207;g=164;b=111;break;
    case Obsidian:
@@ -1049,6 +1055,7 @@ void draw_world(){
  // Perspective height-field renderer for the native PS4 build.
  // A complete day/night cycle drives sky palette, celestial bodies and material emission.
  const Uint32 worldTicks=SDL_GetTicks();
+ worldVisualTicks=worldTicks;
  const float dayPhase=float(worldTicks%480000u)/480000.0f*6.2831853f;
  const float daylight=std::clamp(static_cast<float>(0.5+0.5*std::sin(static_cast<double>(dayPhase)-1.5707963)),0.0f,1.0f);
  const float dawn=std::max(0.0f,static_cast<float>(1.0-std::fabs(static_cast<double>(daylight)-0.5)*3.4));
