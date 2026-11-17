@@ -34,6 +34,9 @@ public:
     static bool generate(std::uint64_t world_seed, const DungeonRoom& room,
                          std::vector<DungeonLootDrop>& output,
                          std::uint8_t max_drops = 6);
+    static bool generate_chest(std::uint64_t world_seed, const DungeonRoom& room,
+                               DungeonChestState& output,
+                               std::uint8_t max_drops = 6);
 };
 
 } // namespace mineplus
