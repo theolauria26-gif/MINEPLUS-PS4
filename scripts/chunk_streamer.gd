@@ -108,7 +108,7 @@ func _build_chunk(key: Vector2i) -> void:
 	var start_z := key.y * CHUNK_SIZE
 
 	# Sample the chunk plus a one-cell halo once. The old path sampled each
-	# center cell and its four neighbors independently (up to 5x noise work).
+	# center height/type and four neighbors independently (up to 7x noise work).
 	var sample_grid: Array = []
 	for local_z in range(-1, CHUNK_SIZE + 1):
 		var row: Array = []
