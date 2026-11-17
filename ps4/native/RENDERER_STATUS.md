@@ -14,7 +14,7 @@
 - River fields use global coordinates and the world seed, so neighboring chunks and reloads reproduce the same channels. The biome identity remains intact for climate and later surface ecology.
 - Surface voxel sampling reports river water as liquid and river banks as solid sand. This is CPU world-generation data consumed by the current surface tile map; it is not a new GPU water renderer.
 - Forest biome trees now form broad deterministic groves with clearings; moist plains can contain sparse tree clusters. Desert, ocean, volcanic and crystal-waste regions do not receive these trees. Placement is derived from seed/global coordinates and is covered by portable PCG tests.
-- The current top-down surface tile representation uses the existing wood tile for tree trunks; this does not yet provide multi-block canopies, wind animation or a new 3D foliage renderer.
+- The surface renderer now places a dedicated leafy canopy tile around deterministic forest trunks. Canopy foliage is walk-through, has its own green pixel texture and raised height-field profile, and can be harvested for moss. This is still the existing SDL height-field renderer, not GPU foliage or wind animation.
 - Initial creature placement now searches for valid land clearings, avoids liquid/solid landmark tiles and the spawn/boss arenas, then assigns creature families from the local biome (woodland/plains, desert/tundra, or highland/hostile regions). Failed bounded searches leave that creature slot inactive instead of embedding it in terrain.
 
 ## Requirements before true voxel rendering
