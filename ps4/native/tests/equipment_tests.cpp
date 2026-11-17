@@ -14,6 +14,17 @@ int main(){
  assert(EquipmentCatalog::find(EquipmentId::PrimordialBlade)!=nullptr);
  assert(EquipmentCatalog::recipe(EquipmentId::PrimordialChest)!=nullptr);
  assert(EquipmentCatalog::find(EquipmentId::Count)==nullptr);
+ for(unsigned id=1;id<static_cast<unsigned>(EquipmentId::Count);++id){
+  const auto equipment=static_cast<EquipmentId>(id);
+  assert(EquipmentCatalog::find(equipment)!=nullptr);
+  const auto* recipe=EquipmentCatalog::recipe(equipment);
+  assert(recipe!=nullptr&&recipe->ingredient_count>0&&recipe->ingredient_count<=4);
+  for(unsigned i=0;i<recipe->ingredient_count;++i)assert(recipe->ingredients[i].inventory_index<31);
+ }
+ int insufficient[31]{};insufficient[4]=2;insufficient[3]=1;
+ const int before[31]={};
+ assert(!EquipmentCatalog::consume_recipe(EquipmentId::StoneHatchet,insufficient,31));
+ for(int i=0;i<31;++i)assert(insufficient[i]==before[i]);
 
  EquipmentLoadout loadout{};
  loadout.slots[0]=EquipmentId::RuneSword;
