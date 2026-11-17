@@ -45,7 +45,13 @@ struct EquipmentLoadout {
     std::array<EquipmentId,static_cast<std::size_t>(EquipmentSlot::Count)> slots{};
 };
 
-struct EquipmentState {\n    std::array<std::uint8_t,static_cast<std::size_t>(EquipmentId::Count)> owned{};\n    std::array<EquipmentId,static_cast<std::size_t>(EquipmentSlot::Count)> equipped{};\n    std::array<std::uint16_t,static_cast<std::size_t>(EquipmentId::Count)> durability{};\n};\n\nstruct EquipmentTotals {
+struct EquipmentState {
+    std::array<std::uint8_t,static_cast<std::size_t>(EquipmentId::Count)> owned{};
+    std::array<EquipmentId,static_cast<std::size_t>(EquipmentSlot::Count)> equipped{};
+    std::array<std::uint16_t,static_cast<std::size_t>(EquipmentId::Count)> durability{};
+};
+
+struct EquipmentTotals {
     std::uint16_t damage=0;
     std::uint16_t defense=0;
     std::uint16_t max_health=10;
@@ -62,7 +68,12 @@ public:
     static const EquipmentRecipe* recipe(EquipmentId id);
     static bool can_craft(EquipmentId id,const int* inventory,std::size_t inventory_count);
     static bool consume_recipe(EquipmentId id,int* inventory,std::size_t inventory_count);
-    static EquipmentTotals calculate(const EquipmentLoadout& loadout);\n    static bool craft(EquipmentState& state,EquipmentId id,int* inventory,std::size_t inventory_count);\n    static bool equip(EquipmentState& state,EquipmentId id);\n    static EquipmentTotals calculate(const EquipmentState& state);\n    static void wear(EquipmentState& state,EquipmentSlot slot,std::uint16_t amount=1);\n    static std::uint16_t mitigate_damage(std::uint16_t incoming,const EquipmentTotals& totals,bool elemental=false);
+    static EquipmentTotals calculate(const EquipmentLoadout& loadout);
+    static bool craft(EquipmentState& state,EquipmentId id,int* inventory,std::size_t inventory_count);
+    static bool equip(EquipmentState& state,EquipmentId id);
+    static EquipmentTotals calculate(const EquipmentState& state);
+    static void wear(EquipmentState& state,EquipmentSlot slot,std::uint16_t amount=1);
+    static std::uint16_t mitigate_damage(std::uint16_t incoming,const EquipmentTotals& totals,bool elemental=false);
 };
 
 } // namespace mineplus
