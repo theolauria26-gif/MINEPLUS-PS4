@@ -595,22 +595,21 @@ void inventory_item_color(int id,Uint8& r,Uint8& g,Uint8& b){
  }
 }
 void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigned seed){
- // Tiny deterministic pixel-art motifs: no external assets, no per-frame allocation.
- // World-space anchoring keeps each material pattern stable while the camera moves.
- const unsigned cellX=static_cast<unsigned>(wx)&7u;
- const unsigned cellY=static_cast<unsigned>(wy)&7u;
- for(int py=top+3;py<bottom;py+=4){
-  const unsigned v=static_cast<unsigned>((py-top)/4)&7u;
+ // Pixel-art de alta densidade, ancorada no espaço do mundo para não "nadar" na câmera.
+ // Os padrões são baratos: hash inteiro, sem alocação e sem assets externos por frame.
+ const unsigned cellX=static_cast<unsigned>(wx)&15u;
+ const unsigned cellY=static_cast<unsigned>(wy)&15u;
+ for(int py=top+2;py<bottom;py+=3){
+  const unsigned v=static_cast<unsigned>((py-top)/3)&7u;
   const unsigned pattern=hash2(int(cellX*37u+cellY*11u+unsigned(t)*97u+seed),
                                int(v*53u+cellY*19u+unsigned(t)*31u));
-  Uint8 r=0,g=0,b=0;bool draw=false;
+  Uint8 r=0,g=0,b=0,alpha=155;bool draw=false;
   switch(t){
    case Grass: {
-    // Small pixel-art grass tufts and four flower colors add foreground
-    // texture without spawning entities or changing collision/save data.
     const unsigned tuft=hash2(int(cellX*37u+cellY*11u+unsigned(t)*97u+seed),
                               int(cellY*19u+unsigned(t)*31u));
-    if((tuft%43u)==0u){
+    const unsigned blade=(tuft>>5)&7u;
+    if((tuft%47u)==0u){
      draw=(v==1u||v==2u);
      switch((tuft>>8)%4u){
       case 0:r=242;g=218;b=126;break;
@@ -619,37 +618,42 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
       default:r=173;g=188;b=232;break;
      }
     }else{
-     const unsigned blade=(tuft>>5)&7u;
-     draw=((v==blade||v==((blade+1u)&7u))&&((tuft>>12)%3u)!=0u)||
-          (v==0u&&(pattern%3u)==0u);
+     draw=(v==blade||v==((blade+1u)&7u))&&((tuft>>12)%3u)!=0u;
      const unsigned shade=(tuft>>16)%4u;
-     r=static_cast<Uint8>(shade==0u?91u:shade==1u?112u:shade==2u?132u:151u);
-     g=static_cast<Uint8>(shade==0u?139u:shade==1u?163u:shade==2u?181u:193u);
-     b=static_cast<Uint8>(shade==0u?61u:shade==1u?72u:shade==2u?79u:88u);
+     r=static_cast<Uint8>(shade==0u?83u:shade==1u?105u:shade==2u?128u:151u);
+     g=static_cast<Uint8>(shade==0u?132u:shade==1u?157u:shade==2u?177u:193u);
+     b=static_cast<Uint8>(shade==0u?55u:shade==1u?67u:shade==2u?78u:88u);
     }
     break;
    }
-   case Dirt:
-    draw=(pattern%7u)==0u;r=190;g=132;b=83;
-    if((pattern%11u)==0u){r=77;g=54;b=43;}break;
-   case Stone: case DarkStone:
-    // Broken masonry: staggered horizontal joints with occasional vertical seams.
-    draw=(v==3u&&(pattern%3u)!=0u)||
-         (v==7u&&((cellX+(cellY&1u))%4u==0u));
-    r=t==Stone?151:91;g=t==Stone?154:91;b=t==Stone?158:108;
-    if(v==3u){r=t==Stone?76:34;g=t==Stone?82:37;b=t==Stone?91:49;}
+   case Dirt: {
+    const unsigned cluster=(cellX*3u+cellY*5u+v*7u+pattern%5u)%13u;
+    draw=cluster<4u||(pattern%19u)==0u;
+    r=cluster==0u?184:static_cast<Uint8>(cluster<4u?157:190);
+    g=cluster==0u?111:static_cast<Uint8>(cluster<4u?99:132);
+    b=cluster==0u?76:static_cast<Uint8>(cluster<4u?72:91);
+    if((pattern%37u)==0u){r=218;g=159;b=111;}
     break;
+   }
+   case Stone: case DarkStone: {
+    const bool seam=(v==3u&&(pattern%3u)!=0u)||
+        (v==7u&&((cellX+(cellY&1u))%4u==0u));
+    const bool crack=(cellX*5u+v*3u+cellY)%29u==0u;
+    draw=seam||crack;
+    r=t==Stone?151:91;g=t==Stone?154:91;b=t==Stone?158:108;
+    if(seam){r=t==Stone?76:34;g=t==Stone?82:37;b=t==Stone?91:49;}
+    if(crack){r=t==Stone?185:118;g=t==Stone?188:108;b=t==Stone?194:145;}
+    break;
+   }
    case Wood:
-    // Long grain streaks follow the trunk instead of random stone-like speckles.
-    draw=(cellX%3u==0u&&(pattern%2u)==0u)||
-         (cellX==4u&&(v%3u==0u));
-    r=174;g=119;b=69;break;
+    draw=(cellX%4u==0u&&(pattern%2u)==0u)||
+         (cellX==9u&&(v%3u==0u))||((pattern%23u)==0u);
+    r=(cellX%4u==0u)?174:145;g=(cellX%4u==0u)?119:91;b=(cellX%4u==0u)?69:57;
+    if((pattern%23u)==0u){r=207;g=154;b=96;}
+    break;
    case Leaves: {
-    // Layered leaf pixels use four restrained canopy palettes and scattered
-    // bright tips, giving neighboring crowns more depth without new tile IDs.
-    const unsigned palette=(pattern>>7)&3u;
-    draw=(pattern%4u)!=0u || v==1u || (v==5u&&(pattern%7u)==0u);
-    const unsigned shade=(pattern>>13)&15u;
+    const unsigned palette=(pattern>>7)&3u,shade=(pattern>>13)&15u;
+    draw=(pattern%5u)!=0u||v==1u||(v==5u&&(pattern%7u)==0u);
     if(palette==0u){r=static_cast<Uint8>(43u+shade);g=static_cast<Uint8>(104u+shade*3u);b=static_cast<Uint8>(39u+shade);}
     else if(palette==1u){r=static_cast<Uint8>(56u+shade*2u);g=static_cast<Uint8>(132u+shade*3u);b=static_cast<Uint8>(49u+shade);}
     else if(palette==2u){r=static_cast<Uint8>(83u+shade*2u);g=static_cast<Uint8>(119u+shade*2u);b=static_cast<Uint8>(43u+shade);}
@@ -658,55 +662,72 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     break;
    }
    case Moss: {
-    // Damp forest moss carries tiny cool spore flecks and layered green patches.
     const unsigned patch=(pattern>>6)&3u;
-    draw=(pattern%4u)==0u || (v==1u&&(pattern%9u)==0u);
-    r=static_cast<Uint8>(patch==0u?82u:patch==1u?103u:patch==2u?119u:137u);
-    g=static_cast<Uint8>(patch==0u?126u:patch==1u?148u:patch==2u?163u:176u);
-    b=static_cast<Uint8>(patch==0u?61u:patch==1u?69u:patch==2u?77u:83u);
+    draw=(pattern%4u)==0u||(v==1u&&(pattern%9u)==0u);
+    r=static_cast<Uint8>(patch==0u?72u:patch==1u?94u:patch==2u?119u:137u);
+    g=static_cast<Uint8>(patch==0u?112u:patch==1u?137u:patch==2u?163u:176u);
+    b=static_cast<Uint8>(patch==0u?54u:patch==1u?63u:patch==2u?77u:83u);
     if((pattern%29u)==0u){r=151;g=211;b=174;}
     break;
    }
-   case Crystal: case ObsidianCore:
-    draw=(pattern%3u)==0u;r= t==Crystal?190:145;g=t==Crystal?239:112;b=t==Crystal?246:207;break;
+   case Crystal: case ObsidianCore: {
+    const unsigned facet=(cellX+v*2u+(pattern>>9))%11u;
+    draw=facet<4u||(pattern%17u)==0u;
+    r=t==Crystal?(facet<2u?218:156):(facet<2u?190:129);
+    g=t==Crystal?(facet<2u?255:218):(facet<2u?153:79);
+    b=t==Crystal?(facet<2u?255:226):(facet<2u?224:173);
+    alpha=220;break;
+   }
    case Bone:
-    draw=(pattern%6u)==0u;r=222;g=206;b=164;break;
+    draw=(v==2u||v==6u||(pattern%13u)==0u);
+    r=(v==2u||v==6u)?142:222;g=(v==2u||v==6u)?133:206;b=(v==2u||v==6u)?112:164;
+    break;
    case Sand: {
-    // Fine grit and occasional darker pebbles break up long flat paths and beaches.
-    draw=(pattern%5u)==0u || (v==6u&&(pattern%11u)==0u);
-    r=static_cast<Uint8>((pattern%17u)==0u?143u:224u);
-    g=static_cast<Uint8>((pattern%17u)==0u?119u:191u);
-    b=static_cast<Uint8>((pattern%17u)==0u?82u:125u);
+    const unsigned ripple=(v+cellX/3u)%6u;
+    draw=ripple==0u||(pattern%9u)==0u;
+    r=ripple==0u?167:224;g=ripple==0u?137:191;b=ripple==0u?91:125;
     if((pattern%31u)==0u){r=239;g=214;b=158;}
     break;
    }
-   case Snow: case Ice:
-    draw=(pattern%5u)==0u;r=245;g=250;b=255;break;
-   case Lava: case Ember: case EmberCatalyst:
-    draw=(v%4u==0u&&(pattern%2u)==0u);r=255;g=t==Lava?170:204;b=75;break;
+   case Snow:
+    draw=(pattern%7u)==0u||(v==1u&&(pattern%13u)==0u);
+    r=255;g=255;b=255;alpha=210;break;
+   case Ice:
+    draw=((cellX+v*2u)%13u==0u)||(pattern%11u)==0u;
+    r=188;g=239;b=255;alpha=205;break;
+   case Lava: case Ember: case EmberCatalyst: {
+    const unsigned fissure=(cellX*3u+v*5u+pattern%7u)%12u;
+    draw=fissure<4u||(pattern%17u)==0u;
+    r=255;g=fissure<2u?231:static_cast<Uint8>(t==Lava?151:183);b=fissure<2u?143:65;
+    alpha=225;break;
+   }
    case Water: {
-    // Thin moving highlights suggest river/lake surface ripples in the distance.
     const unsigned phase=(worldVisualTicks/180u+cellX*3u+cellY*5u)&7u;
-    const bool crest=((v+phase)&7u)==0u;
+    const bool crest=((v+phase+cellX/3u)&7u)==0u;
     draw=crest||(v%3u==0u&&(pattern%5u)==0u);
-    r=crest?157:103;g=crest?211:177;b=crest?226:204;
+    r=crest?175:103;g=crest?225:177;b=crest?245:204;alpha=190;
     break;
    }
    case IronOre:
-    draw=(pattern%4u)==0u;r=207;g=164;b=111;break;
+    draw=((cellX*7u+v*11u)%17u<4u)||(pattern%19u)==0u;
+    r=207;g=164;b=111;break;
    case Obsidian:
-    draw=(pattern%4u)==0u||(v==2u&&cellX==3u);
-    r=132;g=112;b=177;break;
+    draw=((cellX+v*2u)%9u<3u)||(pattern%17u)==0u;
+    r=132;g=112;b=177;alpha=195;break;
    case IronBar:
-    draw=(v%3u==0u&&(pattern%2u)==0u);
+    draw=(v%3u==0u&&(pattern%2u)==0u)||(cellX%5u==0u);
     r=231;g=239;b=240;break;
-   case Rune: case AncientRune:
-    draw=(pattern%3u)==0u;r=168;g=255;b=216;break;
-    case ChestClosed: draw=(v==2u||v==6u||cellX==1u||cellX==6u);r=224;g=151;b=73;break;
-    case ChestOpened: draw=(v==2u||v==6u);r=139;g=103;b=73;break;
+   case Rune: case AncientRune: {
+    const bool glyph=(cellX%8u==3u)||(v%4u==1u)||((cellX+v)%7u==0u);
+    draw=glyph&&(pattern%4u)!=0u;
+    r=t==AncientRune?204:168;g=255;b=t==AncientRune?244:216;alpha=235;
+    break;
+   }
+   case ChestClosed: draw=(v==2u||v==6u||cellX==1u||cellX==6u);r=224;g=151;b=73;break;
+   case ChestOpened: draw=(v==2u||v==6u);r=139;g=103;b=73;break;
    default: break;
   }
-  if(draw){color(r,g,b, t==Lava||t==Crystal||t==Rune||t==AncientRune?210:155);SDL_RenderDrawPoint(renderer,sx,py);}
+  if(draw){color(r,g,b,alpha);SDL_RenderDrawPoint(renderer,sx,py);}
  }
 }
 bool solid_tile(int t){return t==DarkStone||t==Stone||t==Wood||t==Bone||t==Crystal||t==IronOre||t==Obsidian||t==Rune;}
