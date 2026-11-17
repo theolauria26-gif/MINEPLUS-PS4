@@ -85,6 +85,52 @@ SurfaceSample PcgWorld::sample_surface(std::int32_t x,std::int32_t y) const {
         case Biome::Volcanic: tile=16; height+=5; break;
         case Biome::CrystalWastes: tile=6; break;
     }
+    // Small inland lakes are placed from a global macro-cell grid. Each
+    // cell derives one stable basin center and radius from the world seed,
+    // so lakes remain identical across chunk borders and save/reload cycles.
+    // The irregular shoreline comes from the surrounding biome/elevation
+    // fields; a shallow lowered basin keeps water visually distinct.
+    const std::int32_t lakeCellX = floor_i(fx / 420.0f);
+    const std::int32_t lakeCellY = floor_i(fy / 420.0f);
+    bool lakeWater = false;
+    bool lakeShore = false;
+    const bool lakeEligible = continent >= 0.18f && elevation > -0.02f &&
+        temperature > -0.82f && biome != Biome::Ocean &&
+        biome != Biome::Desert && biome != Biome::Volcanic &&
+        biome != Biome::CrystalWastes;
+    if (lakeEligible) {
+        for (std::int32_t cy = lakeCellY - 1; cy <= lakeCellY + 1; ++cy) {
+            for (std::int32_t cx = lakeCellX - 1; cx <= lakeCellX + 1; ++cx) {
+                const std::uint32_t basin = hash(cx, cy, 0x1A4E5101u);
+                const std::int32_t centerX = cx * 420 + 72 +
+                    static_cast<std::int32_t>(basin % 276u);
+                const std::int32_t centerY = cy * 420 + 72 +
+                    static_cast<std::int32_t>((basin >> 9) % 276u);
+                const std::int32_t radius = 17 +
+                    static_cast<std::int32_t>((basin >> 18) % 25u);
+                const std::int32_t dx = static_cast<std::int32_t>(x - centerX);
+                const std::int32_t dy = static_cast<std::int32_t>(y - centerY);
+                // A mild anisotropy avoids perfectly circular ponds.
+                const std::int64_t basinDistance =
+                    std::int64_t(dx) * dx * 4 +
+                    std::int64_t(dy) * dy * 3;
+                const std::int64_t waterLimit =
+                    std::int64_t(radius) * radius * 3;
+                const std::int64_t shoreLimit =
+                    std::int64_t(radius + 7) * (radius + 7) * 3;
+                if (basinDistance <= waterLimit) lakeWater = true;
+                else if (basinDistance <= shoreLimit) lakeShore = true;
+            }
+        }
+    }
+    if (lakeWater) {
+        tile = 13; // Inland lake water.
+        height = std::max(19, height - 2);
+    } else if (lakeShore && (tile == 1 || tile == 5 || tile == 3 || tile == 10)) {
+        tile = 9; // Sandy or pale shoreline transition.
+        height = std::max(20, height - 1);
+    }
+
     // Meandering surface rivers use a separate low-frequency field, so their
     // banks remain continuous across chunk boundaries and world reloads.
     // Rivers favor moist temperate land and avoid deserts, volcanic fields,
