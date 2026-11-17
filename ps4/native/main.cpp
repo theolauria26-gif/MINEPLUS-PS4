@@ -442,8 +442,21 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
   Uint8 r=0,g=0,b=0;bool draw=false;
   switch(t){
    case Grass:
-    draw=(v==0u&&(pattern%3u)==0u);
-    r=126;g=178;b=86;break;
+    // Sparse coordinate-locked wildflowers break up broad grass fields without
+    // spawning extra entities or changing collision, saves, or world generation.
+    if((pattern%43u)==0u){
+     draw=(v==1u||v==2u);
+     switch((pattern>>8)%4u){
+      case 0:r=242;g=218;b=126;break;
+      case 1:r=218;g=166;b=194;break;
+      case 2:r=225;g=229;b=205;break;
+      default:r=173;g=188;b=232;break;
+     }
+    }else{
+     draw=(v==0u&&(pattern%3u)==0u);
+     r=126;g=178;b=86;
+    }
+    break;
    case Dirt:
     draw=(pattern%7u)==0u;r=190;g=132;b=83;
     if((pattern%11u)==0u){r=77;g=54;b=43;}break;
