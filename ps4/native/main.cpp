@@ -1007,6 +1007,15 @@ void draw_world(){
   const int b=int(skyB+(53+daylight*105-skyB)*blend);
   rect(0,y,W,3,r,g,b);
  }
+ // A deterministic star field fades in as the daylight falls.
+ const float night=1.0f-daylight;
+ for(unsigned i=0;i<72u;++i){
+  const unsigned seed=hash2(static_cast<int>(i*37u+13u),static_cast<int>(worldSeed>>9));
+  const int starX=static_cast<int>(seed%static_cast<unsigned>(W));
+  const int starY=18+static_cast<int>((seed>>12)%170u);
+  const Uint8 starAlpha=static_cast<Uint8>(night*static_cast<float>(92u+(seed>>20)%120u));
+  if(starAlpha>12u)rect(starX,starY,1+(seed%5u==0u),1,178,198,222,starAlpha);
+ }
  // Sun and moon travel in opposite halves of the same sky path.
  const float celestial=dayPhase;
  const int celestialX=int(W*0.5f+std::cos(celestial)*W*0.39f);
