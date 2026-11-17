@@ -652,6 +652,7 @@ void draw_world(){
  rect(W/2+164,H-190,12,95,151,159,163);rect(W/2+132,H-198,75,13,181,190,190);
  // Crosshair and interaction hint.
  color(225,232,222);SDL_RenderDrawLine(renderer,W/2-9,H/2,W/2+9,H/2);SDL_RenderDrawLine(renderer,W/2,H/2-9,W/2,H/2+9);
+  const int aimedX=px+faceX,aimedY=py+faceY;if(worldGrid.contains(aimedX,aimedY)&&tile_at(aimedX,aimedY)==ChestClosed)draw_text("TREASURE CHEST  /  PRESS F OR X",W/2-145,H/2+25,2,245,205,130);
  rect(0,0,W,64,7,12,16,235);rect(20,13,7,38,52,212,132);draw_text("MINEPLUS  /  THE FORGOTTEN WILDS",44,15,3);draw_text("3D VOXEL SURVIVAL",45,43,1,160,190,174);
  draw_text("HP",500,20,2,210,218,208);rect(535,19,110,14,36,25,26);rect(537,21,playerHealth*10+6,10,playerHealth>3?75:190,playerHealth>3?183:66,playerHealth>3?111:53);
  draw_text("MOVE  /  R-STICK LOOK  /  F OPEN/BREAK  /  E BAG",650,25,2,190,198,192);
