@@ -732,7 +732,8 @@ void update_creatures(){
   int dx=px-m.x,dy=py-m.y,distance=abs(dx)+abs(dy);
   const auto* species=mineplus::surface_species(static_cast<std::uint8_t>(m.type));
   const bool passive=species && (species->behavior==mineplus::SurfaceBehavior::Grazer || species->behavior==mineplus::SurfaceBehavior::Skittish);
-  const bool wandering=passive?distance>7:distance>14;
+  const auto alertDistance=mineplus::surface_event_alert_distance(currentSurfaceEvent.type,passive);
+  const bool wandering=distance>alertDistance;
   if(!wandering&&!dx&&!dy)continue;
   int sx=0,sy=0;
   if(wandering){
