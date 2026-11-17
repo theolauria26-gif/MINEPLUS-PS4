@@ -652,12 +652,17 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     if((pattern%23u)==0u){r=207;g=154;b=96;}
     break;
    case Leaves: {
-    const unsigned palette=(pattern>>7)&3u,shade=(pattern>>13)&15u;
+    const unsigned canopy=hash2(wx/3,wy/3);
+    const unsigned palette=(canopy%29u==0u)?4u:
+        ((canopy%23u==0u)?5u:((pattern>>7)&3u));
+    const unsigned shade=(pattern>>13)&15u;
     draw=(pattern%5u)!=0u||v==1u||(v==5u&&(pattern%7u)==0u);
     if(palette==0u){r=static_cast<Uint8>(43u+shade);g=static_cast<Uint8>(104u+shade*3u);b=static_cast<Uint8>(39u+shade);}
     else if(palette==1u){r=static_cast<Uint8>(56u+shade*2u);g=static_cast<Uint8>(132u+shade*3u);b=static_cast<Uint8>(49u+shade);}
     else if(palette==2u){r=static_cast<Uint8>(83u+shade*2u);g=static_cast<Uint8>(119u+shade*2u);b=static_cast<Uint8>(43u+shade);}
-    else{r=static_cast<Uint8>(116u+shade*2u);g=static_cast<Uint8>(91u+shade*2u);b=static_cast<Uint8>(48u+shade);}
+    else if(palette==3u){r=static_cast<Uint8>(116u+shade*2u);g=static_cast<Uint8>(91u+shade*2u);b=static_cast<Uint8>(48u+shade);}
+    else if(palette==4u){r=static_cast<Uint8>(151u+shade*2u);g=static_cast<Uint8>(91u+shade*2u);b=static_cast<Uint8>(38u+shade);}
+    else{r=static_cast<Uint8>(151u+shade*2u);g=static_cast<Uint8>(65u+shade);b=static_cast<Uint8>(49u+shade);}
     if((pattern%19u)==0u){r=static_cast<Uint8>(std::min(255,int(r)+35));g=static_cast<Uint8>(std::min(255,int(g)+38));b=static_cast<Uint8>(std::min(255,int(b)+24));}
     break;
    }
