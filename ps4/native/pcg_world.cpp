@@ -195,6 +195,12 @@ bool PcgWorld::surface_tree_at(std::int32_t x, std::int32_t y,
         return grove > -0.24f && placement < 24u;
     if (biome == Biome::Plains && column.moisture >= 150u)
         return grove > 0.28f && placement < 7u;
+    // Cold-climate conifers are sparse and favor sheltered, moist pockets.
+    if (biome == Biome::Tundra && column.moisture >= 112u)
+        return grove > 0.02f && placement < 9u;
+    // Alpine trees cling to damp highland ledges rather than covering bare peaks.
+    if (biome == Biome::Highlands && column.moisture >= 126u)
+        return grove > 0.10f && placement < 11u;
     return false;
 }
 
