@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "pcg_world.hpp"
+#include "surface_ecology.hpp"
 #include "world_grid.hpp"
 #include "dungeon_loot.hpp"
 #include "equipment.hpp"
@@ -349,12 +350,10 @@ void init_world(){
    const auto biome=static_cast<mineplus::Biome>(surface.biome);
    if(biome==mineplus::Biome::Ocean)continue;
    const unsigned family=hash2(sx,sy);
-   if(biome==mineplus::Biome::Forest||biome==mineplus::Biome::Plains)
-    m.type=static_cast<int>(family%4u);
-   else if(biome==mineplus::Biome::Desert||biome==mineplus::Biome::Tundra)
-    m.type=4+static_cast<int>(family%4u);
-   else
-    m.type=8+static_cast<int>(family%4u);
+   const auto species=mineplus::choose_surface_species(
+       biome,surface.moisture,surface.temperature,family);
+   if(species>=12u)continue;
+   m.type=static_cast<int>(species);
    m.x=sx;m.y=sy;m.hp=3;
    break;
   }
@@ -610,7 +609,8 @@ void update_creatures(){
  for(auto &m:creatures){
   if(m.hp<=0)continue;
   int dx=px-m.x,dy=py-m.y,distance=abs(dx)+abs(dy);
-  const bool passive=(m.type%4==3);
+  const auto* species=mineplus::surface_species(static_cast<std::uint8_t>(m.type));
+  const bool passive=species && (species->behavior==mineplus::SurfaceBehavior::Grazer || species->behavior==mineplus::SurfaceBehavior::Skittish);
   const bool wandering=passive?distance>7:distance>14;
   if(!wandering&&!dx&&!dy)continue;
   int sx=0,sy=0;
