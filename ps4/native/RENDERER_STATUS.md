@@ -13,6 +13,8 @@
 - The deterministic PCG surface sampler now carves meandering river channels through moist temperate land, with sandy banks that transition into plains, forests and highlands.
 - River fields use global coordinates and the world seed, so neighboring chunks and reloads reproduce the same channels. The biome identity remains intact for climate and later surface ecology.
 - Surface voxel sampling reports river water as liquid and river banks as solid sand. This is CPU world-generation data consumed by the current surface tile map; it is not a new GPU water renderer.
+- Forest biome trees now form broad deterministic groves with clearings; moist plains can contain sparse tree clusters. Desert, ocean, volcanic and crystal-waste regions do not receive these trees. Placement is derived from seed/global coordinates and is covered by portable PCG tests.
+- The current top-down surface tile representation uses the existing wood tile for tree trunks; this does not yet provide multi-block canopies, wind animation or a new 3D foliage renderer.
 
 ## Requirements before true voxel rendering
 
