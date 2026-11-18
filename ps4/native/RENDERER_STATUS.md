@@ -218,3 +218,8 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Surface landmarks receive deterministic perimeter overgrowth during world generation: selected outer dark-stone segments weather into moss, while sparse leaf patches gather just outside the footprint.
 - The pass deliberately preserves entrances, central relics, chests and interior landmark tiles. It reuses existing Moss and Leaves tile IDs and does not alter save schemas.
 - Overgrowth is generated from anchor/world coordinates, so it remains stable across reloads. It is a 2D tile-map treatment, not climbing vine geometry or a 3D structure system.
+
+### Biome-aware ruin weathering
+
+- Surface landmark overgrowth now samples the untouched terrain around each structure. In snowbound surroundings, exposed outer masonry receives ice and perimeter growth becomes snow; in temperate surroundings, the existing moss and leaf treatment remains.
+- The choice is deterministic for a fixed world seed and uses existing tile IDs. It does not add a new biome system, 3D material blending, or dynamic snow accumulation.
