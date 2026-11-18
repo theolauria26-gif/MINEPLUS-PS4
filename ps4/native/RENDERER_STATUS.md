@@ -1,5 +1,13 @@
 # Renderer status and voxel integration plan
 
+
+### Surface roots and lichen
+
+- Grass and moss surfaces can show sparse exposed root strands when adjacent to a living trunk, with deterministic bends and highlights.
+- Stone faces can receive small lichen flecks when adjacent to moss, making damp forest clearings and boulder edges feel more integrated.
+- These are renderer-only pixel details anchored to world coordinates. They do not add tile IDs, collision, persistent entities, or save-format changes.
+- The native PS4 renderer remains a 2D SDL height-field/column projection; these details do not constitute full 3D geometry.
+
 ## Current PS4 presentation path
 
 - The live game uses SDL2's accelerated 2D renderer when available, with a software fallback.
