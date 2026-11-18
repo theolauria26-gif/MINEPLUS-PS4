@@ -50,6 +50,23 @@ int main(){
  std::vector<MeshQuad> no_quads;
  assert(VoxelMeshIndexBuilder::build(no_quads,0,rejected_indices));
  assert(rejected_indices.empty());
+ auto triangle_normal_dot=[](const VoxelMeshVertex& a,const VoxelMeshVertex& b,const VoxelMeshVertex& c) {
+  const float abx=b.x-a.x, aby=b.y-a.y, abz=b.z-a.z;
+  const float acx=c.x-a.x, acy=c.y-a.y, acz=c.z-a.z;
+  const float nx=aby*acz-abz*acy;
+  const float ny=abz*acx-abx*acz;
+  const float nz=abx*acy-aby*acx;
+  return nx*a.normal_x+ny*a.normal_y+nz*a.normal_z;
+ };
+ for(std::size_t q=0;q<mesh.quads.size();++q) {
+  const std::size_t base=q*4;
+  const auto& v0=mesh.vertices[base];
+  const auto& v1=mesh.vertices[base+1];
+  const auto& v2=mesh.vertices[base+2];
+  const auto& v3=mesh.vertices[base+3];
+  assert(triangle_normal_dot(v0,v1,v2)>0.0f);
+  assert(triangle_normal_dot(v0,v2,v3)>0.0f);
+ }
  for(const auto& vertex:mesh.vertices) {
   assert(vertex.material!=0);
   const int normal_count=(vertex.normal_x!=0)+(vertex.normal_y!=0)+(vertex.normal_z!=0);
