@@ -61,3 +61,7 @@ O contrato CPU atual usa posição XYZ em unidades de bloco, UV local repetível
 ## Limitações conhecidas
 
 Não há nesta etapa shader, textura de atlas final, buffers GPU integrados ao loop principal nem validação visual em PS4. Este contrato é uma especificação de implementação para evitar que a integração futura misture geração procedural, gerenciamento de recursos gráficos e gameplay em uma única camada.
+
+## Progresso implementado
+
+O primeiro incremento CPU do plano agora existe: ProceduralVoxelMeshBuilder conecta a geração procedural ou WorldRuntime ao chunk voxel, ao mesher greedy e ao contrato de vértices. A função aplica limites de quads/vértices e publica a saída somente após sucesso integral. Testes de regressão cobrem dados gerados, edições do jogador, normais e falhas por orçamento. Isso ainda não satisfaz o marco de desenho GPU; ele apenas remove a etapa manual que antes separava geração, meshing e vértices.
