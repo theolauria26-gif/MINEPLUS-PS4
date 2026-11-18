@@ -162,3 +162,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Mossback Grazers now have branching antlers; Glimmer Hares have upright ears; Frost Prowlers have a jagged icy dorsal ridge; Burrow Foxes have a fuller animated brush tail; and Shardbacks have three faceted back plates.
 - These are lightweight additions to the existing projected SDL creature pass, keyed to existing species IDs. They do not add entity types, save data, tile IDs or imported assets.
 - The silhouettes remain 2D projected shapes rather than rigged 3D models. Their animation is procedural screen-space motion, not skeletal animation.
+
+
+## Vida luminosa noturna no exterior
+
+- Florestas temperadas agora recebem vaga-lumes discretos durante a noite; os campos de cristais recebem partículas frias azuladas. A densidade e a intensidade acompanham a noite, e posições/deriva usam seed e tempo para evitar sorteios e alocações por frame.
+- O efeito é desenhado em espaço de tela sobre o terreno, condicionado ao bioma na posição do jogador. É atmosfera visual leve, não entidades persistentes, IA de insetos, partículas volumétricas ou iluminação dinâmica real.
