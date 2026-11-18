@@ -295,6 +295,29 @@ void init_world(){
      if(std::abs(along)<=1&&across==0)tile=AncientRune;
      break;
     }
+    case 9: { // Fortified crossing: stone deck over a water channel, guarded bridgeheads.
+     const unsigned axis=hash2(anchor.x+0x2B7,anchor.y-0x51D)&1u;
+     const int along=axis?oy:ox, across=axis?ox:oy;
+     const int towerOffset=std::max(3,radius-4);
+     const bool bridgeTower=std::abs(std::abs(along)-towerOffset)<=1&&
+                            std::abs(across)<=2;
+     if(std::abs(along)<=radius-1&&std::abs(across)<=3){
+      if(std::abs(across)<=1){
+       tile=(std::abs(along)==radius-1)?Sand:DarkStone;
+       if(across==0&&std::abs(along)<=2)tile=AncientRune;
+      }else if(std::abs(across)==2){
+       tile=(std::abs(along)%4==0)?Wood:Water;
+      }else{
+       tile=Water;
+      }
+     }
+     if(bridgeTower){
+      tile=(std::abs(along)==towerOffset&&std::abs(across)==2)?Crystal:DarkStone;
+     }
+     if(std::abs(along)<=1&&std::abs(across)<=1)tile=AncientRune;
+     if(along==0&&across==0)tile=ChestClosed;
+     break;
+    }
     case 8: { // Medieval border keep: curtain wall, four towers and a rune court.
      const int wall=radius-2;
      const int inner=std::max(3,radius/2);
