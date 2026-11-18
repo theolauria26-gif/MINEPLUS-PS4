@@ -1342,6 +1342,41 @@ void draw_world(){
   }
   if(lastY<H){color(9,14,19);SDL_RenderDrawLine(renderer,sx,lastY,sx,H);}
  }
+ // Nocturnal surface life: fireflies gather over old forests, while the
+ // crystal wastes carry colder drifting motes. Their paths are deterministic
+ // per world seed and softly advance with time; this is a screen-space
+ // atmosphere pass, not a persistent particle/entity simulation.
+ if(night>0.34f){
+  mineplus::PcgWorld ambienceWorld(worldSeed);
+  const auto localBiome=static_cast<mineplus::Biome>(
+      ambienceWorld.sample_surface(px-COLS/2,py-ROWS/2).biome);
+  const bool woodland=localBiome==mineplus::Biome::Forest;
+  const bool crystalField=localBiome==mineplus::Biome::CrystalWastes;
+  if(woodland||crystalField){
+   const unsigned count=woodland?28u:18u;
+   for(unsigned i=0;i<count;++i){
+    const unsigned seed=hash2(static_cast<int>(i*73u+19u),
+                              static_cast<int>(worldSeed>>11));
+    const unsigned drift=worldTicks/(woodland?115u:170u)*
+                         (1u+(seed%3u));
+    const int x=static_cast<int>((seed+drift)%
+                    static_cast<unsigned>(W+48))-24;
+    const int y=326+static_cast<int>((seed>>10)%350u);
+    const unsigned twinkle=hash2(static_cast<int>(i),
+                                 static_cast<int>(worldTicks/190u));
+    const Uint8 alpha=static_cast<Uint8>(night*
+        static_cast<float>(42u+(twinkle%100u)));
+    if(alpha<18u)continue;
+    if(woodland){
+     rect(x-2,y-2,5,5,105,178,105,static_cast<Uint8>(alpha/5u));
+     rect(x,y,2,2,176,235,139,alpha);
+    }else{
+     rect(x-2,y-2,5,5,72,160,205,static_cast<Uint8>(alpha/5u));
+     rect(x,y,2,2,145,225,245,alpha);
+    }
+   }
+  }
+ }
  // Distant silhouettes create scale and a recognizable horizon.
  for(int i=0;i<18;i++){int x=(i*173+91)%W;int base=300+(i%4)*13;rect(x,base-24-(i%5)*13,5+(i%3)*4,base>horizon?H-base:25,13,19,24,150);}
  // Project creatures with deterministic species silhouettes and time-based animation.
