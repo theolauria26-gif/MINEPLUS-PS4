@@ -37,5 +37,22 @@ int main() {
     assert(material_atlas_region(MATERIAL_ATLAS_LAST_ID, region));
     assert(region.tile_x == 6 && region.tile_y == 2);
     std::cout << "MINEPLUS material atlas tests: OK\n";
+
+    float atlas_u = -1.0f, atlas_v = -1.0f;
+    assert(material_atlas_resolve_uv(1, 0.0f, 0.0f, atlas_u, atlas_v));
+    MaterialAtlasRegion grass{};
+    assert(material_atlas_region(1, grass));
+    assert(std::fabs(atlas_u - grass.u_min) < 0.000001f);
+    assert(std::fabs(atlas_v - grass.v_min) < 0.000001f);
+    assert(material_atlas_resolve_uv(1, 1.0f, 2.0f, atlas_u, atlas_v));
+    assert(std::fabs(atlas_u - grass.u_min) < 0.000001f);
+    assert(std::fabs(atlas_v - grass.v_min) < 0.000001f);
+    assert(material_atlas_resolve_uv(1, 2.25f, -0.25f, atlas_u, atlas_v));
+    assert(std::fabs(atlas_u - (grass.u_min + 0.25f * (grass.u_max - grass.u_min))) < 0.000001f);
+    assert(std::fabs(atlas_v - (grass.v_min + 0.75f * (grass.v_max - grass.v_min))) < 0.000001f);
+    assert(!material_atlas_resolve_uv(0, 0.5f, 0.5f, atlas_u, atlas_v));
+    assert(atlas_u == 0.0f && atlas_v == 0.0f);
+    assert(!material_atlas_resolve_uv(1, NAN, 0.5f, atlas_u, atlas_v));
+    assert(atlas_u == 0.0f && atlas_v == 0.0f);
     return 0;
 }
