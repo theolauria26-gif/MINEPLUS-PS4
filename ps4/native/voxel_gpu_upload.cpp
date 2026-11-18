@@ -1,7 +1,27 @@
 #include "voxel_gpu_upload.hpp"
+#include "material_atlas.hpp"
+#include <cmath>
 #include <limits>
 
 namespace mineplus {
+namespace {
+bool valid_vertex(const VoxelMeshVertex& vertex) {
+    MaterialAtlasRegion region{};
+    if (!material_atlas_region(vertex.material, region)) return false;
+    if (!std::isfinite(vertex.x) || !std::isfinite(vertex.y) ||
+        !std::isfinite(vertex.z) || !std::isfinite(vertex.u) ||
+        !std::isfinite(vertex.v)) return false;
+
+    const int nx = vertex.normal_x;
+    const int ny = vertex.normal_y;
+    const int nz = vertex.normal_z;
+    const int nonzero_axes = (nx != 0) + (ny != 0) + (nz != 0);
+    return nonzero_axes == 1 &&
+           (nx == -1 || nx == 0 || nx == 1) &&
+           (ny == -1 || ny == 0 || ny == 1) &&
+           (nz == -1 || nz == 0 || nz == 1);
+}
+} // namespace
 
 bool VoxelGpuUploadBuilder::build(
     const std::vector<VoxelMeshVertex>& source,
@@ -16,7 +36,7 @@ bool VoxelGpuUploadBuilder::build(
 
     output.reserve(source.size());
     for (const VoxelMeshVertex& vertex : source) {
-        if (vertex.material == 0) {
+        if (!valid_vertex(vertex)) {
             output.clear();
             return false;
         }
