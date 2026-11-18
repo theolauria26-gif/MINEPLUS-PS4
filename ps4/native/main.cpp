@@ -161,6 +161,35 @@ void init_world(){
       (conifer&&ground==Stone))world[ny*COLS+nx]=Leaves;
   }
  }
+  // Deadwood stands: sparse leafless trunks and broken side branches add
+  // old-growth silhouettes to forest clearings without new tile/save formats.
+  for(int y=8;y<ROWS-8;++y)for(int x=8;x<COLS-8;++x){
+   const int wx=x-COLS/2,wy=y-ROWS/2;
+   const auto ground=world[y*COLS+x];
+   if(ground!=Grass&&ground!=Moss)continue;
+   const auto sample=pcg.sample_surface(wx,wy);
+   if(static_cast<mineplus::Biome>(sample.biome)!=mineplus::Biome::Forest)continue;
+   const unsigned deadwood=hash2(wx+0x6D31,wy-0x2A17);
+   if(deadwood%113u!=0u)continue;
+   if(std::abs(x-COLS/2)<32&&std::abs(y-ROWS/2)<32)continue;
+   if(std::abs(x-BOSS_X)<24&&std::abs(y-BOSS_Y)<24)continue;
+   bool crowded=false;
+   for(int oy=-3;oy<=3&&!crowded;++oy)for(int ox=-3;ox<=3;++ox){
+    const auto nearby=world[(y+oy)*COLS+x+ox];
+    if(nearby==Wood||nearby==Leaves){crowded=true;break;}
+   }
+   if(crowded)continue;
+   const int trunkHeight=2+static_cast<int>((deadwood>>9)%2u);
+   for(int segment=0;segment<trunkHeight;++segment)
+    world[(y-segment)*COLS+x]=Wood;
+   // Broken branches alternate sides and use weathered bone-toned wood accents.
+   const int side=(deadwood&0x1000u)?1:-1;
+   world[(y-1)*COLS+x+side]=Wood;
+   if((deadwood&0x2000u)!=0u)
+    world[(y-2)*COLS+x-side]=Wood;
+   if((deadwood&0x4000u)!=0u)
+    world[(y-2)*COLS+x+side*2]=Bone;
+  }
    // Undergrowth fills the forest floor in small, irregular shrub clusters.
   // Leaves remain walk-through, and the hash makes every patch stable on reload.
   for(int y=2;y<ROWS-2;++y)for(int x=2;x<COLS-2;++x){
