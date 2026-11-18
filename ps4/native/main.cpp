@@ -758,6 +758,26 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
    default: break;
   }
   if(draw){color(r,g,b,alpha);SDL_RenderDrawPoint(renderer,sx,py);}
+  // Sparse reeds and rounded pebbles grow only on sand directly bordering
+  // fresh water. The global tile query keeps the shoreline decoration stable
+  // when the camera moves and avoids placing reeds in dry deserts.
+  if(t==Sand && py<=top+5 && (pattern%11u)==0u){
+   const bool wetEdge=tile_at(wx+1,wy)==Water||tile_at(wx-1,wy)==Water||
+                      tile_at(wx,wy+1)==Water||tile_at(wx,wy-1)==Water;
+   if(wetEdge){
+    const unsigned plant=hash2(wx,wy);
+    if((plant%3u)!=0u){
+     const int lean=static_cast<int>((plant>>5)%3u)-1;
+     color(87,139,83,205);SDL_RenderDrawLine(renderer,sx,py+1,sx+lean,py-5);
+     color(133,178,101,210);SDL_RenderDrawPoint(renderer,sx+lean-1,py-3);
+     SDL_RenderDrawPoint(renderer,sx+lean+1,py-5);
+    }else{
+     color(139,139,129,185);
+     SDL_RenderDrawPoint(renderer,sx,py-1);
+     SDL_RenderDrawPoint(renderer,sx+1,py-2);
+    }
+   }
+  }
   // Wind moves a sparse layer of canopy pixels by at most one screen pixel.
   // The phase is coordinate-stable per tree and uses integer time buckets,
   // avoiding per-pixel trigonometry and keeping the base material texture fixed.
