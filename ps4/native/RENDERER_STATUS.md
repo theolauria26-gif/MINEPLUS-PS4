@@ -285,3 +285,19 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Os testes verificam malha não vazia, quatro vértices por quad, normais axiais, materiais válidos, aplicação de edição do mundo e preservação da saída em falha.
 - Os testes diretos do construtor de índices também rejeitam contagem incompatível de vértices e orçamento insuficiente de índices, além de aceitar corretamente uma malha vazia. Eles calculam o produto vetorial dos dois triângulos de cada quad e confirmam que o winding aponta para a normal externa da face.
 - Isso fecha a preparação CPU dos dados para um backend gráfico, mas ainda não cria buffers GPU, shaders, atlas final ou draw calls. O renderizador jogável continua sendo SDL2/height-field até a integração gráfica ser implementada e validada.
+
+
+## Contrato de staging para vértices voxel
+
+- Foi criado `VoxelGpuVertex`, um formato de staging CPU explícito de 36 bytes: posição float3 (offset 0), UV float2 (offset 12), normal float3 (offset 20) e material uint32 (offset 32).
+- O formato exige layout padrão e cópia trivial, com `static_assert` para stride e offsets. Isso evita depender do padding implícito do vértice de trabalho ou de uma struct de shader ainda não definida.
+- `VoxelGpuUploadBuilder` converte os vértices de malha para esse formato, preservando posição, UV local repetível, normal axial e ID de material. Também rejeita materiais inválidos e limites excedidos.
+- Os testes verificam offsets, stride, conversão dos três eixos, IDs de material e comportamento de falha. O formato agora é compilado no alvo nativo e validado no CI.
+- Importante: isso é apenas um contrato de staging na CPU. O formato ainda precisa ser comparado com os descritores de vértice e a convenção de shader do backend GNM escolhido; não há alocação GPU, upload, shader ou draw call implementado.
+
+## Pesquisa de arquitetura GNM para PS4
+
+- Foi analisada como referência externa a implementação pública do backend GNM do projeto [Xash3D FWGS](https://github.com/FWGS/xash3d-fwgs/tree/master/engine/platform/ps4/gnm). Ela demonstra que um backend funcional exige muito mais do que chamar `sceGnmDrawIndex`: gerenciamento de memória GPU, heaps/alinhamento, buffers transitórios, command buffers, sincronização por labels, invalidação de cache, render targets de cor/profundidade, binários de shader e apresentação via VideoOut.
+- A separação de responsabilidades também é relevante: o dispositivo gráfico possui display e submissão; o renderer solicita espaço e recursos e registra desenhos. O MINEPLUS deve manter esse isolamento para que SDL2 continue como fallback.
+- A referência é licenciada GPL-3.0-or-later. Nenhum código-fonte dela foi copiado para o MINEPLUS; foi usada apenas para identificar responsabilidades e riscos arquiteturais. Antes de reutilizar qualquer implementação, seria necessária uma análise explícita de compatibilidade de licença.
+- O próximo protótipo precisa validar cada bloco isoladamente: alocação/mapeamento GPU; render target e depth; binários VS/PS compatíveis; descriptors e vertex fetch; gravação/submissão de comandos; sincronização e flip. Só depois disso o staging de 36 bytes poderá ser ligado a um pipeline real.
