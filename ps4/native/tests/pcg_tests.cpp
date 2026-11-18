@@ -200,10 +200,11 @@ int main() {
                a.kind == b.kind && a.radius == b.radius);
     }
 
-    // Surface camps are a fifth deterministic landmark family. Verify that
-    // the expanded anchor catalog is stable and that camps occur in the search area.
+    // Surface camps, frontier watch-posts and ancient causeways are deterministic
+    // landmark families. Verify the expanded catalog and its stable anchors.
     bool foundSurfaceCamp = false;
     bool foundFrontierWatchPost = false;
+    bool foundAncientCauseway = false;
     for (int cy = -24; cy <= 24; ++cy) {
         for (int cx = -24; cx <= 24; ++cx) {
             StructureAnchor campA{}, campB{};
@@ -211,15 +212,17 @@ int main() {
             const bool hasCampB = worldB.structure_anchor_for_cell(cx, cy, campB);
             assert(hasCampA == hasCampB);
             if (!hasCampA) continue;
-            assert(campA.kind >= 1 && campA.kind <= 6);
+            assert(campA.kind >= 1 && campA.kind <= 7);
             assert(campA.x == campB.x && campA.y == campB.y &&
                    campA.kind == campB.kind && campA.radius == campB.radius);
             if (campA.kind == 5) foundSurfaceCamp = true;
             if (campA.kind == 6) foundFrontierWatchPost = true;
+            if (campA.kind == 7) foundAncientCauseway = true;
         }
     }
     assert(foundSurfaceCamp);
     assert(foundFrontierWatchPost);
+    assert(foundAncientCauseway);
 
     // Road links select the same nearest landmark pair for identical seeds.
     int roadLinks = 0;
