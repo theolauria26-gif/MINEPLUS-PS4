@@ -182,3 +182,8 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - O mundo externo agora distribui pequenos campos de blocos rochosos em planícies, clareiras de floresta e encostas frias. Cada agrupamento deriva de coordenadas globais e hash determinístico, então permanece estável ao regenerar o mesmo seed.
 - Os agrupamentos reutilizam o material Stone existente, evitam a área inicial e não sobrescrevem troncos, copas, água ou materiais especiais. Não introduzem IDs, entidades, dados de save ou assets externos.
 - No cliente PS4 atual, são formações de terreno na grade 2D projetada; ainda não são pedregulhos 3D com malha, física ou fragmentação.
+
+## Madeira levada pela correnteza
+
+- Margens arenosas diretamente ligadas a água doce agora podem receber raros troncos curtos de madeira à deriva, com extremidade escura e veio claro. O padrão é determinístico por coordenada e complementa os juncos e seixos já existentes.
+- Os troncos são detalhes desenhados no passe de textura, sem bloco novo, colisão, entidade persistente ou alteração de save. São decoração projetada em 2D, não troncos físicos flutuando com simulação de correnteza.
