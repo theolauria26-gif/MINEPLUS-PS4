@@ -595,6 +595,34 @@ void init_world(){
     else if((ox==0||oy==0)&&((ox+oy+int(building.role))&1)==0)
      world[y*COLS+x]=Wood;
    }
+   // Give each building a readable medieval purpose using existing tile materials.
+   // Role 0 is the communal hall; role 1 homes; role 2 smithy; role 3 market;
+   // role 4 rune shrine. These remain walkable tile-map decorations, not 3D props.
+   if(building.role==0){
+    world[(by-1)*COLS+bx]=Ember;
+    world[(by-2)*COLS+bx]=Stone;
+    world[by*COLS+bx-1]=Wood;world[by*COLS+bx+1]=Wood;
+   }else if(building.role==1){
+    world[(by-extent+1)*COLS+bx]=Wood;
+    world[(by-extent+1)*COLS+bx-1]=Wood;
+    world[(by-extent+1)*COLS+bx+1]=Wood;
+    world[(by-1)*COLS+bx]=Moss;
+   }else if(building.role==2){
+    world[(by-1)*COLS+bx]=Ember;
+    world[(by-2)*COLS+bx]=IronBar;
+    world[by*COLS+bx-1]=IronOre;
+    world[by*COLS+bx+1]=DarkStone;
+   }else if(building.role==3){
+    for(int awningX=-1;awningX<=1;++awningX)
+     world[(by-extent+1)*COLS+bx+awningX]=(awningX==0)?Sand:Leaves;
+    world[(by-1)*COLS+bx]=ChestOpened;
+    world[by*COLS+bx-1]=Sand;world[by*COLS+bx+1]=Sand;
+   }else if(building.role==4){
+    world[by*COLS+bx]=AncientRune;
+    world[(by-1)*COLS+bx]=Crystal;
+    world[(by+1)*COLS+bx]=DarkStone;
+    world[by*COLS+bx-1]=Rune;world[by*COLS+bx+1]=Rune;
+   }
    // Doorway faces the central square and remains walkable.
    world[(by+extent)*COLS+bx]=Grass;
   }
