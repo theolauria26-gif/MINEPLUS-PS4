@@ -1,4 +1,5 @@
 #include "procedural_voxel_chunk.hpp"
+#include "voxel_gpu_upload.hpp"
 #include <cassert>
 #include <cstdint>
 #include <iostream>
@@ -34,6 +35,14 @@ int main(){
  assert(!mesh.quads.empty());
  assert(mesh.vertices.size()==mesh.quads.size()*4);
  assert(mesh.indices.size()==mesh.quads.size()*6);
+ std::vector<VoxelGpuVertex> staging;
+ assert(VoxelGpuUploadBuilder::build(mesh.vertices,staging));
+ assert(staging.size()==mesh.vertices.size());
+ for(std::size_t i=0;i<staging.size();++i) {
+  assert(staging[i].x==mesh.vertices[i].x && staging[i].y==mesh.vertices[i].y && staging[i].z==mesh.vertices[i].z);
+  assert(staging[i].u==mesh.vertices[i].u && staging[i].v==mesh.vertices[i].v);
+  assert(staging[i].material==mesh.vertices[i].material);
+ }
  for(std::size_t q=0;q<mesh.quads.size();++q) {
   const std::uint32_t base=static_cast<std::uint32_t>(q*4);
   const std::size_t at=q*6;
