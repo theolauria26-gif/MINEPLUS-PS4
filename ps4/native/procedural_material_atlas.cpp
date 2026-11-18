@@ -26,7 +26,9 @@ constexpr std::array<Palette, MATERIAL_ATLAS_LAST_ID + 1> palettes{{
     {{183,190,198},{91,105,121},{225,203,157},{249,242,215}},  // iron bar
     {{49,38,68},{17,16,31},{129,79,173},{203,157,244}},        // obsidian core
     {{204,91,44},{102,38,35},{255,190,73},{255,235,155}},      // ember catalyst
-    {{92,72,151},{35,29,76},{174,145,244},{229,215,255}}       // ancient rune
+    {{92,72,151},{35,29,76},{174,145,244},{229,215,255}},      // ancient rune
+    {{105,58,48},{48,31,39},{174,75,48},{244,139,66}},         // volcanic rock
+    {{95,104,116},{43,51,65},{174,119,73},{239,194,116}}      // ore
 }};
 std::uint32_t noise(unsigned x, unsigned y, unsigned material) {
     std::uint32_t n=x*0x9E3779B9u ^ y*0x85EBCA6Bu ^ material*0xC2B2AE35u;
@@ -57,6 +59,8 @@ unsigned pattern(unsigned id, unsigned x, unsigned y, std::uint32_t h) {
     case 20: return ((x*3u+y*3u)%16u<3u)?3u:(n<5u?2u:1u);
     case 21: return ((x==y)||(x+y==MATERIAL_ATLAS_TILE_SIZE-1u)||
                      (x%8u==0u&&y%8u==0u))?3u:((n<3u)?2u:1u);
+    case 22: return ((x*5u+y*3u)%11u<3u)?3u:(n<5u?2u:1u); // volcanic seams
+    case 23: return ((x*7u+y*11u)%17u<4u)?3u:(n<5u?0u:1u); // ore grains
     default: return 1u;
     }
 }
