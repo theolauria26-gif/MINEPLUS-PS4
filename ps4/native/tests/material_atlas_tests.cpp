@@ -8,7 +8,10 @@ int main() {
     MaterialAtlasRegion region{};
     assert(!material_atlas_region(0, region));
     assert(region.u_min == 0.0f && region.v_min == 0.0f);
-    assert(!material_atlas_region(22, region));
+    assert(material_atlas_region(22, region));
+    assert(region.tile_x == 5 && region.tile_y == 2);
+    assert(material_atlas_region(23, region));
+    assert(region.tile_x == 6 && region.tile_y == 2);
     assert(!material_atlas_region(255, region));
     bool occupied[MATERIAL_ATLAS_ROWS][MATERIAL_ATLAS_COLUMNS] = {};
     for (std::uint8_t id = MATERIAL_ATLAS_FIRST_ID; id <= MATERIAL_ATLAS_LAST_ID; ++id) {
@@ -32,7 +35,7 @@ int main() {
         assert(region.v_min > 0.0f && region.v_max < 1.0f);
     }
     assert(material_atlas_region(MATERIAL_ATLAS_LAST_ID, region));
-    assert(region.tile_x == 4 && region.tile_y == 2);
+    assert(region.tile_x == 6 && region.tile_y == 2);
     std::cout << "MINEPLUS material atlas tests: OK\n";
     return 0;
 }
