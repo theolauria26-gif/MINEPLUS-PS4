@@ -1,5 +1,11 @@
 # Renderer status and voxel integration plan
 
+
+### Nature reclaiming surface roads
+
+- Deterministic moss and sparse leaf patches now creep along eligible grass/moss shoulders beside generated landmark roads, while the sand road deck remains readable and clear.
+- Edge growth uses world-coordinate hashes and existing tile IDs; it adds no entities, save data, or runtime allocation. This is a 2D tile-map treatment, not dynamic plant simulation.
+
 ### Ancient surface causeways
 
 - A seventh deterministic landmark family adds broken ancient causeways to the overworld: narrow dark-stone decks, weathered side rails, occasional sand-colored cracks, crystal end markers and a central rune trace.
