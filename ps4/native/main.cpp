@@ -568,7 +568,8 @@ void init_world(){
   // A timber palisade encloses the hamlet. Four narrow cardinal gates preserve
   // clear approaches; the circular footprint leaves every house inside the wall.
   for(int oy=-16;oy<=16;++oy)for(int ox=-16;ox<=16;++ox){
-   if(std::max(std::abs(ox),std::abs(oy))!=16||ox*ox+oy*oy>16*16+16)continue;
+   const int ringDistance=ox*ox+oy*oy;
+   if(ringDistance<15*15||ringDistance>16*16)continue;
    if((std::abs(ox)<=1&&oy==-16)||(std::abs(ox)<=1&&oy==16)||
       (std::abs(oy)<=1&&ox==-16)||(std::abs(oy)<=1&&ox==16))continue;
    const int gx=centerX+ox,gy=centerY+oy;
