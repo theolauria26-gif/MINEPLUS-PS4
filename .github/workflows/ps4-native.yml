@@ -88,7 +88,7 @@ jobs:
             ps4/native/save_codec.cpp ps4/native/world_runtime.cpp \
             ps4/native/voxel_mesher.cpp ps4/native/material_atlas.cpp \
             ps4/native/voxel_face_uv.cpp ps4/native/voxel_mesh_vertices.cpp \
-            ps4/native/procedural_voxel_chunk.cpp \
+            ps4/native/voxel_mesh_indices.cpp ps4/native/procedural_voxel_chunk.cpp \
             ps4/native/tests/procedural_voxel_chunk_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-procedural-voxel-chunk-tests"
           "$RUNNER_TEMP/mineplus-procedural-voxel-chunk-tests"
