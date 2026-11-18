@@ -295,6 +295,30 @@ void init_world(){
      if(std::abs(along)<=1&&across==0)tile=AncientRune;
      break;
     }
+    case 8: { // Medieval border keep: curtain wall, four towers and a rune court.
+     const int wall=radius-2;
+     const int inner=std::max(3,radius/2);
+     const int tower=(radius*2)/3;
+     const bool towerCell=std::abs(std::abs(ox)-tower)<=1&&
+                          std::abs(std::abs(oy)-tower)<=1;
+     if(towerCell){
+      tile=(std::abs(ox)==tower&&std::abs(oy)==tower)?Crystal:DarkStone;
+     }else if((std::abs(ox)==wall&&std::abs(oy)<=wall)||
+              (std::abs(oy)==wall&&std::abs(ox)<=wall)){
+      tile=DarkStone;
+     }
+     if((std::abs(ox)==inner&&std::abs(oy)<=inner)||
+        (std::abs(oy)==inner&&std::abs(ox)<=inner))tile=DarkStone;
+     // Two aligned gates keep the courtyard connected to the approach.
+     if((oy==wall&&std::abs(ox)<=2)||(oy==inner&&std::abs(ox)<=1))
+      tile=Air;
+     // The central square is a small keep; its rune approach remains walkable.
+     if(std::abs(ox)<=1&&oy>=0&&oy<wall&&tile==Air)
+      tile=((oy+int(anchor.x))&1)?Sand:AncientRune;
+     if(d<3&&tile==Air)tile=Rune;
+     if(d==0)tile=ChestClosed;
+     break;
+    }
     default: // Bone altar, dark ring and central ancient relic.
      if(d>=r2-2)tile=Bone;
      else if(cardinal&&d>r2/4)tile=DarkStone;
