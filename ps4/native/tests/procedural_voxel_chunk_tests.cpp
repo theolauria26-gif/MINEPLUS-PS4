@@ -5,10 +5,16 @@
 #include <iostream>
 #include <climits>
 using namespace mineplus;
-static std::size_t face_area(const std::vector<MeshQuad>& quads, VoxelFace face) {
+static std::size_t face_area(const std::vector<MeshQuad>& quads, VoxelFace face,
+                             int boundary) {
  std::size_t area=0;
- for(const auto& q:quads) if(q.face==face)
-  area+=static_cast<std::size_t>(q.width)*q.height;
+ for(const auto& q:quads) {
+  if(q.face!=face) continue;
+  const int coordinate = (face==VoxelFace::NegativeX || face==VoxelFace::PositiveX) ? q.x :
+                         (face==VoxelFace::NegativeY || face==VoxelFace::PositiveY) ? q.y : q.z;
+  if(coordinate==boundary)
+   area+=static_cast<std::size_t>(q.width)*q.height;
+ }
  return area;
 }
 int main(){
@@ -37,10 +43,10 @@ int main(){
   if(a.get(x,VoxelChunk::SIZE_Y-1,z)!=0 && a.get(x,VoxelChunk::SIZE_Y,z)==0) ++north_expected;
   if(north.get(x,0,z)!=0 && north.get(x,-1,z)==0) ++south_expected;
  }
- assert(face_area(west_mesh.quads,VoxelFace::PositiveX)==west_expected);
- assert(face_area(east_mesh.quads,VoxelFace::NegativeX)==east_expected);
- assert(face_area(west_mesh.quads,VoxelFace::PositiveY)==north_expected);
- assert(face_area(north_mesh.quads,VoxelFace::NegativeY)==south_expected);
+ assert(face_area(west_mesh.quads,VoxelFace::PositiveX,VoxelChunk::SIZE_X)==west_expected);
+ assert(face_area(east_mesh.quads,VoxelFace::NegativeX,0)==east_expected);
+ assert(face_area(west_mesh.quads,VoxelFace::PositiveY,VoxelChunk::SIZE_Y)==north_expected);
+ assert(face_area(north_mesh.quads,VoxelFace::NegativeY,0)==south_expected);
 
  for(int z=0;z<VoxelChunk::SIZE_Z;++z) for(int y=0;y<VoxelChunk::SIZE_Y;++y){assert(a.get(16,y,z)==east.get(0,y,z)); assert(a.get(15,y,z)==east.get(-1,y,z));}
  assert(ProceduralVoxelChunkBuilder::build(world,{-16,-16},negative));
