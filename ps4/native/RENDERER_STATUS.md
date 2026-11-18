@@ -250,3 +250,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - The procedural exterior landmark catalog includes a ninth family: a guarded crossing with a stone/rune deck, water channel, timber details and two compact crystal-capped bridgeheads.
 - Orientation and placement are derived from the landmark's world seed and anchor, and tests verify that the new family is reproducible.
 - The crossing reuses existing tile IDs. In the current renderer it is a top-down tile-map landmark; it does not yet model flowing 3D water, bridge elevation, destructible supports or traversal physics over a real ravine.
+
+## Rune waystones beside exterior roads
+
+- Long procedural landmark routes can now receive sparse rune waystones on the shoulders. Their spacing follows the road rasterization step and their material choice is coordinate-hashed, so the decoration is stable for a fixed world.
+- Markers only replace open shoulder ground; the road's walkable centerline remains unchanged. Existing Stone and AncientRune tiles are reused.
+- These are static 2D navigation landmarks, not interactive signposts, readable text, animated beacons or a full waypoint/quest navigation system.
