@@ -56,4 +56,27 @@ bool VoxelGpuUploadBuilder::build(
     return true;
 }
 
+bool VoxelGpuMeshUploadBuilder::build(
+    const std::vector<VoxelMeshVertex>& source_vertices,
+    const std::vector<std::uint32_t>& source_indices,
+    std::vector<VoxelGpuVertex>& output_vertices,
+    std::vector<std::uint32_t>& output_indices,
+    std::size_t max_vertices, std::size_t max_indices) {
+    output_vertices.clear();
+    output_indices.clear();
+    if (source_vertices.size() > max_vertices ||
+        source_indices.size() > max_indices ||
+        source_indices.size() % 3u != 0u) return false;
+    for (const std::uint32_t index : source_indices) {
+        if (index >= source_vertices.size()) return false;
+    }
+
+    std::vector<VoxelGpuVertex> staged_vertices;
+    if (!VoxelGpuUploadBuilder::build(source_vertices, staged_vertices, max_vertices))
+        return false;
+    std::vector<std::uint32_t> staged_indices(source_indices);
+    output_vertices.swap(staged_vertices);
+    output_indices.swap(staged_indices);
+    return true;
+}
 } // namespace mineplus
