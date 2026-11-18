@@ -2,6 +2,7 @@
 #include "pcg_world.hpp"
 #include "voxel_mesher.hpp"
 #include "voxel_mesh_vertices.hpp"
+#include "voxel_mesh_indices.hpp"
 #include "world_runtime.hpp"
 #include <cstdint>
 
@@ -21,6 +22,7 @@ public:
 struct ProceduralVoxelMesh {
  std::vector<MeshQuad> quads;
  std::vector<VoxelMeshVertex> vertices;
+ std::vector<std::uint32_t> indices;
 };
 class ProceduralVoxelMeshBuilder {
 public:
