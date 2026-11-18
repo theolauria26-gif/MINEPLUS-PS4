@@ -795,7 +795,7 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
      color(91,63,43,225);
      SDL_RenderDrawLine(renderer,sx,py-1,sx+direction*length,py-1);
      color(133,91,57,235);
-     SDL_RenderDrawLine(renderer,sx+direction,sx?py-2:py-2,
+     SDL_RenderDrawLine(renderer,sx+direction,py-2,
                         sx+direction*(length-1),py-2);
      color(63,48,39,225);
      SDL_RenderDrawPoint(renderer,sx+direction*length,py-1);
