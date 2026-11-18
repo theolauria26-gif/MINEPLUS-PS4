@@ -187,3 +187,8 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - Margens arenosas diretamente ligadas a água doce agora podem receber raros troncos curtos de madeira à deriva, com extremidade escura e veio claro. O padrão é determinístico por coordenada e complementa os juncos e seixos já existentes.
 - Os troncos são detalhes desenhados no passe de textura, sem bloco novo, colisão, entidade persistente ou alteração de save. São decoração projetada em 2D, não troncos físicos flutuando com simulação de correnteza.
+
+## Árvores mortas e galhos expostos nas florestas
+
+- Clareiras de florestas podem receber árvores mortas esparsas, com troncos sem copa, galhos quebrados e alguns detalhes claros de madeira envelhecida. A colocação é determinística por coordenada, evita árvores próximas, o início e a arena do chefe.
+- A decoração reutiliza os materiais Wood e Bone existentes, sem novos IDs, entidades, colisões especiais ou campos de save. No renderizador atual, são silhuetas da grade 2D projetada, não árvores 3D com física, queda ou decomposição simulada.
