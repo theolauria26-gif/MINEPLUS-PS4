@@ -29,5 +29,20 @@ int main(){
  const auto preserved=edited.cells;
  assert(!ProceduralVoxelChunkBuilder::build(runtime,{INT32_MAX,0},edited));
  assert(edited.cells==preserved);
+ ProceduralVoxelMesh mesh;
+ assert(ProceduralVoxelMeshBuilder::build(world,{0,0},mesh));
+ assert(!mesh.quads.empty());
+ assert(mesh.vertices.size()==mesh.quads.size()*4);
+ for(const auto& vertex:mesh.vertices) {
+  assert(vertex.material!=0);
+  const int normal_count=(vertex.normal_x!=0)+(vertex.normal_y!=0)+(vertex.normal_z!=0);
+  assert(normal_count==1);
+ }
+ const auto old_vertex_count=mesh.vertices.size();
+ assert(!ProceduralVoxelMeshBuilder::build(world,{0,0},mesh,1,262144));
+ assert(mesh.vertices.size()==old_vertex_count);
+ ProceduralVoxelMesh edited_mesh;
+ assert(ProceduralVoxelMeshBuilder::build(runtime,{0,0},edited_mesh));
+ assert(!edited_mesh.vertices.empty());
  std::cout<<"MINEPLUS procedural voxel chunk tests: OK\n";
 }
