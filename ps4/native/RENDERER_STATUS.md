@@ -1,5 +1,11 @@
 # Renderer status and voxel integration plan
 
+### Ancient surface causeways
+
+- A seventh deterministic landmark family adds broken ancient causeways to the overworld: narrow dark-stone decks, weathered side rails, occasional sand-colored cracks, crystal end markers and a central rune trace.
+- Causeway orientation and damage patterns derive from the world-coordinate hash, so the same seed reproduces the same silhouette across reloads.
+- The family reuses existing tile IDs and the current surface rasterizer; it is a 2D top-down tile pattern, not a raised 3D bridge mesh or a physically simulated span. Automated PCG tests verify that the new anchor family appears and remains deterministic.
+
 
 ### Surface roots and lichen
 
