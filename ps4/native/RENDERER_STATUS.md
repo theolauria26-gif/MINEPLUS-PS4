@@ -278,7 +278,8 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 ## Pipeline CPU de malha voxel integrada
 
 - Um novo caminho CPU conecta a amostragem procedural ou o mundo editável (WorldRuntime) ao VoxelChunk, ao mesher greedy e ao construtor de vértices.
-- ProceduralVoxelMeshBuilder entrega quads e vértices com material, UV local e normal axial em uma única operação, com limites explícitos para quads e vértices.
+- ProceduralVoxelMeshBuilder entrega quads, vértices com material/UV/normal axial e índices `uint32` para dois triângulos por quad, com limites explícitos para quads e vértices.
+- O buffer de índices mantém a ordem anti-horária externa dos quatro vértices e valida contagem, orçamento e limites antes de produzir a lista indexada.
 - A saída é construída temporariamente e só substitui o resultado anterior quando todas as etapas passam; falha de geração ou estouro de orçamento preserva a malha anterior.
 - Os testes verificam malha não vazia, quatro vértices por quad, normais axiais, materiais válidos, aplicação de edição do mundo e preservação da saída em falha.
 - Isso fecha a preparação CPU dos dados para um backend gráfico, mas ainda não cria buffers GPU, shaders, atlas final ou draw calls. O renderizador jogável continua sendo SDL2/height-field até a integração gráfica ser implementada e validada.
