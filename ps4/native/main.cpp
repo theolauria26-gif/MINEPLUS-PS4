@@ -374,6 +374,16 @@ void init_world(){
    }else if(ground!=ChestClosed&&ground!=DarkStone&&ground!=AncientRune&&
       ground!=Crystal&&ground!=ObsidianCore&&ground!=Bone)
     world[ty*COLS+tx]=Sand;
+   // Forest growth slowly reclaims road shoulders without covering the path.
+   const int sideX=(ax>=ay)?0:1,sideY=(ax>=ay)?1:0;
+   for(int sideSign : {-1,1}){
+    const int edgeX=tx+sideX*sideSign,edgeY=ty+sideY*sideSign;
+    if(edgeX<2||edgeY<2||edgeX>=COLS-2||edgeY>=ROWS-2)continue;
+    auto& edgeTile=world[edgeY*COLS+edgeX];
+    const unsigned growth=hash2(edgeX*17+0x2A7,edgeY*23-0x1D3);
+    if((edgeTile==Grass||edgeTile==Moss)&&growth%17u==0u)
+     edgeTile=(growth%51u==0u)?Leaves:Moss;
+   }
    if(tx==x1&&ty==y1)break;
    const int twice=2*error;
    if(twice>-ay){error-=ay;tx+=stepX;}
