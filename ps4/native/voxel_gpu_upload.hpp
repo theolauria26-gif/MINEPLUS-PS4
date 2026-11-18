@@ -38,4 +38,16 @@ public:
                       std::size_t max_vertices = 262144);
 };
 
+// Validates a complete CPU mesh package and prepares matching vertex/index streams.
+// This remains CPU staging; the PS4 backend must still allocate and upload buffers.
+class VoxelGpuMeshUploadBuilder {
+public:
+    static bool build(const std::vector<VoxelMeshVertex>& source_vertices,
+                      const std::vector<std::uint32_t>& source_indices,
+                      std::vector<VoxelGpuVertex>& output_vertices,
+                      std::vector<std::uint32_t>& output_indices,
+                      std::size_t max_vertices = 262144,
+                      std::size_t max_indices = 393216);
+};
+
 } // namespace mineplus
