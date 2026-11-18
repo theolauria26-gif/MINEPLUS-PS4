@@ -61,8 +61,10 @@ bool ProceduralVoxelMeshBuilder::build(WorldRuntime& world,
  ProceduralVoxelMesh generated;
  if(!VoxelMesher::build(voxels,generated.quads,max_quads)) return false;
  if(!VoxelMeshVertexBuilder::build(generated.quads,generated.vertices,max_vertices)) return false;
+ if(!VoxelMeshIndexBuilder::build(generated.quads,generated.vertices.size(),generated.indices)) return false;
  output.quads.swap(generated.quads);
  output.vertices.swap(generated.vertices);
+ output.indices.swap(generated.indices);
  return true;
 }
 
