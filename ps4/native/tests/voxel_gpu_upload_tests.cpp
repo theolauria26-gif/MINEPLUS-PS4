@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <vector>
 
 using namespace mineplus;
@@ -49,6 +50,24 @@ int main() {
     assert(!VoxelGpuUploadBuilder::build(source, rejected));
     assert(rejected.empty());
 
+    source[1].material = 22;
+    source[1].normal_x = 1;
+    source[1].normal_y = 1;
+    assert(!VoxelGpuUploadBuilder::build(source, rejected));
+    assert(rejected.empty());
+
+    source[1].normal_x = 0;
+    source[1].normal_y = 1;
+    source[1].material = 24;
+    assert(!VoxelGpuUploadBuilder::build(source, rejected));
+    assert(rejected.empty());
+
+    source[1].material = 22;
+    source[1].x = std::numeric_limits<float>::infinity();
+    assert(!VoxelGpuUploadBuilder::build(source, rejected));
+    assert(rejected.empty());
+
+    source[1].x = -8.0f;
     std::vector<VoxelMeshVertex> empty;
     assert(VoxelGpuUploadBuilder::build(empty, output));
     assert(output.empty());
