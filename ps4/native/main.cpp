@@ -449,6 +449,31 @@ void init_world(){
        (edgeTile==Grass||edgeTile==Moss||edgeTile==Sand))
      edgeTile=(marker&4u)?AncientRune:Stone;
    }
+    // Rare roadside rest stops make long routes feel used by travelers.
+    // A tiny fire ring and a timber bench are only placed on open ground;
+    // the road centerline and nearby structures remain untouched.
+    if(roadStep>20&&roadStep%97==48&&marker%5u==0u&&
+       (edgeTile==Grass||edgeTile==Moss||edgeTile==Sand)){
+     const int campX=edgeX+sideX*sideSign*2;
+     const int campY=edgeY+sideY*sideSign*2;
+     const int benchX=campX+sideX*sideSign;
+     const int benchY=campY+sideY*sideSign;
+     const int ringX[4]={campX-1,campX+1,campX,campX};
+     const int ringY[4]={campY,campY,campY-1,campY+1};
+     bool clear=campX>2&&campY>2&&campX<COLS-3&&campY<ROWS-3&&
+                benchX>1&&benchY>1&&benchX<COLS-2&&benchY<ROWS-2;
+     for(int k=0;k<4&&clear;++k){
+      const auto ground=tile_at(ringX[k],ringY[k]);
+      clear=ground==Grass||ground==Moss||ground==Sand;
+     }
+     const auto benchGround=tile_at(benchX,benchY);
+     clear=clear&&(benchGround==Grass||benchGround==Moss||benchGround==Sand);
+     if(clear){
+      world[campY*COLS+campX]=Ember;
+      for(int k=0;k<4;++k)world[ringY[k]*COLS+ringX[k]]=Stone;
+      world[benchY*COLS+benchX]=Wood;
+     }
+    }
    ++roadStep;
    if(tx==x1&&ty==y1)break;
    const int twice=2*error;
