@@ -174,3 +174,11 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - Bancos de areia em contato direto com água doce podem receber pequenos juncos e seixos. A colocação usa coordenadas globais e hash determinístico; a consulta aos quatro vizinhos evita vegetação em areia seca/desértica.
 - O detalhe é desenhado no passe de textura SDL existente, sem novos IDs de bloco, entidades, alocações por pixel ou alterações no formato de save. Continua sendo decoração 2D projetada, não vegetação 3D com colisão.
+
+
+
+## Formações naturais de rochas na superfície
+
+- O mundo externo agora distribui pequenos campos de blocos rochosos em planícies, clareiras de floresta e encostas frias. Cada agrupamento deriva de coordenadas globais e hash determinístico, então permanece estável ao regenerar o mesmo seed.
+- Os agrupamentos reutilizam o material Stone existente, evitam a área inicial e não sobrescrevem troncos, copas, água ou materiais especiais. Não introduzem IDs, entidades, dados de save ou assets externos.
+- No cliente PS4 atual, são formações de terreno na grade 2D projetada; ainda não são pedregulhos 3D com malha, física ou fragmentação.
