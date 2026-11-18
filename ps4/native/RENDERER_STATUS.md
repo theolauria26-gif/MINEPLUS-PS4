@@ -256,3 +256,8 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Long procedural landmark routes can now receive sparse rune waystones on the shoulders. Their spacing follows the road rasterization step and their material choice is coordinate-hashed, so the decoration is stable for a fixed world.
 - Markers only replace open shoulder ground; the road's walkable centerline remains unchanged. Existing Stone and AncientRune tiles are reused.
 - These are static 2D navigation landmarks, not interactive signposts, readable text, animated beacons or a full waypoint/quest navigation system.
+
+## Paradas de viajantes nas estradas externas
+
+- Trechos longos de estradas podem receber pequenas paradas de descanso: uma fogueira central, um anel baixo de pedras e um banco de madeira. A geração é determinística e só ocupa terreno aberto no acostamento, preservando o caminho e evitando água, lava, árvores e estruturas existentes.
+- As paradas reutilizam Ember, Stone e Wood, sem novos IDs de bloco, entidades persistentes ou alterações no formato de save. No renderizador atual são conjuntos decorativos 2D; ainda não incluem NPCs acampados, interação para cozinhar, iluminação dinâmica ou simulação de fogo.
