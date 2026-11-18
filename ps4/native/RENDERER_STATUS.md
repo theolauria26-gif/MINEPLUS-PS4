@@ -63,12 +63,13 @@ A successful CI PKG proves that the native application compiles and packages. It
 
 ## OpenOrbis GPU API audit
 
-The pinned OpenOrbis toolchain source tree was inspected directly:
+The pinned OpenOrbis v0.5.4 source tag was inspected at commit `b458dfd9d2f5c40aa249b127c9b9b4488afdc686`:
 
-- `include/orbis/GnmDriver.h` declares low-level GNM entry points including `sceGnmDrawIndex`, `sceGnmDrawIndexAuto`, `sceGnmSetVsShader`, `sceGnmSetPsShader`, `sceGnmSubmitCommandBuffers`, and `sceGnmSubmitDone`.
-- The declarations confirm that a native GNM draw/submit route exists in the toolchain. They do not, by themselves, provide a complete renderer: the header contains many untyped/empty declarations, and the project does not yet own command-buffer allocation, GPU memory mapping, shader binaries, pipeline state, render targets, synchronization, or presentation.
-- The OpenOrbis SDL2 sample confirms SDL2 is packaged and linked as `-lSDL2`; it is a 2D SDL sample, not evidence of a voxel GPU mesh renderer.
-- The current MINEPLUS Makefile links `-lSDL2` and PS4 system libraries, but not a GNM rendering module. No GNM calls are made by the game.
+- `include/orbis/GnmDriver.h` declares typed low-level entry points for `sceGnmDrawIndex`, `sceGnmSetVsShader`, `sceGnmSetPsShader`, `sceGnmSubmitCommandBuffers`, and `sceGnmSubmitAndFlipCommandBuffers`. Many adjacent declarations are still empty/untype-safe stubs, so the header alone is not a complete graphics API integration guide.
+- `include/orbis/libkernel.h` declares direct-memory allocation, mapping, unmapping and release functions. `include/orbis/VideoOut.h` declares buffer registration and flip submission.
+- The sample `samples/_common/graphics.cpp` is a CPU framebuffer example: it allocates/maps display memory, registers frame buffers with VideoOut, writes pixels directly through a CPU pointer, then submits a VideoOut flip. It does not issue GNM draw calls and is not a 3D GPU mesh sample.
+- This confirms the platform has the low-level building blocks, but does not provide a ready-made voxel renderer. MINEPLUS still needs verified command-buffer construction, GPU resource placement, shader binaries and registers, pipeline/depth state, texture descriptors, synchronization and presentation before a GNM path can be trusted.
+- The current MINEPLUS Makefile links `-lSDL2` and PS4 system libraries, but the game does not call GNM. The active SDL2 renderer remains the 2D height-field path.
 
 ### Safe implementation sequence
 
