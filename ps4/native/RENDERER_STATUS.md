@@ -292,7 +292,7 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Foi criado `VoxelGpuVertex`, um formato de staging CPU explícito de 36 bytes: posição float3 (offset 0), UV float2 (offset 12), normal float3 (offset 20) e material uint32 (offset 32).
 - O formato exige layout padrão e cópia trivial, com `static_assert` para stride e offsets. Isso evita depender do padding implícito do vértice de trabalho ou de uma struct de shader ainda não definida.
 - `VoxelGpuUploadBuilder` converte os vértices de malha para esse formato, preservando posição, UV local repetível, normal axial e ID de material. Também rejeita materiais inválidos e limites excedidos.
-- Os testes verificam offsets, stride, conversão dos três eixos, IDs de material e comportamento de falha. O formato agora é compilado no alvo nativo e validado no CI.
+- Os testes verificam offsets, stride, conversão dos três eixos, IDs de material e comportamento de falha. O teste de integração também converte a malha realmente gerada pelo mundo procedural para o staging e compara posição, UV e material vértice a vértice. O formato agora é compilado no alvo nativo e validado no CI.
 - Importante: isso é apenas um contrato de staging na CPU. O formato ainda precisa ser comparado com os descritores de vértice e a convenção de shader do backend GNM escolhido; não há alocação GPU, upload, shader ou draw call implementado.
 
 ## Pesquisa de arquitetura GNM para PS4
