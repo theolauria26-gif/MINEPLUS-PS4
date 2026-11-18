@@ -316,3 +316,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - Added `VoxelGpuMeshUploadBuilder` to validate and stage the vertex and uint32 index streams as one mesh package. It rejects index counts not divisible by three, out-of-range indices and vertex/index budget overruns, and clears both outputs on failure.
 - The procedural chunk integration test now stages an actual generated mesh and verifies the complete index stream. This is still CPU-side preparation; GPU allocation, upload, command submission and presentation remain unimplemented.
+
+
+### Chunk-boundary mesh validation
+
+- The procedural voxel integration test now builds meshes for two adjacent generated chunks and compares the greedy-merged boundary-face area against the actual solid/air transitions in each chunk's one-voxel halo.
+- This verifies that shared solid faces are culled on both sides of a chunk seam while genuinely exposed boundary faces remain. It is a CPU geometry regression test; chunk visibility, GPU submission and in-game 3D presentation are still separate work.
