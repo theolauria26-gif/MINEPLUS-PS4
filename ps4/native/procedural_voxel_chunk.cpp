@@ -1,4 +1,5 @@
 #include "procedural_voxel_chunk.hpp"
+#include "voxel_mesh_vertices.hpp"
 #include <limits>
 namespace mineplus {
 bool ProceduralVoxelChunkBuilder::build(const PcgWorld& world, ProceduralChunkOrigin origin, VoxelChunk& output) {
@@ -32,4 +33,35 @@ bool ProceduralVoxelChunkBuilder::build(WorldRuntime& world, ProceduralChunkOrig
  }
  output=generated; return true;
 }
+
+bool ProceduralVoxelMeshBuilder::build(const PcgWorld& world,
+                                       ProceduralChunkOrigin origin,
+                                       ProceduralVoxelMesh& output,
+                                       std::size_t max_quads,
+                                       std::size_t max_vertices) {
+ VoxelChunk voxels{};
+ if(!ProceduralVoxelChunkBuilder::build(world,origin,voxels)) return false;
+ ProceduralVoxelMesh generated;
+ if(!VoxelMesher::build(voxels,generated.quads,max_quads)) return false;
+ if(!VoxelMeshVertexBuilder::build(generated.quads,generated.vertices,max_vertices)) return false;
+ output.quads.swap(generated.quads);
+ output.vertices.swap(generated.vertices);
+ return true;
+}
+
+bool ProceduralVoxelMeshBuilder::build(WorldRuntime& world,
+                                       ProceduralChunkOrigin origin,
+                                       ProceduralVoxelMesh& output,
+                                       std::size_t max_quads,
+                                       std::size_t max_vertices) {
+ VoxelChunk voxels{};
+ if(!ProceduralVoxelChunkBuilder::build(world,origin,voxels)) return false;
+ ProceduralVoxelMesh generated;
+ if(!VoxelMesher::build(voxels,generated.quads,max_quads)) return false;
+ if(!VoxelMeshVertexBuilder::build(generated.quads,generated.vertices,max_vertices)) return false;
+ output.quads.swap(generated.quads);
+ output.vertices.swap(generated.vertices);
+ return true;
+}
+
 } // namespace mineplus
