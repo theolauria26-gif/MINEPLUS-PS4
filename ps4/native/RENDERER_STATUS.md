@@ -283,5 +283,5 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - O buffer de índices mantém a ordem anti-horária externa dos quatro vértices e valida contagem, orçamento e limites antes de produzir a lista indexada.
 - A saída é construída temporariamente e só substitui o resultado anterior quando todas as etapas passam; falha de geração ou estouro de orçamento preserva a malha anterior.
 - Os testes verificam malha não vazia, quatro vértices por quad, normais axiais, materiais válidos, aplicação de edição do mundo e preservação da saída em falha.
-- Os testes diretos do construtor de índices também rejeitam contagem incompatível de vértices e orçamento insuficiente de índices, além de aceitar corretamente uma malha vazia.
+- Os testes diretos do construtor de índices também rejeitam contagem incompatível de vértices e orçamento insuficiente de índices, além de aceitar corretamente uma malha vazia. Eles calculam o produto vetorial dos dois triângulos de cada quad e confirmam que o winding aponta para a normal externa da face.
 - Isso fecha a preparação CPU dos dados para um backend gráfico, mas ainda não cria buffers GPU, shaders, atlas final ou draw calls. O renderizador jogável continua sendo SDL2/height-field até a integração gráfica ser implementada e validada.
