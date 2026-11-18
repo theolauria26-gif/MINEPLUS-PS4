@@ -310,3 +310,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - Added `material_atlas_resolve_uv()` as a CPU reference for future fragment-shader atlas lookup. It wraps positive and negative tile-local UVs with floor-based fractional coordinates, applies the half-texel inset, and rejects unknown material IDs or non-finite UVs.
 - Portable regression tests cover repeat boundaries, multi-tile greedy UVs, negative coordinates, invalid material IDs and NaN inputs. This is a tested CPU contract, not a compiled or running PS4 shader.
+
+
+### Complete voxel mesh staging
+
+- Added `VoxelGpuMeshUploadBuilder` to validate and stage the vertex and uint32 index streams as one mesh package. It rejects index counts not divisible by three, out-of-range indices and vertex/index budget overruns, and clears both outputs on failure.
+- The procedural chunk integration test now stages an actual generated mesh and verifies the complete index stream. This is still CPU-side preparation; GPU allocation, upload, command submission and presentation remain unimplemented.
