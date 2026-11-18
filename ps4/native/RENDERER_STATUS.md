@@ -223,3 +223,10 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - Surface landmark overgrowth now samples the untouched terrain around each structure. In snowbound surroundings, exposed outer masonry receives ice and perimeter growth becomes snow; in temperate surroundings, the existing moss and leaf treatment remains.
 - The choice is deterministic for a fixed world seed and uses existing tile IDs. It does not add a new biome system, 3D material blending, or dynamic snow accumulation.
+
+
+## Medieval dark-fantasy border keeps
+
+- The exterior landmark catalog now includes a deterministic medieval keep: a broken circular-square curtain wall, four compact corner towers with crystal caps, an inner courtyard wall, aligned gates and a rune-marked approach to a central treasure.
+- The keep reuses existing DarkStone, Crystal, Sand, AncientRune, Rune and Chest tiles. Placement is derived from the world seed and macro-cell coordinates, so the same world regenerates the same structure without new save fields.
+- The structure is a top-down tile-map footprint projected by the current SDL height-field renderer. It is a first settlement-scale landmark, not yet a multi-storey 3D castle, enterable building interior or fully simulated medieval town.
