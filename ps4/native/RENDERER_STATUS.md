@@ -269,6 +269,12 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Foram adicionados os materiais FarmSoil, Crops e HayBale, com detalhes de pixel determinísticos ancorados nas coordenadas do mundo. São materiais visuais e caminháveis; as cercas continuam usando Wood e mantêm a colisão já existente.
 - A fazenda é uma composição estática de tiles no renderizador SDL atual. Ainda não há sistema de plantio/crescimento, colheita, irrigação interativa, estoque agrícola ou NPCs trabalhando nos campos.
 
+## Atlas procedural de materiais voxel
+
+- O atlas CPU gera pixels RGBA8 determinísticos em uma grade 8×4, com células de 32×32 e paletas/padrões próprios para os 23 IDs de material aceitos pelo contrato.
+- Rocha vulcânica e minério possuem agora paletas e padrões dedicados; os testes verificam cobertura, regiões exclusivas, transparência das células reservadas e variação interna de cada textura.
+- O atlas é dado de preparação CPU: ainda não está carregado como textura GPU nem ligado ao desenho de chunks na tela.
+
 ## Pipeline CPU de malha voxel integrada
 
 - Um novo caminho CPU conecta a amostragem procedural ou o mundo editável (WorldRuntime) ao VoxelChunk, ao mesher greedy e ao construtor de vértices.
