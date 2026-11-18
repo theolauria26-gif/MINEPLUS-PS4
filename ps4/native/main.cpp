@@ -23,7 +23,7 @@
 #include "boss_combat.hpp"
 namespace {
 constexpr int W=1280,H=720,COLS=2048,ROWS=2048,LEGACY_COLS=1024,LEGACY_ROWS=1024,TILE=36,VIEW_COLS=24,VIEW_ROWS=14;
-enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21,ChestClosed=22,ChestOpened=23,Leaves=24};
+enum Tile:unsigned char{Air=0,Grass=1,Dirt=2,Stone=3,Wood=4,Moss=5,Crystal=6,Bone=7,DarkStone=8,Sand=9,Snow=10,Ice=11,Lava=12,Water=13,IronOre=14,Obsidian=15,Ember=16,Rune=17,IronBar=18,ObsidianCore=19,EmberCatalyst=20,AncientRune=21,ChestClosed=22,ChestOpened=23,Leaves=24,FarmSoil=31,Crops=32,HayBale=33};
 std::array<unsigned char,COLS*ROWS> world{};
 mineplus::FixedWorldGrid fixedWorldGrid(world.data(), COLS, ROWS);
 mineplus::WorldGridView& worldGrid = fixedWorldGrid;
@@ -614,14 +614,18 @@ void init_world(){
    world[centerY*COLS+centerX+offset]=Sand;
    world[(centerY+offset)*COLS+centerX]=Sand;
   }
-  for(int bedY : {-5,5})for(int bedX : {-5,5}){
-   for(int oy=-1;oy<=1;++oy)for(int ox=-1;ox<=1;++ox){
-    const int gx=centerX+bedX+ox,gy=centerY+bedY+oy;
-    if(gx<2||gy<2||gx>=COLS-2||gy>=ROWS-2)continue;
-    world[gy*COLS+gx]=(ox==0&&oy==0)?Moss:Leaves;
+   // Four compact crop beds sit in the diagonal gaps, leaving the cardinal
+   // village paths open. The buildings rasterized next can safely cover overlaps.
+   for(int bedY : {-7,7})for(int bedX : {-7,7}){
+    const unsigned bedSeed=hash2(centerX+bedX*19,centerY+bedY*23);
+    for(int oy=-1;oy<=1;++oy)for(int ox=-1;ox<=1;++ox){
+     const int gx=centerX+bedX+ox,gy=centerY+bedY+oy;
+     if(gx<2||gy<2||gx>=COLS-2||gy>=ROWS-2)continue;
+     const unsigned row=(bedSeed+unsigned((ox+2)*3+(oy+2)*5))%4u;
+     world[gy*COLS+gx]=row==0u?FarmSoil:Crops;
+    }
    }
-  }
-  // A timber palisade encloses the hamlet. Four narrow cardinal gates preserve
+   // A timber palisade encloses the hamlet. Four narrow cardinal gates preserve
   // clear approaches; the circular footprint leaves every house inside the wall.
   for(int oy=-16;oy<=16;++oy)for(int ox=-16;ox<=16;++ox){
    const int ringDistance=ox*ox+oy*oy;
@@ -682,7 +686,35 @@ void init_world(){
    // Doorway faces the central square and remains walkable.
    world[(by+extent)*COLS+bx]=Grass;
   }
-  for(std::uint8_t resident=0;resident<settlement.resident_count&&settlementNpcCount<settlementNpcs.size();++resident){
+  // A small fenced farm extends the hamlet into the surrounding countryside.
+   // Search all four diagonals and use the first clear patch; roads, trees,
+   // water, ruins and neighboring structures are never overwritten.
+   const int farmOffsets[4][2]={{-20,-18},{20,-18},{-20,18},{20,18}};
+   const unsigned farmSeed=hash2(settlement.x+0x391,settlement.y-0x5A7);
+   for(int attempt=0;attempt<4;++attempt){
+    const int slot=(int(farmSeed%4u)+attempt)%4;
+    const int farmX=centerX+farmOffsets[slot][0];
+    const int farmY=centerY+farmOffsets[slot][1];
+    bool clear=farmX>8&&farmY>8&&farmX<COLS-9&&farmY<ROWS-9;
+    for(int oy=-3;oy<=3&&clear;++oy)for(int ox=-4;ox<=4;++ox){
+     const auto ground=tile_at(farmX+ox,farmY+oy);
+     if(ground!=Grass&&ground!=Moss&&ground!=Dirt){clear=false;break;}
+    }
+    if(!clear)continue;
+    const int gateX=farmOffsets[slot][0]>0?-4:4;
+    for(int oy=-3;oy<=3;++oy)for(int ox=-4;ox<=4;++ox){
+     const int gx=farmX+ox,gy=farmY+oy;
+     const bool fence=std::abs(ox)==4||std::abs(oy)==3;
+     const bool gate=fence&&ox==gateX&&oy==0;
+     if(fence&&!gate){world[gy*COLS+gx]=Wood;continue;}
+     if(ox==2&&oy==1){world[gy*COLS+gx]=HayBale;continue;}
+     if(ox==-2&&oy==-1){world[gy*COLS+gx]=Water;continue;}
+     const unsigned crop=hash2(gx+int(farmSeed),gy-int(farmSeed>>7));
+     world[gy*COLS+gx]=((oy+2)%2==0&&crop%5u!=0u)?Crops:FarmSoil;
+    }
+    break;
+   }
+   for(std::uint8_t resident=0;resident<settlement.resident_count&&settlementNpcCount<settlementNpcs.size();++resident){
    int hx=centerX,hy=centerY;std::uint8_t role=static_cast<std::uint8_t>(resident%5u);
    if(resident<5u){mineplus::SettlementBuilding building{};if(!mineplus::surface_settlement_building(settlement,resident,building))continue;hx+=building.offset_x;hy+=building.offset_y+building.half_extent+1;role=building.role;}
    else{hx+=resident==5u?3:-3;hy+=resident==5u?-3:3;}
@@ -833,6 +865,7 @@ void tile_color(int t,Uint8&r,Uint8&g,Uint8&b){switch(t){
  case ObsidianCore:r=82;g=55;b=116;break;case EmberCatalyst:r=255;g=133;b=49;break;
  case AncientRune:r=124;g=231;b=190;break;
   case ChestClosed:r=154;g=91;b=48;break;case ChestOpened:r=78;g=58;b=42;break;case Leaves:r=48;g=116;b=55;break;
+  case FarmSoil:r=105;g=68;b=43;break;case Crops:r=91;g=139;b=59;break;case HayBale:r=191;g=151;b=75;break;
   case 25:r=100;g=190;b=105;break;case 26:r=190;g=181;b=150;break;
   case 27:r=150;g=158;b=168;break;case 28:r=105;g=190;b=210;break;case 29:r=150;g=105;b=210;break;case 30:r=245;g=125;b=55;break;default:r=16;g=23;b=29;break;
 }}
@@ -896,6 +929,36 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
     g=cluster==0u?111:static_cast<Uint8>(cluster<4u?99:132);
     b=cluster==0u?76:static_cast<Uint8>(cluster<4u?72:91);
     if((pattern%37u)==0u){r=218;g=159;b=111;}
+    break;
+   }
+   case FarmSoil: {
+    const unsigned furrow=(v+cellY+(cellX/3u))%7u;
+    draw=furrow==0u||furrow==1u||(pattern%23u)==0u;
+    r=furrow<2u?82:128;g=furrow<2u?49:78;b=furrow<2u?34:48;
+    if((pattern%31u)==0u){r=166;g=112;b=68;}
+    break;
+   }
+   case Crops: {
+    const unsigned plant=hash2(wx+int(seed&0xffffu),wy-int((seed>>8)&0xffffu));
+    const unsigned stalkX=(plant>>4)&15u;
+    const unsigned height=2u+((plant>>9)%5u);
+    const bool stalk=cellX==stalkX&&v>=height&&v<=6u;
+    const bool leftLeaf=cellX+1u==stalkX&&v>=height+1u&&v<=6u&&(plant&2u)!=0u;
+    const bool rightLeaf=cellX==stalkX+1u&&v>=height+1u&&v<=6u&&(plant&4u)!=0u;
+    const bool grain=v==height&&(cellX==stalkX||
+        (((plant>>13)&3u)==0u&&(cellX+1u==stalkX||cellX==stalkX+1u)));
+    draw=stalk||leftLeaf||rightLeaf||grain;
+    if(grain){r=222;g=187;b=83;}
+    else if(stalk){r=106;g=151;b=57;}
+    else{r=76;g=126;b=48;}
+    if((pattern%47u)==0u){draw=true;r=154;g=184;b=79;}
+    break;
+   }
+   case HayBale: {
+    const bool binding=cellX==4u||cellX==11u||v==2u||v==6u;
+    draw=binding||(pattern%4u)!=0u;
+    r=binding?112:216;g=binding?76:173;b=binding?43:91;
+    if((pattern%19u)==0u){r=239;g=204;b=119;}
     break;
    }
    case Stone: case DarkStone: {
@@ -1361,7 +1424,7 @@ float terrain_height(int t,int x,int y){
  // Elevation was generated once with the chunk-independent PCG world seed.
  // Reusing it here keeps the first-person ray marcher cheap enough for PS4.
  float h=float(heightMap[y*COLS+x])/48.0f;
- switch(t){case Grass:h+=0.12f;break;case Dirt:h+=0.04f;break;case Stone:h+=0.34f;break;case Wood:h+=0.72f;break;case Leaves:h+=0.96f;break;case Moss:h+=0.18f;break;case Crystal:h+=0.92f;break;case Bone:h+=0.48f;break;case DarkStone:h+=0.42f;break;case Sand:h-=0.08f;break;case Snow:h+=0.24f;break;case Ice:h+=0.12f;break;case Lava:h-=0.08f;break;case Water:h-=0.22f;break;case IronOre:h+=0.36f;break;case Obsidian:h+=0.46f;break;case Ember:h+=0.02f;break;case Rune:h+=0.58f;break;case IronBar:h+=0.3f;break;case ObsidianCore:h+=0.6f;break;case EmberCatalyst:h+=0.5f;break;case AncientRune:h+=0.8f;break;default:break;}
+ switch(t){case Grass:h+=0.12f;break;case Dirt:h+=0.04f;break;case Stone:h+=0.34f;break;case Wood:h+=0.72f;break;case Leaves:h+=0.96f;break;case Moss:h+=0.18f;break;case Crystal:h+=0.92f;break;case Bone:h+=0.48f;break;case DarkStone:h+=0.42f;break;case Sand:h-=0.08f;break;case Snow:h+=0.24f;break;case Ice:h+=0.12f;break;case Lava:h-=0.08f;break;case Water:h-=0.22f;break;case IronOre:h+=0.36f;break;case Obsidian:h+=0.46f;break;case Ember:h+=0.02f;break;case Rune:h+=0.58f;break;case IronBar:h+=0.3f;break;case ObsidianCore:h+=0.6f;break;case EmberCatalyst:h+=0.5f;break;case AncientRune:h+=0.8f;break;case FarmSoil:h-=0.02f;break;case Crops:h+=0.14f;break;case HayBale:h+=0.32f;break;default:break;}
  // Multi-scale elevation creates broad mountain ranges, rolling foothills and rocky peaks.
  float continental=smooth_noise(x/310.0f,y/310.0f);
  float ridge=1.0f-std::fabs(2.0f*smooth_noise(x/118.0f+37.0f,y/118.0f-19.0f)-1.0f);
