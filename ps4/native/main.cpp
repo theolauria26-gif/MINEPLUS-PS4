@@ -184,6 +184,27 @@ void init_world(){
     if(under==Grass||under==Moss)world[ny*COLS+nx]=Leaves;
    }
   }
+  // Natural surface boulder fields: sparse, coordinate-stable clusters
+  // break up uninterrupted plains and alpine slopes. They reuse the existing
+  // Stone tile, stay clear of the spawn and never overwrite trees or landmarks.
+  for(int cy=24;cy<ROWS-24;cy+=37)for(int cx=24;cx<COLS-24;cx+=41){
+   const unsigned field=hash2(cx+0x31A,cy-0x27B);
+   if(field%4u!=0u)continue;
+   const int centerX=cx+static_cast<int>((field>>8)%29u)-14;
+   const int centerY=cy+static_cast<int>((field>>16)%25u)-12;
+   if(std::abs(centerX-COLS/2)<28&&std::abs(centerY-ROWS/2)<28)continue;
+   const int radius=1+static_cast<int>((field>>24)%3u);
+   for(int oy=-radius;oy<=radius;++oy)for(int ox=-radius;ox<=radius;++ox){
+    const int shape=ox*ox*2+oy*oy*3;
+    const unsigned facet=hash2(centerX+ox*13,centerY+oy*17);
+    if(shape>radius*radius*3+1||facet%7u==0u)continue;
+    const int x=centerX+ox,y=centerY+oy;
+    if(x<2||y<2||x>=COLS-2||y>=ROWS-2)continue;
+    const unsigned char ground=world[y*COLS+x];
+    if(ground!=Grass&&ground!=Moss&&ground!=Snow)continue;
+    world[y*COLS+x]=Stone;
+   }
+  }
   // Resolve each 96x96 structure cell once, then rasterize a distinct
  // landmark silhouette. Every pattern is seed/coordinate deterministic.
  for(int cy=-13;cy<=13;++cy)for(int cx=-13;cx<=13;++cx){
