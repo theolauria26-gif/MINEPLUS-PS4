@@ -448,7 +448,6 @@ void init_world(){
     if(roadStep>8&&roadStep%41==20&&marker%3u==0u&&
        (edgeTile==Grass||edgeTile==Moss||edgeTile==Sand))
      edgeTile=(marker&4u)?AncientRune:Stone;
-   }
     // Rare roadside rest stops make long routes feel used by travelers.
     // A tiny fire ring and a timber bench are only placed on open ground;
     // the road centerline and nearby structures remain untouched.
@@ -474,6 +473,7 @@ void init_world(){
       world[benchY*COLS+benchX]=Wood;
      }
     }
+   }
    ++roadStep;
    if(tx==x1&&ty==y1)break;
    const int twice=2*error;
