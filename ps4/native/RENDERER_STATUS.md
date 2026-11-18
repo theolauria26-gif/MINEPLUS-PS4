@@ -244,3 +244,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - The five-building hamlet layout now has distinct visual roles: communal hall with a hearth, timber homes, a smithy with forge/iron accents, a market stall with a simple awning and goods marker, and a rune shrine with crystal and rune details.
 - All accents reuse existing tile IDs and are generated deterministically from the settlement layout. The south-facing doorway remains clear.
 - These are readable 2D tile-map treatments in the current SDL renderer, not furnished 3D interiors, interactive crafting stations, or new NPC professions.
+
+## Fortified surface crossings
+
+- The procedural exterior landmark catalog includes a ninth family: a guarded crossing with a stone/rune deck, water channel, timber details and two compact crystal-capped bridgeheads.
+- Orientation and placement are derived from the landmark's world seed and anchor, and tests verify that the new family is reproducible.
+- The crossing reuses existing tile IDs. In the current renderer it is a top-down tile-map landmark; it does not yet model flowing 3D water, bridge elevation, destructible supports or traversal physics over a real ravine.
