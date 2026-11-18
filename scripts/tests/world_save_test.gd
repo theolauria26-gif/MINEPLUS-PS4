@@ -40,6 +40,8 @@ func _run() -> void:
 	_expect(loaded.get("blocks", []).size() == 1, "invalid placed-block entries are ignored")
 	_expect(loaded.get("terrain_edits", []).size() == 1, "invalid terrain edits are ignored")
 	_expect(loaded.get("inventory", [])[0] == 999 and loaded.get("inventory", [])[1] == 0, "inventory stacks are bounded")
+	_expect(loaded.get("inventory", []).size() == 7 and loaded.get("inventory", [])[6] == 0, "legacy six-item inventory migrates with an empty wood slot")
+	_expect(loaded.get("axe_durability", -1) == 0, "legacy saves receive an empty axe slot")
 	_expect(loaded.get("pickaxe_durability", 0) == 40, "tool durability is bounded")
 	_expect(loaded.get("camera_pitch", 0.0) == 1.45, "camera pitch is bounded")
 	_expect(loaded.get("selected_block", 0) == 5, "selected hotbar slot is bounded")
@@ -61,8 +63,14 @@ func _run() -> void:
 		corrupt.close()
 	var recovered := MineplusWorldSave.load_world(path)
 	_expect(not recovered.is_empty() and recovered.get("inventory", [])[0] == 7, "valid backup recovers a corrupt primary save")
+	_expect(recovered.get("inventory", []).size() == 7 and recovered.get("axe_durability", -1) == 0, "version-five backup migrates inventory and tool fields")
 	_expect(FileAccess.file_exists(path), "recovered backup is restored to the primary path")
 	_expect(not MineplusWorldSave.save_world(path, {"version": 99, "blocks": []}), "future save versions are rejected")
+	var current_payload := {"version": 6, "blocks": [], "inventory": [1, 2, 3, 4, 5, 6, 7], "axe_durability": 27}
+	_expect(MineplusWorldSave.save_world(path, current_payload), "version-six inventory and tool state are saved")
+	var current_loaded := MineplusWorldSave.load_world(path)
+	_expect(current_loaded.get("inventory", []).size() == 7 and current_loaded.get("inventory", [])[6] == 7, "wood stack survives version-six round trip")
+	_expect(current_loaded.get("axe_durability", 0) == 27, "axe durability survives version-six round trip")
 
 	_remove_test_file(path)
 	_remove_test_file(path + ".bak")
