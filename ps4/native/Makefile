@@ -37,7 +37,6 @@ $(INTDIR)/voxel_mesh_vertices.o: voxel_mesh_vertices.cpp voxel_mesh_vertices.hpp
 	$(CXX) $(CXXFLAGS) -o $@ voxel_mesh_vertices.cpp
 $(INTDIR)/voxel_mesh_indices.o: voxel_mesh_indices.cpp voxel_mesh_indices.hpp voxel_mesher.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ voxel_mesh_indices.cpp
-	$(CXX) $(CXXFLAGS) -o $@ voxel_mesh_vertices.cpp
 $(INTDIR)/dungeon_loot.o: dungeon_loot.cpp dungeon_loot.hpp dungeon_graph.hpp | $(INTDIR)
 	$(CXX) $(CXXFLAGS) -o $@ dungeon_loot.cpp
 $(INTDIR)/equipment.o: equipment.cpp equipment.hpp | $(INTDIR)
