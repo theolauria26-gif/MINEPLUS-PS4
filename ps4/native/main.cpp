@@ -424,6 +424,7 @@ void init_world(){
   }
   if(blocked)continue;
   ax=std::abs(x1-x0);ay=std::abs(y1-y0);error=ax-ay;tx=x0;ty=y0;
+  int roadStep=0;
   for(;;){
    const auto ground=tile_at(tx,ty);
    if(ground==Water){
@@ -441,7 +442,14 @@ void init_world(){
     const unsigned growth=hash2(edgeX*17+0x2A7,edgeY*23-0x1D3);
     if((edgeTile==Grass||edgeTile==Moss)&&growth%17u==0u)
      edgeTile=(growth%51u==0u)?Leaves:Moss;
+    // Occasional rune waystones make long routes readable without cluttering
+    // the road surface. They only replace open shoulder ground.
+    const unsigned marker=hash2(edgeX+roadStep*13+0x4B1,edgeY-roadStep*7-0x2D9);
+    if(roadStep>8&&roadStep%41==20&&marker%3u==0u&&
+       (edgeTile==Grass||edgeTile==Moss||edgeTile==Sand))
+     edgeTile=(marker&4u)?AncientRune:Stone;
    }
+   ++roadStep;
    if(tx==x1&&ty==y1)break;
    const int twice=2*error;
    if(twice>-ay){error-=ay;tx+=stepX;}
