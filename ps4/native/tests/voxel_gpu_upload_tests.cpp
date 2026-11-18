@@ -72,5 +72,20 @@ int main() {
     assert(VoxelGpuUploadBuilder::build(empty, output));
     assert(output.empty());
 
+    std::vector<std::uint32_t> indices{0u, 1u, 2u};
+    std::vector<VoxelGpuVertex> mesh_vertices;
+    std::vector<std::uint32_t> mesh_indices;
+    assert(VoxelGpuMeshUploadBuilder::build(source, indices, mesh_vertices, mesh_indices));
+    assert(mesh_vertices.size() == source.size());
+    assert(mesh_indices == indices);
+    assert(!VoxelGpuMeshUploadBuilder::build(source, {0u, 1u}, mesh_vertices, mesh_indices));
+    assert(mesh_vertices.empty() && mesh_indices.empty());
+    assert(!VoxelGpuMeshUploadBuilder::build(source, {0u, 1u, 3u}, mesh_vertices, mesh_indices));
+    assert(mesh_vertices.empty() && mesh_indices.empty());
+    assert(!VoxelGpuMeshUploadBuilder::build(source, indices, mesh_vertices, mesh_indices, 2));
+    assert(mesh_vertices.empty() && mesh_indices.empty());
+    assert(!VoxelGpuMeshUploadBuilder::build(source, indices, mesh_vertices, mesh_indices, 3, 2));
+    assert(mesh_vertices.empty() && mesh_indices.empty());
+
     std::cout << "MINEPLUS voxel GPU upload staging tests: OK\n";
 }
