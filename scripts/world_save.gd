@@ -2,14 +2,15 @@ extends RefCounted
 class_name MineplusWorldSave
 ## Versioned, bounded and recoverable world persistence for the Godot prototype.
 
-const CURRENT_VERSION := 5
+const CURRENT_VERSION := 6
 const MAX_SAVE_BYTES := 32 * 1024 * 1024
 const MAX_WORLD_BLOCKS := 100000
 const MAX_TERRAIN_EDITS := 250000
 const MAX_COORDINATE := 10000000
 const BLOCK_TYPE_COUNT := 6
+const INVENTORY_ITEM_COUNT := 7
 const TERRAIN_TYPE_COUNT := 11
-const DEFAULT_INVENTORY := [64, 64, 32, 32, 16, 0]
+const DEFAULT_INVENTORY := [64, 64, 32, 32, 16, 0, 0]
 const DEFAULT_PLAYER_POSITION := [0.0, 13.0, 5.0]
 
 static func _is_number(value: Variant) -> bool:
@@ -84,7 +85,7 @@ static func normalize_payload(raw: Variant) -> Dictionary:
 	var inventory_value: Variant = source.get("inventory", null)
 	if typeof(inventory_value) == TYPE_ARRAY:
 		var source_inventory: Array = inventory_value
-		for index in range(mini(BLOCK_TYPE_COUNT, source_inventory.size())):
+		for index in range(mini(INVENTORY_ITEM_COUNT, source_inventory.size())):
 			inventory[index] = _bounded_int(source_inventory[index], 0, 999, inventory[index])
 
 	var player_position := DEFAULT_PLAYER_POSITION.duplicate()
@@ -104,6 +105,7 @@ static func normalize_payload(raw: Variant) -> Dictionary:
 		"blocks": blocks,
 		"inventory": inventory,
 		"pickaxe_durability": _bounded_int(source.get("pickaxe_durability", 0), 0, 40, 0),
+		"axe_durability": _bounded_int(source.get("axe_durability", 0), 0, 40, 0),
 		"player_position": player_position,
 		"player_rotation_y": float(rotation_value) if _is_number(rotation_value) else 0.0,
 		"camera_pitch": clampf(float(pitch_value), -1.45, 1.45) if _is_number(pitch_value) else 0.0,
