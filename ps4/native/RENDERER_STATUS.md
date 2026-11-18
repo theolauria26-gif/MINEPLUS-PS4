@@ -268,3 +268,11 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Uma fazenda externa compacta pode surgir em uma das quatro diagonais, somente quando todo o retângulo estiver em terreno natural livre. Ela recebe cerca de madeira com uma abertura voltada para o povoado, fileiras de cultivo, um pequeno cocho de água e feno.
 - Foram adicionados os materiais FarmSoil, Crops e HayBale, com detalhes de pixel determinísticos ancorados nas coordenadas do mundo. São materiais visuais e caminháveis; as cercas continuam usando Wood e mantêm a colisão já existente.
 - A fazenda é uma composição estática de tiles no renderizador SDL atual. Ainda não há sistema de plantio/crescimento, colheita, irrigação interativa, estoque agrícola ou NPCs trabalhando nos campos.
+
+## Pipeline CPU de malha voxel integrada
+
+- Um novo caminho CPU conecta a amostragem procedural ou o mundo editável (WorldRuntime) ao VoxelChunk, ao mesher greedy e ao construtor de vértices.
+- ProceduralVoxelMeshBuilder entrega quads e vértices com material, UV local e normal axial em uma única operação, com limites explícitos para quads e vértices.
+- A saída é construída temporariamente e só substitui o resultado anterior quando todas as etapas passam; falha de geração ou estouro de orçamento preserva a malha anterior.
+- Os testes verificam malha não vazia, quatro vértices por quad, normais axiais, materiais válidos, aplicação de edição do mundo e preservação da saída em falha.
+- Isso fecha a preparação CPU dos dados para um backend gráfico, mas ainda não cria buffers GPU, shaders, atlas final ou draw calls. O renderizador jogável continua sendo SDL2/height-field até a integração gráfica ser implementada e validada.
