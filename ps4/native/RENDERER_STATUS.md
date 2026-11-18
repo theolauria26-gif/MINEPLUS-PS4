@@ -238,3 +238,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - A small stone-lined well with a visible water center adds a recognizable public-space landmark south of the village green. It reuses existing Stone and Water tiles.
 - Settlement placement now skips the player's starting clearing and the boss arena before rasterizing the hamlet, avoiding accidental overwrites of those important areas.
 - These additions are deterministic tile-map features in the current SDL renderer. The palisade is not yet a destructible 3D wall, and the well has no water-drawing interaction or dedicated prop model.
+
+## Medieval hamlet building identities
+
+- The five-building hamlet layout now has distinct visual roles: communal hall with a hearth, timber homes, a smithy with forge/iron accents, a market stall with a simple awning and goods marker, and a rune shrine with crystal and rune details.
+- All accents reuse existing tile IDs and are generated deterministically from the settlement layout. The south-facing doorway remains clear.
+- These are readable 2D tile-map treatments in the current SDL renderer, not furnished 3D interiors, interactive crafting stations, or new NPC professions.
