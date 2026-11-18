@@ -33,6 +33,14 @@ int main(){
  assert(ProceduralVoxelMeshBuilder::build(world,{0,0},mesh));
  assert(!mesh.quads.empty());
  assert(mesh.vertices.size()==mesh.quads.size()*4);
+ assert(mesh.indices.size()==mesh.quads.size()*6);
+ for(std::size_t q=0;q<mesh.quads.size();++q) {
+  const std::uint32_t base=static_cast<std::uint32_t>(q*4);
+  const std::size_t at=q*6;
+  assert(mesh.indices[at]==base && mesh.indices[at+1]==base+1 && mesh.indices[at+2]==base+2);
+  assert(mesh.indices[at+3]==base && mesh.indices[at+4]==base+2 && mesh.indices[at+5]==base+3);
+  for(std::size_t i=0;i<6;++i) assert(mesh.indices[at+i]<mesh.vertices.size());
+ }
  for(const auto& vertex:mesh.vertices) {
   assert(vertex.material!=0);
   const int normal_count=(vertex.normal_x!=0)+(vertex.normal_y!=0)+(vertex.normal_z!=0);
