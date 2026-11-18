@@ -22,16 +22,25 @@ int main(){
  assert(ProceduralVoxelChunkBuilder::build(world,{16,0},east));
  // Greedy meshes must use the sampled halo: shared terrain faces at chunk
  // boundaries are culled on both sides, while exposed boundary area remains.
- ProceduralVoxelMesh west_mesh,east_mesh;
+ VoxelChunk north;
+ assert(ProceduralVoxelChunkBuilder::build(world,{0,16},north));
+ ProceduralVoxelMesh west_mesh,east_mesh,north_mesh;
  assert(ProceduralVoxelMeshBuilder::build(world,{0,0},west_mesh));
  assert(ProceduralVoxelMeshBuilder::build(world,{16,0},east_mesh));
- std::size_t west_expected=0,east_expected=0;
+ assert(ProceduralVoxelMeshBuilder::build(world,{0,16},north_mesh));
+ std::size_t west_expected=0,east_expected=0,north_expected=0,south_expected=0;
  for(int z=0;z<VoxelChunk::SIZE_Z;++z) for(int y=0;y<VoxelChunk::SIZE_Y;++y) {
   if(a.get(VoxelChunk::SIZE_X-1,y,z)!=0 && a.get(VoxelChunk::SIZE_X,y,z)==0) ++west_expected;
   if(east.get(0,y,z)!=0 && east.get(-1,y,z)==0) ++east_expected;
  }
+ for(int z=0;z<VoxelChunk::SIZE_Z;++z) for(int x=0;x<VoxelChunk::SIZE_X;++x) {
+  if(a.get(x,VoxelChunk::SIZE_Y-1,z)!=0 && a.get(x,VoxelChunk::SIZE_Y,z)==0) ++north_expected;
+  if(north.get(x,0,z)!=0 && north.get(x,-1,z)==0) ++south_expected;
+ }
  assert(face_area(west_mesh.quads,VoxelFace::PositiveX)==west_expected);
  assert(face_area(east_mesh.quads,VoxelFace::NegativeX)==east_expected);
+ assert(face_area(west_mesh.quads,VoxelFace::PositiveY)==north_expected);
+ assert(face_area(north_mesh.quads,VoxelFace::NegativeY)==south_expected);
 
  for(int z=0;z<VoxelChunk::SIZE_Z;++z) for(int y=0;y<VoxelChunk::SIZE_Y;++y){assert(a.get(16,y,z)==east.get(0,y,z)); assert(a.get(15,y,z)==east.get(-1,y,z));}
  assert(ProceduralVoxelChunkBuilder::build(world,{-16,-16},negative));
