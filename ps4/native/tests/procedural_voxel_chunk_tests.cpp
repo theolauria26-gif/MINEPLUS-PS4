@@ -41,6 +41,15 @@ int main(){
   assert(mesh.indices[at+3]==base && mesh.indices[at+4]==base+2 && mesh.indices[at+5]==base+3);
   for(std::size_t i=0;i<6;++i) assert(mesh.indices[at+i]<mesh.vertices.size());
  }
+ std::vector<std::uint32_t> rejected_indices{99u};
+ assert(!VoxelMeshIndexBuilder::build(mesh.quads,mesh.vertices.size()-1,rejected_indices));
+ assert(rejected_indices.empty());
+ rejected_indices.push_back(99u);
+ assert(!VoxelMeshIndexBuilder::build(mesh.quads,mesh.vertices.size(),rejected_indices,mesh.indices.size()-1));
+ assert(rejected_indices.empty());
+ std::vector<MeshQuad> no_quads;
+ assert(VoxelMeshIndexBuilder::build(no_quads,0,rejected_indices));
+ assert(rejected_indices.empty());
  for(const auto& vertex:mesh.vertices) {
   assert(vertex.material!=0);
   const int normal_count=(vertex.normal_x!=0)+(vertex.normal_y!=0)+(vertex.normal_z!=0);
