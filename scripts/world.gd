@@ -7,11 +7,13 @@ const BLOCK_COLORS := [
 	Color("#79b85a"), Color("#8b6548"), Color("#858b96"), Color("#c6ad72"), Color("#4e9d83"), Color("#b86f62")
 ]
 const BLOCK_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo", "Tijolo"]
+const INVENTORY_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo", "Tijolo", "Madeira"]
+const INVENTORY_COLORS := [Color("#79b85a"), Color("#8b6548"), Color("#858b96"), Color("#c6ad72"), Color("#4e9d83"), Color("#b86f62"), Color("#b88754")]
 
 var blocks: Dictionary = {}
 var chunk_streamer: MineplusChunkStreamer
 var selected_block := 0
-var block_counts: Array[int] = [64, 64, 32, 32, 16, 0]
+var block_counts: Array[int] = [64, 64, 32, 32, 16, 0, 0]
 var player: CharacterBody3D
 var camera: Camera3D
 var pickaxe_visual: Node3D
@@ -30,6 +32,8 @@ var configured_fov := 78.0
 var hud_opacity := 1.0
 var graphics_quality := 1
 var pickaxe_durability := 0
+var axe_durability := 0
+var axe_visual: Node3D
 var block_textures: Array[Texture2D] = []
 var walk_animation_time := 0.0
 var camera_base_height := 1.55
@@ -167,6 +171,7 @@ func _create_player() -> void:
 	player.add_child(camera)
 	_create_first_person_arms()
 	_create_pickaxe_visual()
+	_create_axe_visual()
 	add_child(player)
 	selected_block = clampi(saved_selected_block, 0, BLOCK_NAMES.size() - 1)
 
@@ -217,6 +222,39 @@ func _animate_pickaxe_swing() -> void:
 	var tween := create_tween()
 	tween.tween_property(pickaxe_visual, "rotation_degrees", Vector3(-62, -4, -30), 0.08)
 	tween.tween_property(pickaxe_visual, "rotation_degrees", Vector3(-18, -24, -18), 0.12)
+
+func _create_axe_visual() -> void:
+	axe_visual = Node3D.new()
+	axe_visual.position = Vector3(0.34, -0.37, -0.60)
+	axe_visual.rotation_degrees = Vector3(-18, -18, -28)
+	axe_visual.visible = axe_durability > 0
+	camera.add_child(axe_visual)
+	var handle := MeshInstance3D.new()
+	var handle_mesh := BoxMesh.new()
+	handle_mesh.size = Vector3(0.075, 0.46, 0.075)
+	handle.mesh = handle_mesh
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color("#815331")
+	handle.material_override = wood
+	handle.position.y = -0.04
+	axe_visual.add_child(handle)
+	var head := MeshInstance3D.new()
+	var head_mesh := BoxMesh.new()
+	head_mesh.size = Vector3(0.28, 0.16, 0.12)
+	head.mesh = head_mesh
+	var stone := StandardMaterial3D.new()
+	stone.albedo_color = Color("#89949b")
+	stone.roughness = 0.96
+	head.material_override = stone
+	head.position = Vector3(0.11, 0.15, 0.0)
+	axe_visual.add_child(head)
+
+func _animate_axe_swing() -> void:
+	if axe_visual == null or not axe_visual.visible:
+		return
+	var tween := create_tween()
+	tween.tween_property(axe_visual, "rotation_degrees", Vector3(-62, 8, -46), 0.09)
+	tween.tween_property(axe_visual, "rotation_degrees", Vector3(-18, -18, -28), 0.13)
 
 func _create_hud() -> void:
 	var hud := CanvasLayer.new()
@@ -364,7 +402,7 @@ func _create_inventory_panel(hud: CanvasLayer) -> void:
 	hint.add_theme_font_size_override("font_size", 12)
 	stack.add_child(hint)
 	inventory_tool_label = Label.new()
-	inventory_tool_label.text = "PICARETA  •  Durabilidade: %d / 40" % pickaxe_durability
+	inventory_tool_label.text = "PICARETA %d/40  •  MACHADO %d/40" % [pickaxe_durability, axe_durability]
 	inventory_tool_label.add_theme_color_override("font_color", Color("#e9d28b"))
 	stack.add_child(inventory_tool_label)
 	inventory_grid = GridContainer.new()
@@ -396,17 +434,17 @@ func _refresh_inventory() -> void:
 		inventory_tool_label.text = "PICARETA  •  Durabilidade: %d / 40" % pickaxe_durability
 	for child in inventory_grid.get_children():
 		child.queue_free()
-	for i in range(BLOCK_NAMES.size()):
+	for i in range(INVENTORY_NAMES.size()):
 		var item := PanelContainer.new()
 		var item_style := StyleBoxFlat.new()
 		item_style.bg_color = Color(1, 1, 1, 0.055)
 		item_style.set_corner_radius_all(9)
 		item.add_theme_stylebox_override("panel", item_style)
 		var label := Label.new()
-		label.text = "  %s\n  Quantidade: %d" % [BLOCK_NAMES[i], block_counts[i]]
+		label.text = "  %s\n  Quantidade: %d" % [INVENTORY_NAMES[i], block_counts[i]]
 		var item_width := (inventory_panel_width - 55.0) / float(inventory_grid.columns)
 		label.custom_minimum_size = Vector2(item_width, 48)
-		label.add_theme_color_override("font_color", BLOCK_COLORS[i])
+		label.add_theme_color_override("font_color", INVENTORY_COLORS[i])
 		item.add_child(label)
 		inventory_grid.add_child(item)
 
@@ -523,7 +561,7 @@ func _show_crafting() -> void:
 	var dialog := Window.new()
 	dialog.title = "BANCADA DE FABRICAÇÃO"
 	var viewport_size := get_viewport().get_visible_rect().size
-	dialog.size = Vector2i(int(minf(420.0, viewport_size.x - 24.0)), int(minf(270.0, viewport_size.y - 40.0)))
+	dialog.size = Vector2i(int(minf(420.0, viewport_size.x - 24.0)), int(minf(330.0, viewport_size.y - 40.0)))
 	dialog.close_requested.connect(dialog.hide)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -553,6 +591,13 @@ func _show_crafting() -> void:
 		_craft_pickaxe()
 	)
 	stack.add_child(pickaxe_button)
+	var axe_button := Button.new()
+	axe_button.text = "2 Pedras + 2 Terras  →  Machado de pedra (40 usos)"
+	axe_button.pressed.connect(func():
+		dialog.hide()
+		_craft_axe()
+	)
+	stack.add_child(axe_button)
 	var close_button := Button.new()
 	close_button.text = "FECHAR"
 	close_button.pressed.connect(dialog.hide)
@@ -576,6 +621,23 @@ func _craft_pickaxe() -> void:
 	_refresh_inventory()
 	_save_world(true)
 	status_label.text = "Picareta fabricada: 40 usos."
+
+func _craft_axe() -> void:
+	if axe_durability > 0:
+		status_label.text = "Você já possui um machado com %d de durabilidade." % axe_durability
+		return
+	if block_counts[2] < 2 or block_counts[1] < 2:
+		status_label.text = "Machado: faltam 2 Pedras e 2 Terras."
+		return
+	block_counts[2] -= 2
+	block_counts[1] -= 2
+	axe_durability = 40
+	if axe_visual:
+		axe_visual.visible = true
+	_update_hotbar()
+	_refresh_inventory()
+	_save_world(true)
+	status_label.text = "Machado de pedra fabricado: 40 usos."
 
 func _craft_bricks() -> void:
 	if block_counts[1] < 2 or block_counts[2] < 1 or block_counts[5] > MAX_STACK_SIZE - 2:
@@ -611,7 +673,7 @@ func _save_world(silent: bool = false) -> void:
 		player_position = [player.position.x, player.position.y, player.position.z]
 		player_rotation_y = player.rotation.y
 		camera_pitch = camera.rotation.x
-	var payload := {"version": MineplusWorldSave.CURRENT_VERSION, "world_seed": chunk_streamer.generator.world_seed if chunk_streamer else 4839201, "terrain_edits": chunk_streamer.export_edits() if chunk_streamer else [], "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "selected_block": selected_block}
+	var payload := {"version": MineplusWorldSave.CURRENT_VERSION, "world_seed": chunk_streamer.generator.world_seed if chunk_streamer else 4839201, "terrain_edits": chunk_streamer.export_edits() if chunk_streamer else [], "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "axe_durability": axe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "selected_block": selected_block}
 	var saved := MineplusWorldSave.save_world(_world_save_path(), payload)
 	if saved:
 		if not silent and status_label:
@@ -630,6 +692,7 @@ func _load_world() -> void:
 		chunk_streamer.generator = MineplusWorldGen.new(int(parsed["world_seed"]))
 		chunk_streamer.import_edits(parsed["terrain_edits"])
 	pickaxe_durability = int(parsed["pickaxe_durability"])
+	axe_durability = int(parsed["axe_durability"])
 	var saved_position: Array = parsed["player_position"]
 	saved_player_position = Vector3(float(saved_position[0]), float(saved_position[1]), float(saved_position[2]))
 	saved_player_rotation_y = float(parsed["player_rotation_y"])
@@ -735,6 +798,7 @@ func _rotate_view(relative: Vector2) -> void:
 func _terrain_drop_index(terrain_type: int) -> int:
 	match terrain_type:
 		MineplusWorldGen.Block.GRASS: return 0
+		MineplusWorldGen.Block.WOOD: return 6
 		MineplusWorldGen.Block.DIRT, MineplusWorldGen.Block.SNOW, MineplusWorldGen.Block.ICE, MineplusWorldGen.Block.WOOD: return 1
 		MineplusWorldGen.Block.STONE, MineplusWorldGen.Block.BASALT: return 2
 		MineplusWorldGen.Block.SAND: return 3
@@ -784,13 +848,25 @@ func _interact(place: bool) -> void:
 			if block_counts[drop_index] >= MAX_STACK_SIZE:
 				if status_label: status_label.text = "Pilha cheia: máximo de %d por material." % MAX_STACK_SIZE
 				return
-			if (drop_index == 2 or drop_index == 5) and pickaxe_durability <= 0:
+			var needs_pickaxe := drop_index == 2 or drop_index == 5
+			var needs_axe := drop_index == 6
+			if needs_pickaxe and pickaxe_durability <= 0:
 				if status_label: status_label.text = "Precisa de uma picareta para minerar este bloco."
 				return
+			if needs_axe and axe_durability <= 0:
+				if status_label: status_label.text = "Precisa de um machado para cortar madeira. Fabrique um na bancada."
+				return
 			chunk_streamer.mine_surface(cell)
-			if drop_index == 2 or drop_index == 5:
+			if needs_pickaxe:
 				pickaxe_durability -= 1
 				_animate_pickaxe_swing()
+				if pickaxe_durability == 0 and pickaxe_visual:
+					pickaxe_visual.visible = false
+			elif needs_axe:
+				axe_durability -= 1
+				_animate_axe_swing()
+				if axe_durability == 0 and axe_visual:
+					axe_visual.visible = false
 			block_counts[drop_index] += 1
 			_update_hotbar()
 			_save_world(true)
