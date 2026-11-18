@@ -93,7 +93,8 @@ jobs:
             -o "$RUNNER_TEMP/mineplus-procedural-voxel-chunk-tests"
           "$RUNNER_TEMP/mineplus-procedural-voxel-chunk-tests"
           clang++ -std=c++17 -O2 -Wall -Wextra -Werror -I ps4/native \
-            ps4/native/voxel_gpu_upload.cpp ps4/native/tests/voxel_gpu_upload_tests.cpp \
+            ps4/native/material_atlas.cpp ps4/native/voxel_gpu_upload.cpp \
+            ps4/native/tests/voxel_gpu_upload_tests.cpp \
             -o "$RUNNER_TEMP/mineplus-voxel-gpu-upload-tests"
           "$RUNNER_TEMP/mineplus-voxel-gpu-upload-tests"
           clang++ -std=c++17 -O2 -Wall -Wextra -I ps4/native \
