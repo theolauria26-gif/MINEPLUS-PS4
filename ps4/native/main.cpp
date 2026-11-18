@@ -312,6 +312,17 @@ void init_world(){
   mineplus::StructureAnchor anchor{};
   if(!pcg.structure_anchor_for_cell(cx,cy,anchor))continue;
   const int reach=anchor.radius+2;
+  // Detect a snowbound landmark from the untouched terrain just outside its footprint.
+  int coldSamples=0,warmSamples=0;
+  for(int oy=-reach;oy<=reach;++oy)for(int ox=-reach;ox<=reach;++ox){
+   if(std::max(std::abs(ox),std::abs(oy))<anchor.radius+1)continue;
+   const int sx=anchor.x+ox+COLS/2,sy=anchor.y+oy+ROWS/2;
+   if(sx<0||sy<0||sx>=COLS||sy>=ROWS)continue;
+   const auto ground=tile_at(sx,sy);
+   if(ground==Snow||ground==Ice)++coldSamples;
+   else if(ground==Grass||ground==Moss||ground==Sand)++warmSamples;
+  }
+  const bool frozenLandmark=coldSamples>0&&coldSamples>=warmSamples/2;
   for(int oy=-reach;oy<=reach;++oy)for(int ox=-reach;ox<=reach;++ox){
    const int lx=anchor.x+ox+COLS/2,ly=anchor.y+oy+ROWS/2;
    if(lx<2||ly<2||lx>=COLS-2||ly>=ROWS-2)continue;
@@ -323,13 +334,13 @@ void init_world(){
    // structure tiles and the center are never replaced.
    if(tile==DarkStone&&d>=(anchor.radius-1)*(anchor.radius-1)&&
       overgrowth%7u==0u){
-    tile=Moss;
+    tile=frozenLandmark?Ice:Moss;
     continue;
    }
    // Low creeping foliage grows around, never across, the landmark footprint.
    if(d>anchor.radius*anchor.radius&&d<=(anchor.radius+2)*(anchor.radius+2)&&
       (tile==Grass||tile==Moss)&&overgrowth%13u==0u){
-    tile=Leaves;
+    tile=frozenLandmark?Snow:Leaves;
    }
   }
  }
