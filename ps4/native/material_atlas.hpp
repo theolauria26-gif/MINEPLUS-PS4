@@ -2,7 +2,7 @@
 #include <cstdint>
 namespace mineplus {
 constexpr std::uint8_t MATERIAL_ATLAS_FIRST_ID = 1;
-constexpr std::uint8_t MATERIAL_ATLAS_LAST_ID = 21;
+constexpr std::uint8_t MATERIAL_ATLAS_LAST_ID = 23;
 constexpr int MATERIAL_ATLAS_TILE_SIZE = 32;
 constexpr int MATERIAL_ATLAS_COLUMNS = 8;
 constexpr int MATERIAL_ATLAS_ROWS = 4;
