@@ -287,6 +287,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - Isso fecha a preparação CPU dos dados para um backend gráfico, mas ainda não cria buffers GPU, shaders, atlas final ou draw calls. O renderizador jogável continua sendo SDL2/height-field até a integração gráfica ser implementada e validada.
 
 
+
+- O contrato de atributos, mapeamento do atlas, repetição UV, orientação dos triângulos e comportamento esperado dos estágios de shader está especificado em `docs/VOXEL_SHADER_CONTRACT.md`. É uma especificação de integração, não um shader compilado ou pipeline GNM funcional.
+
 ## Contrato de staging para vértices voxel
 
 - Foi criado `VoxelGpuVertex`, um formato de staging CPU explícito de 36 bytes: posição float3 (offset 0), UV float2 (offset 12), normal float3 (offset 20) e material uint32 (offset 32).
