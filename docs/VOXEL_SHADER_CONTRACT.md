@@ -24,7 +24,7 @@ The CPU type has compile-time standard-layout, trivial-copy and offset/stride as
 - For ID `m`, the zero-based cell index is `m - 1`; cell coordinates are `((m - 1) % 8, (m - 1) / 8)`.
 - Only IDs 1 through 23 are currently assigned. ID 0 is air and must not be submitted as a surface material.
 
-The fragment stage should repeat the tile-local UV within each material cell, then map the fractional coordinate into that cell's normalized atlas rectangle. The rectangle should use the existing half-texel inset from `material_atlas_region()` to avoid sampling adjacent cells. Texture filtering and mip behavior must be chosen with pixel-art atlas bleeding in mind; no mip chain or sampler state is currently implemented.
+The fragment stage should repeat the tile-local UV within each material cell, then map the fractional coordinate into that cell's normalized atlas rectangle. The rectangle should use the existing half-texel inset from `material_atlas_region()` to avoid sampling adjacent cells. `material_atlas_resolve_uv()` is the CPU reference implementation: it uses floor-based wrapping (including negative UVs), rejects non-finite coordinates and unknown material IDs, and clears outputs on failure. A shader implementation should match this behavior. Texture filtering and mip behavior must be chosen with pixel-art atlas bleeding in mind; no mip chain or sampler state is currently implemented.
 
 ## Geometry and rasterization
 
@@ -44,3 +44,8 @@ The fragment stage should repeat the tile-local UV within each material cell, th
 ## Explicit non-goals / missing GPU work
 
 This contract does not supply shader source or binaries, GNM resource descriptors, GPU memory allocation, texture upload, depth state, command buffer construction, synchronization, render-target setup, or VideoOut presentation. Those must be implemented and validated against the exact PS4 SDK/toolchain and preferably hardware before switching away from the current SDL2 renderer.
+
+
+## Atlas sampling reference tests
+
+Portable tests cover row-major cells, half-texel bounds, integer-repeat boundaries, UVs beyond one tile, negative UV wrapping, and rejection of air/non-finite coordinates. These tests validate the CPU reference contract only; they do not execute a GPU shader.
