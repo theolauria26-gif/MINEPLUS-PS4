@@ -370,9 +370,9 @@ bool PcgWorld::structure_anchor_for_cell(std::int32_t ax,std::int32_t ay,
     const std::int64_t sy=std::int64_t(ay)*CELL+std::int64_t(hash(ax,ay,331)%CELL);
     if(sx<INT32_MIN||sx>INT32_MAX||sy<INT32_MIN||sy>INT32_MAX) return false;
     const std::int32_t radius=7+std::int32_t(hash(ax,ay,337)%18);
-    // Eight landmark families, including medieval dark-fantasy keeps.
+    // Nine landmark families, including keeps and fortified crossings.
     out={static_cast<std::int32_t>(sx),static_cast<std::int32_t>(sy),
-         static_cast<std::uint16_t>(1+hash(ax,ay,347)%8),
+         static_cast<std::uint16_t>(1+hash(ax,ay,347)%9),
          static_cast<std::uint16_t>(radius)};
     return true;
 }
