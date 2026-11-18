@@ -261,3 +261,10 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - Trechos longos de estradas podem receber pequenas paradas de descanso: uma fogueira central, um anel baixo de pedras e um banco de madeira. A geração é determinística e só ocupa terreno aberto no acostamento, preservando o caminho e evitando água, lava, árvores e estruturas existentes.
 - As paradas reutilizam Ember, Stone e Wood, sem novos IDs de bloco, entidades persistentes ou alterações no formato de save. No renderizador atual são conjuntos decorativos 2D; ainda não incluem NPCs acampados, interação para cozinhar, iluminação dinâmica ou simulação de fogo.
+
+## Hortas e fazenda dos povoados medievais
+
+- Os povoados agora recebem quatro pequenos canteiros diagonais com solo arado e plantações, mantendo os caminhos cardeais da praça livres. A posição continua subordinada à composição das cinco construções, que podem cobrir qualquer sobreposição.
+- Uma fazenda externa compacta pode surgir em uma das quatro diagonais, somente quando todo o retângulo estiver em terreno natural livre. Ela recebe cerca de madeira com uma abertura voltada para o povoado, fileiras de cultivo, um pequeno cocho de água e feno.
+- Foram adicionados os materiais FarmSoil, Crops e HayBale, com detalhes de pixel determinísticos ancorados nas coordenadas do mundo. São materiais visuais e caminháveis; as cercas continuam usando Wood e mantêm a colisão já existente.
+- A fazenda é uma composição estática de tiles no renderizador SDL atual. Ainda não há sistema de plantio/crescimento, colheita, irrigação interativa, estoque agrícola ou NPCs trabalhando nos campos.
