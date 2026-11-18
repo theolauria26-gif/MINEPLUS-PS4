@@ -405,11 +405,18 @@ func _create_inventory_panel(hud: CanvasLayer) -> void:
 	inventory_tool_label.text = "PICARETA %d/40  •  MACHADO %d/40" % [pickaxe_durability, axe_durability]
 	inventory_tool_label.add_theme_color_override("font_color", Color("#e9d28b"))
 	stack.add_child(inventory_tool_label)
+	var inventory_scroll := ScrollContainer.new()
+	inventory_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inventory_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	inventory_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	inventory_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	stack.add_child(inventory_scroll)
 	inventory_grid = GridContainer.new()
 	inventory_grid.columns = 2 if panel_width >= 420.0 else 1
+	inventory_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inventory_grid.add_theme_constant_override("h_separation", 10)
 	inventory_grid.add_theme_constant_override("v_separation", 8)
-	stack.add_child(inventory_grid)
+	inventory_scroll.add_child(inventory_grid)
 	var close := Button.new()
 	close.text = "FECHAR  [E]"
 	close.pressed.connect(_toggle_inventory)
