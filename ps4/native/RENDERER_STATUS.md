@@ -230,3 +230,11 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - The exterior landmark catalog now includes a deterministic medieval keep: a broken circular-square curtain wall, four compact corner towers with crystal caps, an inner courtyard wall, aligned gates and a rune-marked approach to a central treasure.
 - The keep reuses existing DarkStone, Crystal, Sand, AncientRune, Rune and Chest tiles. Placement is derived from the world seed and macro-cell coordinates, so the same world regenerates the same structure without new save fields.
 - The structure is a top-down tile-map footprint projected by the current SDL height-field renderer. It is a first settlement-scale landmark, not yet a multi-storey 3D castle, enterable building interior or fully simulated medieval town.
+
+
+## Medieval hamlet defenses and public well
+
+- The existing five-building frontier hamlets now gain a seed-stable timber palisade with four narrow cardinal gates. The defensive ring is placed outside the house footprints and retains the established village clearing.
+- A small stone-lined well with a visible water center adds a recognizable public-space landmark south of the village green. It reuses existing Stone and Water tiles.
+- Settlement placement now skips the player's starting clearing and the boss arena before rasterizing the hamlet, avoiding accidental overwrites of those important areas.
+- These additions are deterministic tile-map features in the current SDL renderer. The palisade is not yet a destructible 3D wall, and the well has no water-drawing interaction or dedicated prop model.
