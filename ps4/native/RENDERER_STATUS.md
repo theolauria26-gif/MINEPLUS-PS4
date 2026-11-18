@@ -168,3 +168,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - Florestas temperadas agora recebem vaga-lumes discretos durante a noite; os campos de cristais recebem partículas frias azuladas. A densidade e a intensidade acompanham a noite, e posições/deriva usam seed e tempo para evitar sorteios e alocações por frame.
 - O efeito é desenhado em espaço de tela sobre o terreno, condicionado ao bioma na posição do jogador. É atmosfera visual leve, não entidades persistentes, IA de insetos, partículas volumétricas ou iluminação dinâmica real.
+
+
+## Detalhes de margens de rios e lagos
+
+- Bancos de areia em contato direto com água doce podem receber pequenos juncos e seixos. A colocação usa coordenadas globais e hash determinístico; a consulta aos quatro vizinhos evita vegetação em areia seca/desértica.
+- O detalhe é desenhado no passe de textura SDL existente, sem novos IDs de bloco, entidades, alocações por pixel ou alterações no formato de save. Continua sendo decoração 2D projetada, não vegetação 3D com colisão.
