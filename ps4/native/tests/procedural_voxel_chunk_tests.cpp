@@ -36,7 +36,9 @@ int main(){
  assert(mesh.vertices.size()==mesh.quads.size()*4);
  assert(mesh.indices.size()==mesh.quads.size()*6);
  std::vector<VoxelGpuVertex> staging;
- assert(VoxelGpuUploadBuilder::build(mesh.vertices,staging));
+ std::vector<std::uint32_t> staged_indices;
+ assert(VoxelGpuMeshUploadBuilder::build(mesh.vertices,mesh.indices,staging,staged_indices));
+ assert(staged_indices==mesh.indices);
  assert(staging.size()==mesh.vertices.size());
  for(std::size_t i=0;i<staging.size();++i) {
   assert(staging[i].x==mesh.vertices[i].x && staging[i].y==mesh.vertices[i].y && staging[i].z==mesh.vertices[i].z);
