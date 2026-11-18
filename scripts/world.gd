@@ -431,7 +431,7 @@ func _refresh_inventory() -> void:
 	if inventory_grid == null:
 		return
 	if inventory_tool_label:
-		inventory_tool_label.text = "PICARETA  •  Durabilidade: %d / 40" % pickaxe_durability
+		inventory_tool_label.text = "PICARETA %d/40  •  MACHADO %d/40" % [pickaxe_durability, axe_durability]
 	for child in inventory_grid.get_children():
 		child.queue_free()
 	for i in range(INVENTORY_NAMES.size()):
@@ -698,7 +698,7 @@ func _load_world() -> void:
 	saved_player_rotation_y = float(parsed["player_rotation_y"])
 	saved_camera_pitch = float(parsed["camera_pitch"])
 	saved_selected_block = int(parsed["selected_block"])
-	for i in range(BLOCK_NAMES.size()):
+	for i in range(INVENTORY_NAMES.size()):
 		block_counts[i] = int(parsed["inventory"][i])
 	for entry in parsed["blocks"]:
 		_add_block(Vector3i(int(entry[0]), int(entry[1]), int(entry[2])), int(entry[3]))
@@ -799,7 +799,7 @@ func _terrain_drop_index(terrain_type: int) -> int:
 	match terrain_type:
 		MineplusWorldGen.Block.GRASS: return 0
 		MineplusWorldGen.Block.WOOD: return 6
-		MineplusWorldGen.Block.DIRT, MineplusWorldGen.Block.SNOW, MineplusWorldGen.Block.ICE, MineplusWorldGen.Block.WOOD: return 1
+		MineplusWorldGen.Block.DIRT, MineplusWorldGen.Block.SNOW, MineplusWorldGen.Block.ICE: return 1
 		MineplusWorldGen.Block.STONE, MineplusWorldGen.Block.BASALT: return 2
 		MineplusWorldGen.Block.SAND: return 3
 		MineplusWorldGen.Block.MOSS: return 4
@@ -869,6 +869,10 @@ func _interact(place: bool) -> void:
 					axe_visual.visible = false
 			block_counts[drop_index] += 1
 			_update_hotbar()
+			if needs_axe and axe_durability == 0 and status_label:
+				status_label.text = "Seu machado quebrou. Fabrique outro na bancada."
+			elif needs_pickaxe and pickaxe_durability == 0 and status_label:
+				status_label.text = "Sua picareta quebrou. Fabrique outra na bancada."
 			_save_world(true)
 			return
 		if cell.y >= 0:
