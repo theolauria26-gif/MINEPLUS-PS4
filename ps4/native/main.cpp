@@ -536,6 +536,9 @@ void init_world(){
   if(!mineplus::surface_settlement_for_cell(pcg,cx,cy,settlement))continue;
   const int centerX=settlement.x+COLS/2,centerY=settlement.y+ROWS/2;
   if(centerX<20||centerY<20||centerX>=COLS-20||centerY>=ROWS-20)continue;
+  // Keep the player's arrival clearing and the boss arena free of settlement footprints.
+  if(std::abs(centerX-COLS/2)+std::abs(centerY-ROWS/2)<24||
+     std::abs(centerX-BOSS_X)+std::abs(centerY-BOSS_Y)<24)continue;
   bool blocked=false;
   for(int oy=-17;oy<=17&&!blocked;++oy)for(int ox=-17;ox<=17;++ox){
    if(ox*ox+oy*oy>17*17)continue;
@@ -561,6 +564,21 @@ void init_world(){
     if(gx<2||gy<2||gx>=COLS-2||gy>=ROWS-2)continue;
     world[gy*COLS+gx]=(ox==0&&oy==0)?Moss:Leaves;
    }
+  }
+  // A timber palisade encloses the hamlet. Four narrow cardinal gates preserve
+  // clear approaches; the circular footprint leaves every house inside the wall.
+  for(int oy=-16;oy<=16;++oy)for(int ox=-16;ox<=16;++ox){
+   if(std::max(std::abs(ox),std::abs(oy))!=16||ox*ox+oy*oy>16*16+16)continue;
+   if((std::abs(ox)<=1&&oy==-16)||(std::abs(ox)<=1&&oy==16)||
+      (std::abs(oy)<=1&&ox==-16)||(std::abs(oy)<=1&&ox==16))continue;
+   const int gx=centerX+ox,gy=centerY+oy;
+   if(gx>=2&&gy>=2&&gx<COLS-2&&gy<ROWS-2)world[gy*COLS+gx]=Wood;
+  }
+  // A stone-lined village well sits just south of the green, away from doors.
+  for(int oy=-1;oy<=1;++oy)for(int ox=-1;ox<=1;++ox){
+   const int gx=centerX+ox,gy=centerY+7+oy;
+   if(gx<2||gy<2||gx>=COLS-2||gy>=ROWS-2)continue;
+   world[gy*COLS+gx]=(ox==0&&oy==0)?Water:Stone;
   }
   for(std::uint8_t i=0;i<5u;++i){
    mineplus::SettlementBuilding building{};
