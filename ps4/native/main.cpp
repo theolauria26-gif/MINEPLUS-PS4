@@ -291,6 +291,34 @@ void init_world(){
    if(tile!=Air)world[ly*COLS+lx]=tile;
   }
  }
+ // Surface landmarks weather into their surroundings: moss creeps onto
+ // selected outer masonry and small vine-like leaf patches gather at the
+ // perimeter. Entrances, relics, chests and the inner structure stay intact.
+ for(int cy=-13;cy<=13;++cy)for(int cx=-13;cx<=13;++cx){
+  mineplus::StructureAnchor anchor{};
+  if(!pcg.structure_anchor_for_cell(cx,cy,anchor))continue;
+  const int reach=anchor.radius+2;
+  for(int oy=-reach;oy<=reach;++oy)for(int ox=-reach;ox<=reach;++ox){
+   const int lx=anchor.x+ox+COLS/2,ly=anchor.y+oy+ROWS/2;
+   if(lx<2||ly<2||lx>=COLS-2||ly>=ROWS-2)continue;
+   const int d=ox*ox+oy*oy;
+   const unsigned overgrowth=hash2(anchor.x+ox*19+0x51A,
+                                    anchor.y+oy*23-0x2D7);
+   auto& tile=world[ly*COLS+lx];
+   // Only the outside ring of dark masonry receives moss; important
+   // structure tiles and the center are never replaced.
+   if(tile==DarkStone&&d>=(anchor.radius-1)*(anchor.radius-1)&&
+      overgrowth%7u==0u){
+    tile=Moss;
+    continue;
+   }
+   // Low creeping foliage grows around, never across, the landmark footprint.
+   if(d>anchor.radius*anchor.radius&&d<=(anchor.radius+2)*(anchor.radius+2)&&
+      (tile==Grass||tile==Moss)&&overgrowth%13u==0u){
+    tile=Leaves;
+   }
+  }
+ }
  // Connect nearby landmarks with coordinate-stable dirt roads. Links are
  // chosen by the PCG world, drawn once at generation time and never rerolled.
  for(int cy=-13;cy<=13;++cy)for(int cx=-13;cx<=13;++cx){
