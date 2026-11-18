@@ -808,6 +808,37 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
    default: break;
   }
   if(draw){color(r,g,b,alpha);SDL_RenderDrawPoint(renderer,sx,py);}
+  // Exposed roots emerge from the soil beside living trunks. They are a
+  // screen-space material detail only: no tile edits, collision or save data.
+  if((t==Grass||t==Moss)&&py<=top+5){
+   const bool rooted=tile_at(wx+1,wy)==Wood||tile_at(wx-1,wy)==Wood||
+                     tile_at(wx,wy+1)==Wood;
+   const unsigned root=hash2(wx+int(t)*17,wy-0x391);
+   if(rooted&&(root%5u)!=0u){
+    const int reach=2+static_cast<int>((root>>7)%4u);
+    const int bend=(root&0x100u)?1:-1;
+    color(t==Moss?91:112,t==Moss?76:83,t==Moss?48:54,205);
+    SDL_RenderDrawLine(renderer,sx,py+1,sx+bend*reach,py+2);
+    if((root&0x400u)!=0u){
+     color(t==Moss?132:145,t==Moss?111:112,t==Moss?68:70,185);
+     SDL_RenderDrawPoint(renderer,sx+bend*(reach-1),py+1);
+    }
+   }
+  }
+  // Moss creeps over the exposed face of boulders beside damp ground.
+  if(t==Stone&&py<=top+5){
+   const bool damp=tile_at(wx+1,wy)==Moss||tile_at(wx-1,wy)==Moss||
+                   tile_at(wx,wy+1)==Moss||tile_at(wx,wy-1)==Moss;
+   const unsigned lichen=hash2(wx-0x217,wy+0x5B1);
+   if(damp&&(lichen%3u)!=0u){
+    color(77,119,65,205);
+    SDL_RenderDrawPoint(renderer,sx,py+1);
+    if((lichen&0x180u)==0u){
+     color(111,151,78,190);
+     SDL_RenderDrawPoint(renderer,sx,py+4);
+    }
+   }
+  }
   // Sparse reeds and rounded pebbles grow only on sand directly bordering
   // fresh water. The global tile query keeps the shoreline decoration stable
   // when the camera moves and avoids placing reeds in dry deserts.
