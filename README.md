@@ -94,7 +94,7 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 
 
 - Atualização nativa mais recente: o workflow [44379732777](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44379732777), no commit `f9b85d84`, concluiu com sucesso testes portáveis, compilação do EBOOT/PKG, validação estrutural e publicação do artefato `MINEPLUS-PS4-PKG` (5.978.581 bytes; artefato [14463836288](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44379732777)). A validação não inclui instalação ou execução em console físico.
-- A validação Godot [44384011753](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44384011753), no commit `e66b4a7f`, instalou Godot 4.3 headless e passou pela importação/parsing do projeto, instanciação de `scenes/world.tscn` e testes de migração/recuperação do save versão 6, incluindo madeira e durabilidade do machado.
+- A validação Godot mais recente, [44384221699](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44384221699), no commit `93f1f8e5`, instalou Godot 4.3 headless e passou pela importação/parsing do projeto, instanciação de `scenes/world.tscn` e testes de migração/recuperação do save versão 6. Ela inclui a nova madeira, durabilidade do machado e a interface de inventário com rolagem para telas estreitas.
 
 ## Direção visual: materiais pixel-art
 
