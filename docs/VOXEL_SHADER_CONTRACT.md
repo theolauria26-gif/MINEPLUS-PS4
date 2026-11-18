@@ -28,7 +28,7 @@ The fragment stage should repeat the tile-local UV within each material cell, th
 
 ## Geometry and rasterization
 
-- Each greedy quad emits four vertices and six uint32 indices.
+- Each greedy quad emits four vertices and six uint32 indices. `VoxelGpuMeshUploadBuilder` validates the complete CPU package before staging: index count must be divisible by three, every index must address an existing source vertex, and both streams must remain within their configured budgets. It prepares the packed vertex stream and a matching uint32 index stream together; it does not allocate or upload GPU buffers.
 - Index order per quad is `0,1,2, 0,2,3` relative to its four-vertex base.
 - Tests calculate both triangle cross products and require them to agree with the outward axial normal.
 - Face normals are one of the six signed cardinal axes.
@@ -49,3 +49,6 @@ This contract does not supply shader source or binaries, GNM resource descriptor
 ## Atlas sampling reference tests
 
 Portable tests cover row-major cells, half-texel bounds, integer-repeat boundaries, UVs beyond one tile, negative UV wrapping, and rejection of air/non-finite coordinates. These tests validate the CPU reference contract only; they do not execute a GPU shader.
+
+
+The portable upload tests exercise valid triangle lists, non-triangle index counts, out-of-range indices, and vertex/index budget rejection. The integration test stages a real procedurally generated chunk and verifies the staged index stream exactly matches its CPU mesh.
