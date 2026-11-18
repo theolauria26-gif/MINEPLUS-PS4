@@ -200,3 +200,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - Clareiras de florestas podem receber árvores mortas esparsas, com troncos sem copa, galhos quebrados e alguns detalhes claros de madeira envelhecida. A colocação é determinística por coordenada, evita árvores próximas, o início e a arena do chefe.
 - A decoração reutiliza os materiais Wood e Bone existentes, sem novos IDs, entidades, colisões especiais ou campos de save. No renderizador atual, são silhuetas da grade 2D projetada, não árvores 3D com física, queda ou decomposição simulada.
+
+### Ruins reclaimed by the surface
+
+- Surface landmarks receive deterministic perimeter overgrowth during world generation: selected outer dark-stone segments weather into moss, while sparse leaf patches gather just outside the footprint.
+- The pass deliberately preserves entrances, central relics, chests and interior landmark tiles. It reuses existing Moss and Leaves tile IDs and does not alter save schemas.
+- Overgrowth is generated from anchor/world coordinates, so it remains stable across reloads. It is a 2D tile-map treatment, not climbing vine geometry or a 3D structure system.
