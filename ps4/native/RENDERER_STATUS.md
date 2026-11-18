@@ -304,3 +304,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - A separação de responsabilidades também é relevante: o dispositivo gráfico possui display e submissão; o renderer solicita espaço e recursos e registra desenhos. O MINEPLUS deve manter esse isolamento para que SDL2 continue como fallback.
 - A referência é licenciada GPL-3.0-or-later. Nenhum código-fonte dela foi copiado para o MINEPLUS; foi usada apenas para identificar responsabilidades e riscos arquiteturais. Antes de reutilizar qualquer implementação, seria necessária uma análise explícita de compatibilidade de licença.
 - O próximo protótipo precisa validar cada bloco isoladamente: alocação/mapeamento GPU; render target e depth; binários VS/PS compatíveis; descriptors e vertex fetch; gravação/submissão de comandos; sincronização e flip. Só depois disso o staging de 36 bytes poderá ser ligado a um pipeline real.
+
+
+### Voxel atlas sampling reference
+
+- Added `material_atlas_resolve_uv()` as a CPU reference for future fragment-shader atlas lookup. It wraps positive and negative tile-local UVs with floor-based fractional coordinates, applies the half-texel inset, and rejects unknown material IDs or non-finite UVs.
+- Portable regression tests cover repeat boundaries, multi-tile greedy UVs, negative coordinates, invalid material IDs and NaN inputs. This is a tested CPU contract, not a compiled or running PS4 shader.
