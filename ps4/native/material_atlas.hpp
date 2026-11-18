@@ -14,4 +14,9 @@ struct MaterialAtlasRegion {
 };
 // Returns false for air, reserved cells, and unknown material IDs.
 bool material_atlas_region(std::uint8_t material, MaterialAtlasRegion& output);
+
+// CPU reference for the future fragment shader: wraps tile-local UVs (including
+// negative coordinates) and maps them into the material cell's half-texel inset.
+bool material_atlas_resolve_uv(std::uint8_t material, float tile_u, float tile_v,
+                                float& atlas_u, float& atlas_v);
 } // namespace mineplus
