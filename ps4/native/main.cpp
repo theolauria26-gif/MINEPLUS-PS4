@@ -281,6 +281,20 @@ void init_world(){
       tile=Crystal;
      else if(d<r2/4&&((ox+oy+int(anchor.x))&3)==0)tile=Moss;
      break;
+    case 7: { // Collapsed ancient causeway with a cracked deck and broken rails.
+     const unsigned axis=hash2(anchor.x+0x6D2,anchor.y-0x3A1)&1u;
+     const int along=axis?oy:ox, across=axis?ox:oy;
+     if(std::abs(along)<=radius-2&&std::abs(across)<=1){
+      if(across==0)tile=((std::abs(along)==radius-2)||
+          (std::abs(along)>2&&hash2(anchor.x+along*17,anchor.y+along*29)%19u==0u))
+          ?Sand:DarkStone;
+      else if(std::abs(along)%5!=0||hash2(anchor.x+along*11,anchor.y+across*31)%3u==0u)
+       tile=DarkStone;
+     }
+     if(std::abs(along)==radius-2&&std::abs(across)<=2)tile=Crystal;
+     if(std::abs(along)<=1&&across==0)tile=AncientRune;
+     break;
+    }
     default: // Bone altar, dark ring and central ancient relic.
      if(d>=r2-2)tile=Bone;
      else if(cardinal&&d>r2/4)tile=DarkStone;
