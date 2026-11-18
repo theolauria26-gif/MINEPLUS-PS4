@@ -787,7 +787,21 @@ void draw_material_texture(int t,int sx,int top,int bottom,int wx,int wy,unsigne
                       tile_at(wx,wy+1)==Water||tile_at(wx,wy-1)==Water;
    if(wetEdge){
     const unsigned plant=hash2(wx,wy);
-    if((plant%3u)!=0u){
+    if((plant%41u)==0u){
+     // Driftwood rests on selected wet banks: a short bark silhouette with
+     // a cut end and one pale grain mark. It is purely visual and walkable.
+     const int length=4+static_cast<int>((plant>>7)%4u);
+     const int direction=(plant&0x100u)?1:-1;
+     color(91,63,43,225);
+     SDL_RenderDrawLine(renderer,sx,py-1,sx+direction*length,py-1);
+     color(133,91,57,235);
+     SDL_RenderDrawLine(renderer,sx+direction,sx?py-2:py-2,
+                        sx+direction*(length-1),py-2);
+     color(63,48,39,225);
+     SDL_RenderDrawPoint(renderer,sx+direction*length,py-1);
+     color(174,128,79,180);
+     SDL_RenderDrawPoint(renderer,sx+direction*(length/2),py-2);
+    }else if((plant%3u)!=0u){
      const int lean=static_cast<int>((plant>>5)%3u)-1;
      color(87,139,83,205);SDL_RenderDrawLine(renderer,sx,py+1,sx+lean,py-5);
      color(133,178,101,210);SDL_RenderDrawPoint(renderer,sx+lean-1,py-3);
