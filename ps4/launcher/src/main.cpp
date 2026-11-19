@@ -1,9 +1,6 @@
 #include <time.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <orbis/SystemService.h>
-#include <orbis/UserService.h>
-extern "C" int32_t sceLncUtilInitialize(void);
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -24,7 +21,6 @@ std::string libraryStatus="SCANNING LIBRARY";
 std::vector<Particle> particles;
 int selected=0,hubSelected=0; bool hub=false,running=true;
 std::string notice; float noticeTimer=0.0f;
-bool launchServicesReady=false; int32_t launchUserId=-1; std::string launchServiceStatus="LAUNCH SERVICE NOT INITIALIZED";
 float focus=0.0f, bgMix=1.0f;
 SDL_Window* window=nullptr; SDL_Renderer* renderer=nullptr;
 void fill(int x,int y,int w,int h,SDL_Color c){SDL_SetRenderDrawColor(renderer,c.r,c.g,c.b,c.a);SDL_Rect r{x,y,w,h};SDL_RenderFillRect(renderer,&r);}
@@ -131,24 +127,6 @@ void scanInstalledGames(){
  else libraryStatus="NO READABLE GAMES FOUND";
 }
 
-void initializeLaunchServices(){
- OrbisUserServiceInitializeParams params{};params.priority=256;
- int32_t userInit=sceUserServiceInitialize(&params);
- if(userInit<0){launchServiceStatus="USER SERVICE INIT FAILED";return;}
- int32_t userResult=sceUserServiceGetForegroundUser(&launchUserId);
- if(userResult<0||launchUserId<0){launchServiceStatus="FOREGROUND USER UNAVAILABLE";return;}
- int32_t lncResult=sceLncUtilInitialize();
- if(lncResult<0){launchServiceStatus="LNC SERVICE INIT FAILED";return;}
- launchServicesReady=true;launchServiceStatus="LAUNCH SERVICE READY";
-}
-void launchSelectedGame(){
- if(games.empty()){notice="NO GAME SELECTED";noticeTimer=3.0f;return;}
- if(!launchServicesReady){notice=launchServiceStatus;noticeTimer=3.5f;return;}
- LncAppParam param{};param.size=sizeof(LncAppParam);param.user_id=static_cast<uint32_t>(launchUserId);param.app_opt=0;param.crash_report=0;param.LaunchAppCheck_flag=LaunchApp_None;
- uint32_t result=static_cast<uint32_t>(sceLncUtilLaunchApp(games[selected].titleId.c_str(),nullptr,&param));
- if((result&0x80000000u)==0){notice="LAUNCH REQUEST ACCEPTED";noticeTimer=4.0f;}
- else{char message[48];std::snprintf(message,sizeof(message),"LAUNCH ERROR 0x%08X",result);notice=message;noticeTimer=5.0f;}
-}
 void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
 void draw(){
  fill(0,0,W,H,{8,11,18,255});
@@ -248,7 +226,7 @@ int main(int,char**){
  float axisRepeat=0.0f;
  IMG_Init(IMG_INIT_PNG);
  SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);
- initParticles();scanInstalledGames();initializeLaunchServices();Uint64 prev=SDL_GetPerformanceCounter();
+ initParticles();scanInstalledGames();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
   if(e.type==SDL_CONTROLLERDEVICEADDED&&!pad&&SDL_IsGameController(e.cdevice.which))pad=SDL_GameControllerOpen(e.cdevice.which);
@@ -259,7 +237,7 @@ int main(int,char**){
    if(hub){
     static const char* hubMessages[4]={"GAME LIBRARY","MEDIA CENTER NOT AVAILABLE","SETTINGS NOT AVAILABLE","PROFILE NOT AVAILABLE"};
     notice=hubMessages[hubSelected];noticeTimer=3.0f;hub=false;
-   }else{launchSelectedGame();}
+   }else if(!games.empty()){notice="LAUNCH API NOT AVAILABLE";noticeTimer=3.5f;}
    break;default:break;}}}
   if(pad){Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);if(axis>16000||axis< -16000){axisRepeat-=dt;if(axisRepeat<=0.0f){if(hub)hubSelected=(hubSelected+(axis>0?1:3))%4;else move(axis>0?1:-1);axisRepeat=0.24f;}}else axisRepeat=0.0f;}
   update(dt);draw();
