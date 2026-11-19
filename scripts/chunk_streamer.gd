@@ -280,12 +280,17 @@ func _build_chunk(key: Vector2i) -> void:
 	visual.mesh = mesh
 	visual.material_override = material
 	var decorations := root.get_node_or_null("Decorations") as MeshInstance3D
-	if decorations == null:
-		decorations = MeshInstance3D.new()
-		decorations.name = "Decorations"
-		root.add_child(decorations)
-	decorations.mesh = decoration_mesh
-	decorations.material_override = material
+	if decoration_mesh != null and decoration_mesh.get_surface_count() > 0:
+		if decorations == null:
+			decorations = MeshInstance3D.new()
+			decorations.name = "Decorations"
+			root.add_child(decorations)
+		decorations.mesh = decoration_mesh
+		decorations.material_override = material
+		decorations.visible = true
+	elif decorations != null:
+		# Recycled chunks may still own an old decoration mesh; hide it explicitly.
+		decorations.visible = false
 	var body := root.get_node_or_null("CollisionBody") as StaticBody3D
 	if body == null:
 		body = StaticBody3D.new()
