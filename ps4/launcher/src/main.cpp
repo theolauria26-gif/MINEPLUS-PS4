@@ -65,6 +65,12 @@ void textBlock(const char* s,int x,int y,int scale,SDL_Color c){
    if(p[row*5+col]=='1')fill(x+col*scale,y+row*scale,scale,scale,c);
  }
 }
+void textBlockFit(const std::string& value,int x,int y,int scale,int maxWidth,SDL_Color c){
+ size_t maxChars=maxWidth>0?size_t(maxWidth/(6*scale)):value.size();
+ std::string clipped=value;
+ if(clipped.size()>maxChars){if(maxChars>3)clipped=clipped.substr(0,maxChars-3)+"...";else clipped=clipped.substr(0,maxChars);}
+ textBlock(clipped.c_str(),x,y,scale,c);
+}
 void initParticles(){particles.clear();for(int i=0;i<110;++i){float f=float(i);particles.push_back({float((i*173)%W),float((i*97)%H),float(std::sin(f*1.7f)*7.0),-8.0f-float(i%9),1.0f+float(i%3),0.15f+float(i%5)*0.06f});}}
 uint32_t le32(const std::vector<uint8_t>& b,size_t p){return uint32_t(b[p])|(uint32_t(b[p+1])<<8)|(uint32_t(b[p+2])<<16)|(uint32_t(b[p+3])<<24);}
 uint16_t le16(const std::vector<uint8_t>& b,size_t p){return uint16_t(b[p])|(uint16_t(b[p+1])<<8);}
@@ -90,7 +96,7 @@ void scanInstalledGames(){
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED";games.clear();selected=0;return;}
  {
   dirent* ent;
-  while((ent=readdir(dir))!=nullptr&&found.size()<40){
+  while((ent=readdir(dir))!=nullptr&&found.size()<256){
    if(ent->d_name[0]=='.')continue;
    std::string root="/user/app/"+std::string(ent->d_name);
    struct stat st{};if(stat(root.c_str(),&st)!=0||!S_ISDIR(st.st_mode))continue;
@@ -113,6 +119,7 @@ void scanInstalledGames(){
   return std::lexicographical_compare(a.title.begin(),a.title.end(),b.title.begin(),b.title.end(),
    [](unsigned char x,unsigned char y){return std::tolower(x)<std::tolower(y);});
  });
+ if(found.size()>40)found.resize(40);
  games.swap(found);selected=0;
  if(!games.empty())libraryStatus="INSTALLED GAMES FOUND";
  else libraryStatus="NO READABLE GAMES FOUND";
@@ -174,7 +181,7 @@ void draw(){
  fill(112,510,5,130,{104,210,190,255});
  if(!games.empty()){
   const Game& g=games[selected];
-  textBlock(g.title.c_str(),140,530,5,{226,234,242,255});
+  textBlockFit(g.title,140,530,5,1640,{226,234,242,255});
   textBlock("INSTALLED GAME",140,590,2,{117,184,180,255});
   textBlock(g.titleId.c_str(),140,630,2,{166,184,202,255});
  }else{
@@ -207,7 +214,7 @@ void draw(){
 void move(int d){if(games.empty())return;selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
 }
 int main(int,char**){
- if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_AUDIO)!=0)return 1;
+ if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER)!=0)return 1;
  window=SDL_CreateWindow("PS5-style Homebrew Launcher",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,W,H,SDL_WINDOW_SHOWN);
  if(!window){SDL_Quit();return 2;}
  renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
