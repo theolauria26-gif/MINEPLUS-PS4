@@ -12,6 +12,14 @@ func _expect(condition: bool, description: String) -> void:
 
 func _run() -> void:
 	var wind_shader := load("res://shaders/foliage_wind.gdshader") as Shader
+	var world_script := load("res://scripts/world.gd") as GDScript
+	_expect(world_script != null, "world input script loads for touch-zone tests")
+	if world_script != null:
+		_expect(world_script._touch_starts_look(Vector2(900, 320), Vector2(1280, 720)), "right-side upper touch starts camera look")
+		_expect(not world_script._touch_starts_look(Vector2(600, 320), Vector2(1280, 720)), "left movement zone does not start camera look")
+		_expect(not world_script._touch_starts_look(Vector2(900, 620), Vector2(1280, 720)), "lower action-button zone does not start camera look")
+		_expect(not world_script._touch_starts_look(Vector2(900, -1), Vector2(1280, 720)), "touch outside viewport is rejected")
+		_expect(not world_script._touch_starts_look(Vector2(900, 320), Vector2.ZERO), "zero-sized viewport is rejected")
 	_expect(wind_shader != null, "procedural foliage wind shader loads")
 	var streamer := MineplusChunkStreamer.new()
 	streamer.generator = MineplusWorldGen.new(731942)
