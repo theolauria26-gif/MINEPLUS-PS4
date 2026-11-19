@@ -110,13 +110,35 @@ void draw(){
  for(const auto& p:particles){SDL_SetRenderDrawColor(renderer,145,177,205,Uint8(p.a*180));SDL_Rect q{int(p.x),int(p.y),int(p.r),int(p.r)};SDL_RenderFillRect(renderer,&q);}
  textBlock("LIBRARY",110,55,2,{146,168,190,255});
  textBlock("MINEPLUS",W-360,48,3,{220,229,239,255});
- // Horizontal game row, selected card grows and lifts.
- const int start=110,baseY=190,cardW=236,cardH=150,gap=24;
- for(int i=0;i<(int)games.size();++i){float active=(i==selected)?focus:0.0f;int w=cardW+int(active*28),h=cardH+int(active*18);int x=start+i*(cardW+gap)-int(active*14),y=baseY-int(active*26);auto c=games[i].color;
-  fill(x-5,y-5,w+10,h+10,{Uint8(i==selected?220:65),Uint8(i==selected?226:76),Uint8(i==selected?237:91),255});fill(x,y,w,h,c);
-  fill(x+14,y+14,w-28,4,{Uint8(255),Uint8(255),Uint8(255),Uint8(75)});
-  fill(x+18,y+h-27,w-36,5,{Uint8(15),Uint8(18),Uint8(25),Uint8(160)});
-  textBlock(games[i].title.c_str(),x+16,y+h-55,2,{235,239,245,255});
+ // Five-slot carousel keeps the selected installed title centered, even with 40 entries.
+ const int baseY=184,cardW=292,cardH=178,gap=26;
+ const int visible=(int)std::min<size_t>(5,games.size());
+ const int start=(W-(visible*cardW+(visible-1)*gap))/2;
+ for(int slot=0;slot<visible;++slot){
+  int idx=(selected-visible/2+slot+(int)games.size())%(int)games.size();
+  const Game& game=games[idx];bool chosen=(idx==selected);
+  float active=chosen?focus:0.0f;
+  int w=cardW+int(active*24),h=cardH+int(active*18);
+  int x=start+slot*(cardW+gap)-int(active*12),y=baseY-int(active*22);
+  unsigned hash=2166136261u;for(unsigned char ch:game.titleId){hash^=ch;hash*=16777619u;}
+  SDL_Color accent{Uint8(72+(hash&63)),Uint8(82+((hash>>7)&63)),Uint8(105+((hash>>14)&63)),255};
+  SDL_Color shade{Uint8(accent.r/3),Uint8(accent.g/3),Uint8(accent.b/3),255};
+  fill(x-5,y-5,w+10,h+10,chosen?SDL_Color{220,229,239,255}:SDL_Color{48,61,78,255});
+  fill(x,y,w,h,shade);
+  fill(x,y,w,7,accent);
+  // Layered geometric artwork is generated from the real title ID, not a fake cover.
+  fill(x+18,y+25,w-36,2,{accent.r,accent.g,accent.b,105});
+  fill(x+26,y+43,w-52,72,{Uint8(accent.r/2),Uint8(accent.g/2),Uint8(accent.b/2),255});
+  fill(x+34,y+51,w-68,3,{accent.r,accent.g,accent.b,180});
+  fill(x+34,y+60,w-68,2,{accent.r,accent.g,accent.b,95});
+  fill(x+34,y+101,w-68,2,{accent.r,accent.g,accent.b,130});
+  fill(x+18,y+h-35,w-36,3,{12,17,26,220});
+  std::string label=game.title.substr(0,21);
+  textBlock(label.c_str(),x+18,y+h-26,2,{235,240,247,255});
+ }
+ if(!games.empty()){
+  char counter[24];std::snprintf(counter,sizeof(counter),"%02d / %02d",selected+1,(int)games.size());
+  textBlock(counter,W-250,395,2,{158,178,199,255});
  }
  // Hero area reports real scan results; never presents fake games as installed titles.
  fill(112,510,5,130,{104,210,190,255});
@@ -155,10 +177,15 @@ int main(int,char**){
  renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
  if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
  if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}
- SDL_GameController* pad=nullptr;if(SDL_NumJoysticks()>0&&SDL_IsGameController(0))pad=SDL_GameControllerOpen(0);
+ SDL_GameController* pad=nullptr;for(int i=0;i<SDL_NumJoysticks();++i){if(SDL_IsGameController(i)){pad=SDL_GameControllerOpen(i);if(pad)break;}}
+ float axisRepeat=0.0f;
  initParticles();scanInstalledGames();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
-  while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(hub)hubSelected=(hubSelected+3)%4;else move(-1);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub)hubSelected=(hubSelected+1)%4;else move(1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:hub=true;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:hub=false;break;case SDL_CONTROLLER_BUTTON_B:hub=false;break;case SDL_CONTROLLER_BUTTON_A:/* Launch backend intentionally not wired in prototype. */break;default:break;}}}
+  while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
+  if(e.type==SDL_CONTROLLERDEVICEADDED&&!pad&&SDL_IsGameController(e.cdevice.which))pad=SDL_GameControllerOpen(e.cdevice.which);
+  if(e.type==SDL_CONTROLLERDEVICEREMOVED&&pad&&SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad))==e.cdevice.which){SDL_GameControllerClose(pad);pad=nullptr;}
+  if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(hub)hubSelected=(hubSelected+3)%4;else move(-1);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub)hubSelected=(hubSelected+1)%4;else move(1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:hub=true;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:hub=false;break;case SDL_CONTROLLER_BUTTON_B:hub=false;break;case SDL_CONTROLLER_BUTTON_A:/* Launch backend intentionally not wired in prototype. */break;default:break;}}}
+  if(pad){Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);if(axis>16000||axis< -16000){axisRepeat-=dt;if(axisRepeat<=0.0f){if(hub)hubSelected=(hubSelected+(axis>0?1:3))%4;else move(axis>0?1:-1);axisRepeat=0.24f;}}else axisRepeat=0.0f;}
   update(dt);draw();
  }
  if(pad)SDL_GameControllerClose(pad);SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;
