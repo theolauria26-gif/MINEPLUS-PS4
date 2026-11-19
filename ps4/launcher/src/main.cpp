@@ -1,3 +1,4 @@
+#include <time.h>
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include <cmath>
@@ -25,7 +26,7 @@ void textBlock(const char* s,int x,int y,int scale,SDL_Color c){
  static const char* glyphs[10]={"01110 10001 10011 10101 11001 10001 01110","00100 01100 00100 00100 00100 00100 01110","01110 10001 00001 00010 00100 01000 11111","11110 00001 00001 01110 00001 00001 11110","00010 00110 01010 10010 11111 00010 00010","11111 10000 10000 11110 00001 00001 11110","01110 10000 10000 11110 10001 10001 01110","11111 00001 00010 00100 01000 01000 01000","01110 10001 10001 01110 10001 10001 01110","01110 10001 10001 01111 00001 00001 01110"};
  for(;*s;++s,x+=6*scale){if(*s<'0'||*s>'9')continue;const char* p=glyphs[*s-'0'];int bit=0;for(int row=0;row<7;++row)for(int col=0;col<5;++col){while(p[bit]==' ')++bit;if(p[bit++]=='1')fill(x+col*scale,y+row*scale,scale,scale,c);}}
 }
-void initParticles(){particles.clear();for(int i=0;i<110;++i){float f=float(i);particles.push_back({float((i*173)%W),float((i*97)%H),std::sin(f*1.7f)*7.0f,-8.0f-float(i%9),1.0f+float(i%3),0.15f+float(i%5)*0.06f});}}
+void initParticles(){particles.clear();for(int i=0;i<110;++i){float f=float(i);particles.push_back({float((i*173)%W),float((i*97)%H),float(std::sin(f*1.7f)*7.0),-8.0f-float(i%9),1.0f+float(i%3),0.15f+float(i%5)*0.06f});}}
 void update(float dt){focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
 void draw(){
  fill(0,0,W,H,{8,11,18,255});
