@@ -200,13 +200,14 @@ int main() {
                a.kind == b.kind && a.radius == b.radius);
     }
 
-    // Surface camps, watch-posts, causeways, keeps and fortified crossings
+    // Surface camps, watch-posts, causeways, keeps, crossings and farmsteads
     // are deterministic landmark families with stable world-seed placement.
     bool foundSurfaceCamp = false;
     bool foundFrontierWatchPost = false;
     bool foundAncientCauseway = false;
     bool foundMedievalKeep = false;
     bool foundFortifiedCrossing = false;
+    bool foundMedievalFarmstead = false;
     for (int cy = -24; cy <= 24; ++cy) {
         for (int cx = -24; cx <= 24; ++cx) {
             StructureAnchor campA{}, campB{};
@@ -214,7 +215,7 @@ int main() {
             const bool hasCampB = worldB.structure_anchor_for_cell(cx, cy, campB);
             assert(hasCampA == hasCampB);
             if (!hasCampA) continue;
-            assert(campA.kind >= 1 && campA.kind <= 9);
+            assert(campA.kind >= 1 && campA.kind <= 10);
             assert(campA.x == campB.x && campA.y == campB.y &&
                    campA.kind == campB.kind && campA.radius == campB.radius);
             if (campA.kind == 5) foundSurfaceCamp = true;
@@ -222,6 +223,7 @@ int main() {
             if (campA.kind == 7) foundAncientCauseway = true;
             if (campA.kind == 8) foundMedievalKeep = true;
             if (campA.kind == 9) foundFortifiedCrossing = true;
+            if (campA.kind == 10) foundMedievalFarmstead = true;
         }
     }
     assert(foundSurfaceCamp);
@@ -229,6 +231,7 @@ int main() {
     assert(foundAncientCauseway);
     assert(foundMedievalKeep);
     assert(foundFortifiedCrossing);
+    assert(foundMedievalFarmstead);
 
     // Road links select the same nearest landmark pair for identical seeds.
     int roadLinks = 0;
