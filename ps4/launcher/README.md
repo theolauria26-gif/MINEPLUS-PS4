@@ -13,7 +13,7 @@ Independent PS4 homebrew application. This project is intentionally isolated fro
 - Loads each installed title's real `sce_sys/icon0.png` when accessible, with a procedural fallback.
 - Caches at most five icon textures while browsing to keep GPU memory bounded.
 - Read-only discovery attempt under `/user/app/*/sce_sys/param.sfo`.
-- Bounded PARAM.SFO parser for `TITLE` and `TITLE_ID`, using bounded C stdio reads to avoid unsupported iostream locale code in the OpenOrbis libc++ headers.
+- Bounded PARAM.SFO parser for `TITLE` and `TITLE_ID`, with strict PS4 title-ID validation and self-entry filtering, using bounded C stdio reads to avoid unsupported iostream locale code in the OpenOrbis libc++ headers.
 - Lowercase-aware bitmap text with basic punctuation for readable title IDs and names.
 - Visible feedback for rescans and for menu/game actions that are not yet implemented.
 - Honest empty/denied library states; no fake game entries are presented as installed games.
