@@ -11,6 +11,8 @@ func _expect(condition: bool, description: String) -> void:
 		push_error("MINEPLUS VISUAL TEST FAILED: " + description)
 
 func _run() -> void:
+	var wind_shader := load("res://shaders/foliage_wind.gdshader") as Shader
+	_expect(wind_shader != null, "procedural foliage wind shader loads")
 	var streamer := MineplusChunkStreamer.new()
 	streamer.generator = MineplusWorldGen.new(731942)
 	var keys := [Vector2i(0, 0), Vector2i(-1, 0), Vector2i(38, 42), Vector2i(-46, 31)]
