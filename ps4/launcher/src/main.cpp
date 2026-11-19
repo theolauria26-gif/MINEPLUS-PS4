@@ -62,7 +62,7 @@ void initParticles(){particles.clear();for(int i=0;i<110;++i){float f=float(i);p
 uint32_t le32(const std::vector<uint8_t>& b,size_t p){return uint32_t(b[p])|(uint32_t(b[p+1])<<8)|(uint32_t(b[p+2])<<16)|(uint32_t(b[p+3])<<24);}
 uint16_t le16(const std::vector<uint8_t>& b,size_t p){return uint16_t(b[p])|(uint16_t(b[p+1])<<8);}
 std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
- if(b.size()<20||std::memcmp(b.data(),"\\0PSF",4)!=0)return {};
+ if(b.size()<20||std::memcmp(b.data(),"\0PSF",4)!=0)return {};
  uint32_t keys=le32(b,8),data=le32(b,12),count=le32(b,16);
  if(count>512||keys>=b.size()||data>=b.size())return {};
  for(uint32_t i=0;i<count;++i){size_t e=20+size_t(i)*16;if(e+16>b.size())break;
@@ -70,7 +70,8 @@ std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
   size_t kp=size_t(keys)+ko,dp=size_t(data)+off;
   if(kp>=b.size()||dp>b.size()||len>b.size()-dp)continue;
   const char* key=reinterpret_cast<const char*>(b.data()+kp);
-  if(std::strcmp(key,wanted)==0){size_t n=0;while(n<len&&b[dp+n])++n;return std::string(reinterpret_cast<const char*>(b.data()+dp),n);}
+  const void* keyEnd=std::memchr(key,0,b.size()-kp);if(!keyEnd)continue;
+  if(std::string(key,static_cast<const char*>(keyEnd)-key)==wanted){size_t n=0;while(n<len&&b[dp+n])++n;return std::string(reinterpret_cast<const char*>(b.data()+dp),n);}
  }
  return {};
 }
