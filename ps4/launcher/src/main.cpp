@@ -191,7 +191,8 @@ void draw(){
   textBlock("LIBRARY SCAN RESULT",140,590,2,{117,184,180,255});
  }
  textBlock(libraryStatus.c_str(),110,790,2,{166,184,202,255});
- textBlock("PRESS Y TO RESCAN",W-390,790,2,{117,184,180,255});
+ textBlock("D-PAD / STICK TO BROWSE",110,730,2,{166,184,202,255});
+ textBlock("TRIANGLE TO RESCAN",W-430,730,2,{117,184,180,255});
  if(!notice.empty()&&!hub){
   fill(105,830,760,64,{20,34,48,235});
   fill(105,830,4,64,{104,210,190,255});
