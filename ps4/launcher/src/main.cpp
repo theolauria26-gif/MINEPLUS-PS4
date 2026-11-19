@@ -23,7 +23,7 @@ struct Particle { float x,y,vx,vy,r,a; };
 std::vector<Game> games;
 std::string libraryStatus="SCANNING LIBRARY";
 std::vector<Particle> particles;
-int selected=0,hubSelected=0; bool hub=false,running=true;
+int selected=0,hubSelected=0,settingsCursor=0; bool hub=false,settingsPage=false,running=true; bool particlesEnabled=true,showTitleId=true;
 std::string notice; float noticeTimer=0.0f;
 bool launchServicesReady=false; int32_t launchUserId=-1; std::string launchServiceStatus="LAUNCH SERVICE NOT INITIALIZED";
 float focus=0.0f, bgMix=1.0f;
@@ -169,7 +169,7 @@ void draw(){
  // Layered atmospheric gradients and subtle horizon glow.
  for(int y=0;y<H;y+=8){float t=float(y)/H;fill(0,y,W,8,{Uint8(9+10*t),Uint8(14+13*t),Uint8(24+20*t),255});}
  for(int i=0;i<12;++i){int yy=590+i*18;line(0,yy,W,yy,{Uint8(25+i),Uint8(34+i),Uint8(51+i),90});}
- for(const auto& p:particles){SDL_SetRenderDrawColor(renderer,145,177,205,Uint8(p.a*180));SDL_Rect q{int(p.x),int(p.y),int(p.r),int(p.r)};SDL_RenderFillRect(renderer,&q);}
+ if(particlesEnabled)for(const auto& p:particles){SDL_SetRenderDrawColor(renderer,145,177,205,Uint8(p.a*180));SDL_Rect q{int(p.x),int(p.y),int(p.r),int(p.r)};SDL_RenderFillRect(renderer,&q);}
  textBlock("LIBRARY",110,55,2,{146,168,190,255});
  textBlock("MINEPLUS",W-360,48,3,{220,229,239,255});
  // Five-slot carousel keeps the selected installed title centered, even with 40 entries.
@@ -221,7 +221,7 @@ void draw(){
   const Game& g=games[selected];
   textBlockFit(g.title,140,530,5,1640,{226,234,242,255});
   textBlock("INSTALLED GAME",140,590,2,{117,184,180,255});
-  textBlock(g.titleId.c_str(),140,630,2,{166,184,202,255});
+  if(showTitleId)textBlock(g.titleId.c_str(),140,630,2,{166,184,202,255});
  }else{
   textBlock("NO GAMES FOUND",140,530,4,{226,234,242,255});
   textBlock("LIBRARY SCAN RESULT",140,590,2,{117,184,180,255});
@@ -235,17 +235,29 @@ void draw(){
   textBlock(notice.c_str(),128,850,2,{226,235,243,255});
  }
  if(hub){
-  fill(0,850,W,230,{10,15,24,245});
-  textBlock("CONTROL CENTER",110,872,2,{204,219,232,255});
-  fill(0,850,W,2,{102,145,164,210});
-  const char* labels[4]={"GAMES","MEDIA","SETTINGS","PROFILE"};
-  const char* hints[4]={"YOUR LIBRARY","MUSIC AND VIDEO","SYSTEM OPTIONS","PLAYER ACCOUNT"};
-  for(int i=0;i<4;++i){int x=110+i*420;bool active=(i==hubSelected);
-   fill(x,910,380,112,active?SDL_Color{222,232,239,255}:SDL_Color{28,39,54,255});
-   if(active)fill(x+10,920,360,92,{18,26,37,255});
-   SDL_Color tc=active?SDL_Color{238,244,249,255}:SDL_Color{174,190,207,255};
-   textBlock(labels[i],x+28,940,2,tc);
-   textBlock(hints[i],x+28,976,1,tc);
+  fill(0,820,W,260,{10,15,24,248});
+  fill(0,820,W,2,{102,145,164,210});
+  if(settingsPage){
+   textBlock("SETTINGS",110,850,3,{226,235,243,255});
+   textBlock("B TO RETURN - UP / DOWN TO SELECT - X TO CHANGE",110,900,1,{166,184,202,255});
+   const char* names[2]={"AMBIENT PARTICLES","SHOW GAME TITLE ID"};
+   const char* values[2]={particlesEnabled?"ON":"OFF",showTitleId?"ON":"OFF"};
+   for(int i=0;i<2;++i){int y=950+i*62;bool active=i==settingsCursor;
+    fill(110,y-12,760,48,active?SDL_Color{45,65,82,255}:SDL_Color{24,35,49,255});
+    textBlock(names[i],136,y,2,{226,235,243,255});
+    textBlock(values[i],760,y,2,active?SDL_Color{117,224,190,255}:SDL_Color{166,184,202,255});
+   }
+  }else{
+   textBlock("CONTROL CENTER",110,842,2,{204,219,232,255});
+   const char* labels[4]={"GAMES","MEDIA","SETTINGS","PROFILE"};
+   const char* hints[4]={"YOUR LIBRARY","MUSIC AND VIDEO","SYSTEM OPTIONS","PLAYER ACCOUNT"};
+   for(int i=0;i<4;++i){int x=110+i*420;bool active=(i==hubSelected);
+    fill(x,890,380,112,active?SDL_Color{222,232,239,255}:SDL_Color{28,39,54,255});
+    if(active)fill(x+10,900,360,92,{18,26,37,255});
+    SDL_Color tc=active?SDL_Color{238,244,249,255}:SDL_Color{174,190,207,255};
+    textBlock(labels[i],x+28,920,2,tc);
+    textBlock(hints[i],x+28,956,1,tc);
+   }
   }
  }
  SDL_RenderPresent(renderer);
@@ -268,11 +280,18 @@ int main(int,char**){
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
   if(e.type==SDL_CONTROLLERDEVICEADDED&&!pad&&SDL_IsGameController(e.cdevice.which))pad=SDL_GameControllerOpen(e.cdevice.which);
   if(e.type==SDL_CONTROLLERDEVICEREMOVED&&pad&&SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad))==e.cdevice.which){SDL_GameControllerClose(pad);pad=nullptr;}
-  if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(hub)hubSelected=(hubSelected+3)%4;else move(-1);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub)hubSelected=(hubSelected+1)%4;else move(1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:hub=true;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:hub=false;break;case SDL_CONTROLLER_BUTTON_B:hub=false;break;
+  if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){
+  case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(hub&&!settingsPage)hubSelected=(hubSelected+3)%4;else if(!hub)move(-1);break;
+  case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
+  case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(settingsPage)settingsCursor=(settingsCursor+1)%2;else hub=true;break;
+  case SDL_CONTROLLER_BUTTON_DPAD_UP:if(settingsPage)settingsCursor=(settingsCursor+1)%2;else hub=false;break;
+  case SDL_CONTROLLER_BUTTON_B:if(settingsPage)settingsPage=false;else hub=false;break;
   case SDL_CONTROLLER_BUTTON_Y:if(!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
   case SDL_CONTROLLER_BUTTON_A:
-   if(hub){
+   if(settingsPage){if(settingsCursor==0)particlesEnabled=!particlesEnabled;else showTitleId=!showTitleId;}
+   else if(hub){
     if(hubSelected==0){hub=false;notice.clear();noticeTimer=0.0f;}
+    else if(hubSelected==2){settingsPage=true;settingsCursor=0;}
     else{
      static const char* hubMessages[4]={"GAME LIBRARY","MEDIA CENTER NOT AVAILABLE","SETTINGS NOT AVAILABLE","PROFILE NOT AVAILABLE"};
      notice=hubMessages[hubSelected];noticeTimer=3.0f;hub=false;
