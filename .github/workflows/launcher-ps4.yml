@@ -29,7 +29,10 @@ jobs:
           echo "OO_PS4_TOOLCHAIN=$TOOLCHAIN_DIR" >> "$GITHUB_ENV"
       - name: Prepare package tools
         run: |
-          sudo apt-get install -y libssl1.1 || true
+          curl -L --fail --retry 5 "https://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb" -o "$RUNNER_TEMP/libssl1.1.deb"
+          sudo dpkg -i "$RUNNER_TEMP/libssl1.1.deb"
+          sudo ldconfig
+          test -e /usr/lib/x86_64-linux-gnu/libssl.so.1.1
           test -x "$OO_PS4_TOOLCHAIN/bin/linux/create-fself"
           test -x "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4"
           test -x "$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core"
