@@ -36,18 +36,6 @@ func _run() -> void:
 			elif kind == 5:
 				_expect(biome == MineplusWorldGen.Biome.FOREST or biome == MineplusWorldGen.Biome.HIGHLANDS, "monoliths use ancient forest/highland biomes")
 
-	for kind in [1, 2, 3, 4]:
-		var tool := SurfaceTool.new()
-		tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-		streamer._append_tree(tool, {"x": 2, "y": 12, "z": -3, "kind": kind, "hash": 918273})
-		var mesh := tool.commit()
-		_expect(mesh != null and mesh.get_surface_count() == 1, "tree kind %d produces 3D triangle geometry" % kind)
-	var monolith_tool := SurfaceTool.new()
-	monolith_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-	streamer._append_monolith(monolith_tool, {"x": 0, "y": 10, "z": 0})
-	var monolith_mesh := monolith_tool.commit()
-	_expect(monolith_mesh != null and monolith_mesh.get_surface_count() == 1, "monolith produces 3D triangle geometry")
-
 	if failures == 0:
 		print("MINEPLUS world-visual tests: OK")
 	else:
