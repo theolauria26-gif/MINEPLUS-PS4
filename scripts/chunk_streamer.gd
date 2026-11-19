@@ -335,7 +335,11 @@ func _build_chunk(key: Vector2i) -> void:
 			6: _append_ruin(decoration_st, anchor)
 			7: _append_dungeon_gate(decoration_st, anchor)
 			_: _append_tree(decoration_st, anchor)
-	var decoration_mesh := decoration_st.commit()
+	# SurfaceTool can return an empty ArrayMesh for chunks with no decorations.
+	# Do not attach that zero-surface resource to a MeshInstance3D.
+	var decoration_mesh: ArrayMesh = null
+	if decoration_st.get_vertex_count() > 0:
+		decoration_mesh = decoration_st.commit()
 	var root: Node3D
 	if not chunk_pool.is_empty():
 		root = chunk_pool.pop_back()
