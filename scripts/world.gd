@@ -275,27 +275,31 @@ func _animate_axe_swing() -> void:
 
 func _create_hud() -> void:
 	var hud := CanvasLayer.new()
-	hud.modulate.a = hud_opacity
-	add_child(hud)
+	add_child(hud_root)
+	var hud_root := Control.new()
+	hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_root.modulate.a = hud_opacity
+	hud_root.add_child(hud_root)
 	var top := Label.new()
 	top.text = "MINEPLUS  /  SURVIVAL PROTOTYPE"
 	top.position = Vector2(22, 18)
 	top.add_theme_color_override("font_color", Color("#e9f2f2"))
 	top.add_theme_font_size_override("font_size", 15)
-	hud.add_child(top)
+	hud_root.add_child(top)
 	status_label = Label.new()
 	status_label.text = "WASD mover  •  Mouse olhar  •  Clique quebrar/colocar"
 	status_label.position = Vector2(22, 44)
 	status_label.add_theme_color_override("font_color", Color("#c2d0d0"))
 	status_label.add_theme_font_size_override("font_size", 12)
-	hud.add_child(status_label)
+	hud_root.add_child(status_label)
 	var crosshair := Label.new()
 	crosshair.text = "+"
 	crosshair.set_anchors_preset(Control.PRESET_CENTER)
 	crosshair.position = Vector2(-7, -15)
 	crosshair.add_theme_font_size_override("font_size", 26)
 	crosshair.add_theme_color_override("font_color", Color("#ffffff"))
-	hud.add_child(crosshair)
+	hud_root.add_child(crosshair)
 	hotbar_label = Label.new()
 	hotbar_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	var hud_width := minf(500.0, get_viewport().get_visible_rect().size.x - 20.0)
@@ -304,25 +308,25 @@ func _create_hud() -> void:
 	hotbar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hotbar_label.add_theme_font_size_override("font_size", 17)
 	hotbar_label.add_theme_color_override("font_color", Color("#f1f5f2"))
-	hud.add_child(hotbar_label)
+	hud_root.add_child(hotbar_label)
 	_update_hotbar()
 	if OS.has_feature("mobile"):
-		_add_touch_controls(hud)
-	_add_hotbar_buttons(hud)
-	_add_save_button(hud)
-	_add_craft_button(hud)
-	_add_inventory_button(hud)
-	_create_inventory_panel(hud)
-	_create_pause_menu(hud)
+		_add_touch_controls(hud_root)
+	_add_hotbar_buttons(hud_root)
+	_add_save_button(hud_root)
+	_add_craft_button(hud_root)
+	_add_inventory_button(hud_root)
+	_create_inventory_panel(hud_root)
+	_create_pause_menu(hud_root)
 
-func _add_touch_controls(hud: CanvasLayer) -> void:
+func _add_touch_controls(hud: Control) -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	var ui_scale := clampf(minf(viewport_size.x / 720.0, viewport_size.y / 560.0), 0.55, 1.0)
 	var move_box := HBoxContainer.new()
 	move_box.position = Vector2(14, -112 * ui_scale)
 	move_box.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	move_box.add_theme_constant_override("separation", maxi(3, roundi(7.0 * ui_scale)))
-	hud.add_child(move_box)
+	hud_root.add_child(move_box)
 	_add_hold_button(move_box, "◀", "move_left", ui_scale)
 	_add_hold_button(move_box, "▲", "move_forward", ui_scale)
 	_add_hold_button(move_box, "▼", "move_back", ui_scale)
@@ -334,7 +338,7 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 	break_button.custom_minimum_size = Vector2(96, 54) * ui_scale
 	break_button.add_theme_font_size_override("font_size", 10)
 	break_button.pressed.connect(func(): _interact(false))
-	hud.add_child(break_button)
+	hud_root.add_child(break_button)
 	var place_button := Button.new()
 	place_button.text = "COLOCAR"
 	place_button.position = Vector2(-322 * ui_scale, -112 * ui_scale)
@@ -342,7 +346,7 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 	place_button.custom_minimum_size = Vector2(96, 54) * ui_scale
 	place_button.add_theme_font_size_override("font_size", 10)
 	place_button.pressed.connect(func(): _interact(true))
-	hud.add_child(place_button)
+	hud_root.add_child(place_button)
 	var jump := Button.new()
 	jump.text = "PULAR"
 	jump.position = Vector2(-112 * ui_scale, -112 * ui_scale)
@@ -351,9 +355,9 @@ func _add_touch_controls(hud: CanvasLayer) -> void:
 	jump.add_theme_font_size_override("font_size", 10)
 	jump.button_down.connect(func(): Input.action_press("jump"))
 	jump.button_up.connect(func(): Input.action_release("jump"))
-	hud.add_child(jump)
+	hud_root.add_child(jump)
 
-func _add_hotbar_buttons(hud: CanvasLayer) -> void:
+func _add_hotbar_buttons(hud: Control) -> void:
 	var bar := HBoxContainer.new()
 	bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	var viewport_width := get_viewport().get_visible_rect().size.x
@@ -362,7 +366,7 @@ func _add_hotbar_buttons(hud: CanvasLayer) -> void:
 	bar.size = Vector2(bar_width, 42)
 	bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	bar.add_theme_constant_override("separation", 5)
-	hud.add_child(bar)
+	hud_root.add_child(bar)
 	for i in range(BLOCK_NAMES.size()):
 		var slot := Button.new()
 		slot.text = str(i + 1) + " " + BLOCK_NAMES[i].substr(0, 3).to_upper()
@@ -377,16 +381,16 @@ func _select_block(index: int) -> void:
 	selected_block = clampi(index, 0, BLOCK_NAMES.size() - 1)
 	_update_hotbar()
 
-func _add_inventory_button(hud: CanvasLayer) -> void:
+func _add_inventory_button(hud: Control) -> void:
 	var button := Button.new()
 	button.text = "INVENTÁRIO"
 	button.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	button.position = Vector2(166, 76)
 	button.custom_minimum_size = Vector2(132, 42)
 	button.pressed.connect(_toggle_inventory)
-	hud.add_child(button)
+	hud_root.add_child(button)
 
-func _create_inventory_panel(hud: CanvasLayer) -> void:
+func _create_inventory_panel(hud: Control) -> void:
 	inventory_panel = PanelContainer.new()
 	inventory_panel.set_anchors_preset(Control.PRESET_CENTER)
 	var viewport_size := get_viewport().get_visible_rect().size
@@ -438,7 +442,7 @@ func _create_inventory_panel(hud: CanvasLayer) -> void:
 	close.text = "FECHAR  [E]"
 	close.pressed.connect(_toggle_inventory)
 	stack.add_child(close)
-	hud.add_child(inventory_panel)
+	hud_root.add_child(inventory_panel)
 	_refresh_inventory()
 
 func _toggle_inventory() -> void:
@@ -482,14 +486,14 @@ func _load_settings() -> void:
 		selected_skin = clampi(int(config.get_value("appearance", "skin", 0)), 0, SKIN_COLORS.size() - 1)
 		world_slot = clampi(int(config.get_value("world", "slot", 1)), 1, 3)
 
-func _create_pause_menu(hud: CanvasLayer) -> void:
+func _create_pause_menu(hud: Control) -> void:
 	var pause_button := Button.new()
 	pause_button.text = "PAUSAR"
 	pause_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	pause_button.position = Vector2(-156, 68)
 	pause_button.custom_minimum_size = Vector2(138, 42)
 	pause_button.pressed.connect(_toggle_pause)
-	hud.add_child(pause_button)
+	hud_root.add_child(pause_button)
 	pause_layer = CanvasLayer.new()
 	pause_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	pause_layer.visible = false
@@ -562,24 +566,24 @@ func _resume_game() -> void:
 	if not OS.has_feature("mobile"):
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
-func _add_save_button(hud: CanvasLayer) -> void:
+func _add_save_button(hud: Control) -> void:
 	var save_button := Button.new()
 	save_button.text = "SALVAR MUNDO"
 	save_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	save_button.position = Vector2(-156, 18)
 	save_button.custom_minimum_size = Vector2(138, 42)
 	save_button.pressed.connect(_save_world)
-	hud.add_child(save_button)
+	hud_root.add_child(save_button)
 
 
-func _add_craft_button(hud: CanvasLayer) -> void:
+func _add_craft_button(hud: Control) -> void:
 	var craft_button := Button.new()
 	craft_button.text = "FABRICAR"
 	craft_button.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	craft_button.position = Vector2(22, 76)
 	craft_button.custom_minimum_size = Vector2(132, 42)
 	craft_button.pressed.connect(_show_crafting)
-	hud.add_child(craft_button)
+	hud_root.add_child(craft_button)
 
 func _show_crafting() -> void:
 	var dialog := Window.new()
