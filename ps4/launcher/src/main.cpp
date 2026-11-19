@@ -15,11 +15,8 @@ namespace {
 constexpr int W=1920,H=1080;
 struct Game { std::string title; SDL_Color color; std::string titleId; };
 struct Particle { float x,y,vx,vy,r,a; };
-std::vector<Game> games={
- {"NIGHTFALL",{104,75,91,255},""}, {"KINGDOMS",{75,103,112,255},""},
- {"ABYSS",{71,83,119,255},""}, {"ASHEN REALMS",{132,88,62,255},""},
- {"LAST LIGHT",{81,116,91,255},""}
-};
+std::vector<Game> games;
+std::string libraryStatus="SCANNING LIBRARY";
 std::vector<Particle> particles;
 int selected=0,hubSelected=0; bool hub=false,running=true;
 float focus=0.0f, bgMix=1.0f;
@@ -78,7 +75,8 @@ std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
 void scanInstalledGames(){
  std::vector<Game> found;
  DIR* dir=opendir("/user/app");
- if(dir){
+ if(!dir){libraryStatus="LIBRARY ACCESS DENIED";games.clear();selected=0;return;}
+ {
   dirent* ent;
   while((ent=readdir(dir))!=nullptr&&found.size()<40){
    if(ent->d_name[0]=='.')continue;
@@ -94,7 +92,9 @@ void scanInstalledGames(){
   }
   closedir(dir);
  }
- if(!found.empty()){games.swap(found);selected=0;}
+ games.swap(found);selected=0;
+ if(!games.empty())libraryStatus="INSTALLED GAMES FOUND";
+ else libraryStatus="NO READABLE GAMES FOUND";
 }
 
 void update(float dt){focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
@@ -114,12 +114,18 @@ void draw(){
   fill(x+18,y+h-27,w-36,5,{Uint8(15),Uint8(18),Uint8(25),Uint8(160)});
   textBlock(games[i].title.c_str(),x+16,y+h-55,2,{235,239,245,255});
  }
- const Game& g=games[selected];
- // Hero title and metadata zone.
+ // Hero area reports real scan results; never presents fake games as installed titles.
  fill(112,510,5,130,{104,210,190,255});
- textBlock(g.title.c_str(),140,530,5,{226,234,242,255});
- textBlock("DARK FANTASY",140,590,2,{117,184,180,255});
- textBlock("EXPLORE THE UNKNOWN",140,630,2,{166,184,202,255});
+ if(!games.empty()){
+  const Game& g=games[selected];
+  textBlock(g.title.c_str(),140,530,5,{226,234,242,255});
+  textBlock("INSTALLED GAME",140,590,2,{117,184,180,255});
+  textBlock(g.titleId.c_str(),140,630,2,{166,184,202,255});
+ }else{
+  textBlock("NO GAMES FOUND",140,530,4,{226,234,242,255});
+  textBlock("LIBRARY SCAN RESULT",140,590,2,{117,184,180,255});
+ }
+ textBlock(libraryStatus.c_str(),110,790,2,{166,184,202,255});
  if(hub){
   fill(0,850,W,230,{10,15,24,245});
   textBlock("CONTROL CENTER",110,872,2,{204,219,232,255});
@@ -136,7 +142,7 @@ void draw(){
  }
  SDL_RenderPresent(renderer);
 }
-void move(int d){selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
+void move(int d){if(games.empty())return;selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
 }
 int main(int,char**){
  if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_AUDIO)!=0)return 1;
