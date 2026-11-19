@@ -240,6 +240,17 @@ void init_world(){
   mineplus::StructureAnchor anchor{};
   if(!pcg.structure_anchor_for_cell(cx,cy,anchor))continue;
   const int radius=anchor.radius,r2=radius*radius;
+  // Face rural entrances toward the neighboring landmark connected by road.
+  // South remains the deterministic fallback when no link exists.
+  int gateX=0,gateY=1;
+  mineplus::StructureAnchor roadFrom{},roadTo{};
+  if(pcg.surface_road_link_for_cell(cx,cy,roadFrom,roadTo)){
+   const bool isFrom=roadFrom.x==anchor.x&&roadFrom.y==anchor.y;
+   const auto& neighbor=isFrom?roadTo:roadFrom;
+   const int dx=neighbor.x-anchor.x,dy=neighbor.y-anchor.y;
+   if(std::abs(dx)>std::abs(dy)){gateX=dx>0?1:-1;gateY=0;}
+   else if(dx!=0||dy!=0){gateX=0;gateY=dy>0?1:-1;}
+  }
   for(int oy=-radius;oy<=radius;++oy)for(int ox=-radius;ox<=radius;++ox){
    const int d=ox*ox+oy*oy;
    if(d>r2)continue;
@@ -323,16 +334,21 @@ void init_world(){
      const bool perimeter=(std::abs(ox)==fence&&std::abs(oy)<=fence)||
                           (std::abs(oy)==fence&&std::abs(ox)<=fence);
      if(perimeter) tile=Wood;
-     // A south-facing gate and a packed-earth lane lead into the yard.
-     if(oy==fence&&std::abs(ox)<=1) tile=Air;
-     if(oy>=0&&oy<=fence-1&&std::abs(ox)<=1) tile=Sand;
-     // The barn occupies the northern half; its open central aisle remains clear.
-     const int barnY=-std::max(2,radius/3);
-     const bool barnInside=std::abs(ox)<=3&&std::abs(oy-barnY)<=2;
-     const bool barnWall=(std::abs(ox)==3&&std::abs(oy-barnY)<=2)||
-                         (std::abs(oy-barnY)==2&&std::abs(ox)<=3);
+     // Gate and lane face the connected road rather than a fixed compass side.
+     const bool gateCell=(gateX!=0&&ox==gateX*fence&&std::abs(oy)<=1)||
+                         (gateY!=0&&oy==gateY*fence&&std::abs(ox)<=1);
+     if(gateCell) tile=Air;
+     if((gateX!=0&&ox*gateX>=0&&ox*gateX<fence&&std::abs(oy)<=1)||
+        (gateY!=0&&oy*gateY>=0&&oy*gateY<fence&&std::abs(ox)<=1))
+      tile=Sand;
+     // Place the barn opposite the entrance so it cannot block the approach.
+     const int barnX=-gateX*std::max(2,radius/3);
+     const int barnY=-gateY*std::max(2,radius/3);
+     const bool barnInside=std::abs(ox-barnX)<=3&&std::abs(oy-barnY)<=2;
+     const bool barnWall=(std::abs(ox-barnX)==3&&std::abs(oy-barnY)<=2)||
+                         (std::abs(oy-barnY)==2&&std::abs(ox-barnX)<=3);
      if(barnInside) tile=barnWall?Wood:DarkStone;
-     if(ox==0&&oy==barnY+2) tile=Air;
+     if(ox==barnX&&oy==barnY+2) tile=Air;
      // Parallel crop beds are separated by narrow walkways and a water trench.
      const int fieldY=std::max(2,radius/3);
      if(oy>=fieldY&&oy<fence-1&&std::abs(ox)>=3&&std::abs(ox)<=fence-2){
@@ -347,11 +363,13 @@ void init_world(){
     }
     case 11: { // Medieval windmill with a stone tower, timber sails and fenced yard.
      const int yard=radius-1;
-     // The lower yard is fenced on three sides; the southern opening faces the road.
-     if(oy>=1&&oy<=yard&&
-        (std::abs(ox)==yard||oy==yard))
+     // Complete timber fence with one gate aligned to the road graph.
+     if((std::abs(ox)==yard&&std::abs(oy)<=yard)||
+        (std::abs(oy)==yard&&std::abs(ox)<=yard))
       tile=Wood;
-     if(oy==yard&&std::abs(ox)<=1) tile=Air;
+     if((gateX!=0&&ox==gateX*yard&&std::abs(oy)<=1)||
+        (gateY!=0&&oy==gateY*yard&&std::abs(ox)<=1))
+      tile=Air;
      // Four broad diagonal sails form a readable windmill silhouette on the map.
      if(std::abs(ox)==std::abs(oy)&&std::abs(ox)>=2&&
         std::abs(ox)<=radius-2){
@@ -365,8 +383,10 @@ void init_world(){
      if(ox<=-3&&ox>=-5&&oy>=2&&oy<=4)
       tile=((ox+oy)&1)?Wood:DarkStone;
      if(ox==-4&&oy==3) tile=HayBale;
-     // A packed path connects the yard gate to the mill entrance.
-     if(ox==0&&oy>=2&&oy<yard) tile=Sand;
+     // Packed path follows the chosen gate axis into the mill courtyard.
+     if((gateX!=0&&ox*gateX>=0&&ox*gateX<yard&&std::abs(oy)<=1)||
+        (gateY!=0&&oy*gateY>=0&&oy*gateY<yard&&std::abs(ox)<=1))
+      tile=Sand;
      break;
     }
     case 8: { // Medieval border keep: curtain wall, four towers and a rune court.
