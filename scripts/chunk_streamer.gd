@@ -327,7 +327,7 @@ func _build_chunk(key: Vector2i) -> void:
 			if south_height < y:
 				_add_quad(st, Vector3(x0, float(south_height) + 0.5, z1), Vector3(x1, float(south_height) + 0.5, z1), Vector3(x1, top, z1), Vector3(x0, top, z1), color.darkened(0.28))
 	var mesh := st.commit()
-	if mesh == null or mesh.get_surface_count() == 0:
+	if mesh == null:
 		return
 	for anchor in decoration_anchors(key):
 		match int(anchor.kind):
@@ -356,7 +356,7 @@ func _build_chunk(key: Vector2i) -> void:
 		visual.mesh = mesh
 		visual.material_override = material
 	var decorations := root.get_node_or_null("Decorations") as MeshInstance3D
-	if decoration_mesh != null and decoration_mesh.get_surface_count() > 0:
+	if decoration_mesh != null:
 		if decorations == null:
 			decorations = MeshInstance3D.new()
 			decorations.name = "Decorations"
@@ -383,7 +383,10 @@ func _build_chunk(key: Vector2i) -> void:
 		collision = CollisionShape3D.new()
 		collision.name = "CollisionShape3D"
 		body.add_child(collision)
-	collision.shape = mesh.create_trimesh_shape()
+	# The headless dummy renderer has no mesh RID storage; skip physics baking there.
+	# Real game builds still receive the full per-chunk concave collider.
+	if DisplayServer.get_name() != "headless":
+		collision.shape = mesh.create_trimesh_shape()
 	chunks[key] = root
 
 func cell_from_hit(hit: Dictionary) -> Vector3i:
