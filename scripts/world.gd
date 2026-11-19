@@ -830,7 +830,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		_rotate_view(event.relative)
 	elif event is InputEventScreenDrag:
-		if touch_look_active and event.index == touch_look_index:
+		if touch_look_active and _touch_drag_matches(touch_look_index, event.index):
 			_rotate_view(event.relative)
 	elif event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
@@ -859,6 +859,9 @@ static func _touch_starts_look(position: Vector2, viewport_size: Vector2) -> boo
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return false
 	return position.x > viewport_size.x * 0.48 and position.y >= 0.0 and position.y < viewport_size.y * 0.78
+
+static func _touch_drag_matches(active_index: int, event_index: int) -> bool:
+	return active_index >= 0 and event_index == active_index
 
 func _rotate_view(relative: Vector2) -> void:
 	player.rotate_y(-relative.x * look_sensitivity)
