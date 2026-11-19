@@ -322,3 +322,9 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - The procedural voxel integration test now builds meshes for two adjacent generated chunks and compares the greedy-merged boundary-face area against the actual solid/air transitions in each chunk's one-voxel halo.
 - This verifies that shared solid faces are culled on both sides of a chunk seam while genuinely exposed boundary faces remain. It is a CPU geometry regression test; chunk visibility, GPU submission and in-game 3D presentation are still separate work.
+
+
+## Propriedades rurais medievais no exterior
+
+- A geração de marcos passou a incluir propriedades rurais com celeiro, cerca e portão, trilha de entrada, canteiros em linhas e poço. Isso cria pontos de vida civil entre fortalezas, estradas e assentamentos.
+- A distribuição é determinística por seed e célula global; os canteiros reutilizam materiais já existentes. Não há ainda colheita, crescimento sazonal, animais de fazenda, NPCs, interior 3D ou telhado modelado.
