@@ -74,6 +74,7 @@ std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
 }
 void scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
+ for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);old.icon=nullptr;}
  std::vector<Game> found;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED";games.clear();selected=0;return;}
@@ -98,7 +99,6 @@ void scanInstalledGames(){
   }
   closedir(dir);
  }
- for(auto& old:games)if(old.icon)SDL_DestroyTexture(old.icon);
  games.swap(found);selected=0;
  if(!games.empty())libraryStatus="INSTALLED GAMES FOUND";
  else libraryStatus="NO READABLE GAMES FOUND";
