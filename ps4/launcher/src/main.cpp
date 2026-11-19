@@ -67,7 +67,8 @@ void draw(){
  for(int i=0;i<(int)games.size();++i){float active=(i==selected)?focus:0.0f;int w=cardW+int(active*28),h=cardH+int(active*18);int x=start+i*(cardW+gap)-int(active*14),y=baseY-int(active*26);auto c=games[i].color;
   fill(x-5,y-5,w+10,h+10,{Uint8(i==selected?220:65),Uint8(i==selected?226:76),Uint8(i==selected?237:91),255});fill(x,y,w,h,c);
   fill(x+14,y+14,w-28,4,{Uint8(255),Uint8(255),Uint8(255),Uint8(75)});
-  fill(x+18,y+h-27,w-36,5,{Uint8(15),Uint8(18),Uint8(25),Uint8(160)});\n  textBlock(games[i].title,x+16,y+h-55,2,{235,239,245,255});
+  fill(x+18,y+h-27,w-36,5,{Uint8(15),Uint8(18),Uint8(25),Uint8(160)});
+  textBlock(games[i].title,x+16,y+h-55,2,{235,239,245,255});
  }
  const Game& g=games[selected];
  // Hero title and metadata zone.
@@ -76,7 +77,8 @@ void draw(){
  for(int i=0;i<8;++i)fill(140+i*26,530,18,7,{Uint8(210-i*5),Uint8(222-i*4),Uint8(231-i*3),255});
  fill(140,558,360,3,{90,117,137,190});fill(140,574,260,3,{70,94,113,160});
  textBlock("2026",140,610,3,{166,184,202,255});
- if(hub){fill(0,850,W,230,{10,15,24,245});\n  textBlock("CONTROL CENTER",110,872,2,{204,219,232,255});fill(0,850,W,2,{102,145,164,210});fill(110,900,360,104,{222,232,239,255});fill(122,912,336,80,{18,26,37,255});fill(150,948,220,8,{232,239,245,255});fill(520,900,250,104,{28,39,54,255});fill(550,948,180,8,{175,191,207,255});fill(810,900,250,104,{28,39,54,255});fill(840,948,180,8,{175,191,207,255});}
+ if(hub){fill(0,850,W,230,{10,15,24,245});
+  textBlock("CONTROL CENTER",110,872,2,{204,219,232,255});fill(0,850,W,2,{102,145,164,210});fill(110,900,360,104,{222,232,239,255});fill(122,912,336,80,{18,26,37,255});fill(150,948,220,8,{232,239,245,255});fill(520,900,250,104,{28,39,54,255});fill(550,948,180,8,{175,191,207,255});fill(810,900,250,104,{28,39,54,255});fill(840,948,180,8,{175,191,207,255});}
  SDL_RenderPresent(renderer);
 }
 void move(int d){selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
