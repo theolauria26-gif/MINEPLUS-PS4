@@ -1,6 +1,10 @@
 #include <time.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <orbis/SystemService.h>
+#include <orbis/UserService.h>
+#include <orbis/Sysmodule.h>
+#include <orbis/libkernel.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -21,6 +25,10 @@ std::string libraryStatus="SCANNING LIBRARY";
 std::vector<Particle> particles;
 int selected=0,hubSelected=0; bool hub=false,running=true;
 std::string notice; float noticeTimer=0.0f;
+using LncLaunchFn=uint32_t(*)(const char*,const char**,LncAppParam*);
+using LncInitFn=int32_t(*)();
+LncLaunchFn lncLaunch=nullptr; LncInitFn lncInitialize=nullptr;
+bool launchServicesReady=false; int32_t launchUserId=-1; std::string launchServiceStatus="LAUNCH SERVICE NOT INITIALIZED";
 float focus=0.0f, bgMix=1.0f;
 SDL_Window* window=nullptr; SDL_Renderer* renderer=nullptr;
 void fill(int x,int y,int w,int h,SDL_Color c){SDL_SetRenderDrawColor(renderer,c.r,c.g,c.b,c.a);SDL_Rect r{x,y,w,h};SDL_RenderFillRect(renderer,&r);}
@@ -127,6 +135,56 @@ void scanInstalledGames(){
  else libraryStatus="NO READABLE GAMES FOUND";
 }
 
+void* findLoadedSymbol(const char* preferredModule,const char* symbol){
+ OrbisKernelModule modules[256]{};size_t count=0;
+ if(sceKernelGetModuleList(modules,256,&count)!=0)return nullptr;
+ for(size_t pass=0;pass<2;++pass){
+  for(size_t i=0;i<count&&i<256;++i){
+   OrbisKernelModuleInfo info{};info.size=sizeof(info);
+   if(sceKernelGetModuleInfo(modules[i],&info)!=0)continue;
+   bool preferred=preferredModule&&std::strstr(info.name,preferredModule);
+   if(pass==0&&!preferred)continue;
+   if(pass==1&&preferred)continue;
+   void* address=nullptr;
+   if(sceKernelDlsym(static_cast<int32_t>(modules[i]),symbol,&address)==0&&address)return address;
+  }
+ }
+ return nullptr;
+}
+void initializeLaunchServices(){
+ int32_t systemResult=sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE);
+ if(systemResult<0){launchServiceStatus="SYSTEM SERVICE LOAD FAILED";return;}
+ int32_t userModuleResult=sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_USER_SERVICE);
+ if(userModuleResult<0){launchServiceStatus="USER SERVICE LOAD FAILED";return;}
+ OrbisUserServiceInitializeParams params{};params.priority=256;
+ int32_t userInit=sceUserServiceInitialize(&params);
+ int32_t userResult=sceUserServiceGetForegroundUser(&launchUserId);
+ if(userResult<0||launchUserId<0){launchServiceStatus="FOREGROUND USER UNAVAILABLE";return;}
+ void* launchSymbol=findLoadedSymbol("libSceSystemService","sceLncUtilLaunchApp");
+ if(!launchSymbol)launchSymbol=findLoadedSymbol(nullptr,"sceLncUtilLaunchApp");
+ if(!launchSymbol){launchServiceStatus="LNC LAUNCH SYMBOL NOT FOUND";return;}
+ lncLaunch=reinterpret_cast<LncLaunchFn>(launchSymbol);
+ void* initSymbol=findLoadedSymbol(nullptr,"sceLncUtilInitialize");
+ if(initSymbol)lncInitialize=reinterpret_cast<LncInitFn>(initSymbol);
+ launchServicesReady=true;
+ launchServiceStatus=userInit<0?"LAUNCH READY - USER INIT WARNING":"LAUNCH SERVICE READY";
+}
+void launchSelectedGame(){
+ if(games.empty()){notice="NO GAME SELECTED";noticeTimer=3.0f;return;}
+ if(!launchServicesReady||!lncLaunch){notice=launchServiceStatus;noticeTimer=4.0f;return;}
+ if(lncInitialize){
+  int32_t initResult=lncInitialize();
+  if(initResult<0&&static_cast<uint32_t>(initResult)!=0x80940018u){
+   char message[48];std::snprintf(message,sizeof(message),"LNC INIT ERROR 0x%08X",static_cast<uint32_t>(initResult));
+   notice=message;noticeTimer=5.0f;return;
+  }
+ }
+ LncAppParam param{};param.size=sizeof(LncAppParam);param.user_id=static_cast<uint32_t>(launchUserId);
+ param.app_opt=0;param.crash_report=0;param.LaunchAppCheck_flag=LaunchApp_None;
+ uint32_t result=lncLaunch(games[selected].titleId.c_str(),nullptr,&param);
+ if((result&0x80000000u)==0){notice="LAUNCH REQUEST ACCEPTED";noticeTimer=4.0f;}
+ else{char message[48];std::snprintf(message,sizeof(message),"LAUNCH ERROR 0x%08X",result);notice=message;noticeTimer=5.0f;}
+}
 void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
 void draw(){
  fill(0,0,W,H,{8,11,18,255});
@@ -227,7 +285,7 @@ int main(int,char**){
  float axisRepeat=0.0f;
  IMG_Init(IMG_INIT_PNG);
  SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);
- initParticles();scanInstalledGames();Uint64 prev=SDL_GetPerformanceCounter();
+ initParticles();scanInstalledGames();initializeLaunchServices();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
   if(e.type==SDL_CONTROLLERDEVICEADDED&&!pad&&SDL_IsGameController(e.cdevice.which))pad=SDL_GameControllerOpen(e.cdevice.which);
