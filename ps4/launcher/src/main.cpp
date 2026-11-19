@@ -239,6 +239,7 @@ void draw(){
   }
   fill(x+18,y+h-35,w-36,3,{12,17,26,220});
   textBlockFit(game.title,x+18,y+h-26,2,w-36,{235,240,247,255});
+  if(chosen)fill(x,y+h+7,w,3,{104,210,190,235});
  }
  // Retain at most five high-resolution icon textures while browsing the carousel.
  for(size_t i=0;i<games.size();++i){bool visibleNow=false;for(int slot=0;slot<visible;++slot){int idx=(selected-visible/2+slot+(int)games.size())%(int)games.size();if((size_t)idx==i){visibleNow=true;break;}}if(!visibleNow&&games[i].icon){SDL_DestroyTexture(games[i].icon);games[i].icon=nullptr;games[i].iconAttempted=false;}}
@@ -259,6 +260,7 @@ void draw(){
  }
  textBlock(libraryStatus.c_str(),110,790,2,{166,184,202,255});
  textBlock(launchServiceStatus.c_str(),110,820,1,{117,184,180,255});
+ textBlock("CROSS TO LAUNCH SELECTED GAME",110,700,2,{226,234,242,255});
  textBlock("D-PAD / STICK TO BROWSE",110,730,2,{166,184,202,255});
  textBlock("L1 / R1: SKIP 5 GAMES",110,760,1,{145,165,187,255});
  textBlock("TRIANGLE TO RESCAN",W-430,730,2,{117,184,180,255});
@@ -272,7 +274,7 @@ void draw(){
   fill(0,820,W,2,{102,145,164,210});
   if(settingsPage){
    textBlock("SETTINGS",110,850,3,{226,235,243,255});
-   textBlock("B TO RETURN - UP / DOWN TO SELECT - X TO CHANGE",110,900,1,{166,184,202,255});
+   textBlock("CIRCLE BACK - UP / DOWN SELECT - CROSS CHANGE",110,900,1,{166,184,202,255});
    const char* names[2]={"AMBIENT PARTICLES","SHOW GAME TITLE ID"};
    const char* values[2]={particlesEnabled?"ON":"OFF",showTitleId?"ON":"OFF"};
    for(int i=0;i<2;++i){int y=950+i*62;bool active=i==settingsCursor;
