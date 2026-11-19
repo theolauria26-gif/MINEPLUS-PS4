@@ -731,7 +731,7 @@ func _save_world(silent: bool = false) -> void:
 		player_position = [player.position.x, player.position.y, player.position.z]
 		player_rotation_y = player.rotation.y
 		camera_pitch = camera.rotation.x
-	var payload := {"version": MineplusWorldSave.CURRENT_VERSION, "world_seed": chunk_streamer.generator.world_seed if chunk_streamer else 4839201, "terrain_edits": chunk_streamer.export_edits() if chunk_streamer else [], "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "axe_durability": axe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "selected_block": selected_block}
+	var payload := {"version": MineplusWorldSave.CURRENT_VERSION, "world_seed": chunk_streamer.generator.world_seed if chunk_streamer else 4839201, "terrain_edits": chunk_streamer.export_edits() if chunk_streamer else [], "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "axe_durability": axe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "day_clock": day_clock, "selected_block": selected_block}
 	var saved := MineplusWorldSave.save_world(_world_save_path(), payload)
 	if saved:
 		if not silent and status_label:
@@ -755,6 +755,8 @@ func _load_world() -> void:
 	saved_player_position = Vector3(float(saved_position[0]), float(saved_position[1]), float(saved_position[2]))
 	saved_player_rotation_y = float(parsed["player_rotation_y"])
 	saved_camera_pitch = float(parsed["camera_pitch"])
+	day_clock = float(parsed.get("day_clock", 0.5))
+	_update_environment(0.0)
 	saved_selected_block = int(parsed["selected_block"])
 	for i in range(INVENTORY_NAMES.size()):
 		block_counts[i] = int(parsed["inventory"][i])
