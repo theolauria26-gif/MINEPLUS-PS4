@@ -365,3 +365,10 @@ Detalhes e limitações: docs/GODOT_3D_WORLD.md.
 - As malhas decorativas são agrupadas no chunk proprietário, enquanto o collider continua limitado ao terreno. Isso evita duplicação nas bordas e colisores invisíveis em folhas e ornamentos.
 - Ruínas e portões ainda são modelos decorativos sem colisão, interiores navegáveis ou interação. Não são modelos artísticos finais.
 - O teste headless dedicado cobre determinismo de âncoras e geração de malhas de árvores, ruínas e portões; a qualidade visual/FPS ainda precisa de avaliação em hardware real.
+
+
+### Vento procedural nas copas do protótipo Godot
+
+- Um shader espacial anima somente vértices marcados como folhagem pelo alpha da cor de vértice, com oscilação pequena baseada em TIME.
+- Troncos, ruínas, pedras e cristais permanecem rígidos; não há simulação física nem rigs neste estágio.
+- A animação é aplicada à malha decorativa agrupada por chunk, sem novos nós por árvore.
