@@ -3,17 +3,22 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <dirent.h>
+#include <fstream>
 #include <string>
+#include <sys/stat.h>
 #include <vector>
 
 namespace {
 constexpr int W=1920,H=1080;
-struct Game { const char* title; SDL_Color color; };
+struct Game { std::string title; SDL_Color color; std::string titleId; };
 struct Particle { float x,y,vx,vy,r,a; };
 std::vector<Game> games={
- {"NIGHTFALL",{104,75,91,255}}, {"KINGDOMS",{75,103,112,255}},
- {"ABYSS",{71,83,119,255}}, {"ASHEN REALMS",{132,88,62,255}},
- {"LAST LIGHT",{81,116,91,255}}
+ {"NIGHTFALL",{104,75,91,255},""}, {"KINGDOMS",{75,103,112,255},""},
+ {"ABYSS",{71,83,119,255},""}, {"ASHEN REALMS",{132,88,62,255},""},
+ {"LAST LIGHT",{81,116,91,255},""}
 };
 std::vector<Particle> particles;
 int selected=0,hubSelected=0; bool hub=false,running=true;
@@ -54,6 +59,43 @@ void textBlock(const char* s,int x,int y,int scale,SDL_Color c){
  }
 }
 void initParticles(){particles.clear();for(int i=0;i<110;++i){float f=float(i);particles.push_back({float((i*173)%W),float((i*97)%H),float(std::sin(f*1.7f)*7.0),-8.0f-float(i%9),1.0f+float(i%3),0.15f+float(i%5)*0.06f});}}
+uint32_t le32(const std::vector<uint8_t>& b,size_t p){return uint32_t(b[p])|(uint32_t(b[p+1])<<8)|(uint32_t(b[p+2])<<16)|(uint32_t(b[p+3])<<24);}
+uint16_t le16(const std::vector<uint8_t>& b,size_t p){return uint16_t(b[p])|(uint16_t(b[p+1])<<8);}
+std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
+ if(b.size()<20||std::memcmp(b.data(),"\\0PSF",4)!=0)return {};
+ uint32_t keys=le32(b,8),data=le32(b,12),count=le32(b,16);
+ if(count>512||keys>=b.size()||data>=b.size())return {};
+ for(uint32_t i=0;i<count;++i){size_t e=20+size_t(i)*16;if(e+16>b.size())break;
+  uint16_t ko=le16(b,e);uint32_t len=le32(b,e+4),off=le32(b,e+12);
+  size_t kp=size_t(keys)+ko,dp=size_t(data)+off;
+  if(kp>=b.size()||dp>b.size()||len>b.size()-dp)continue;
+  const char* key=reinterpret_cast<const char*>(b.data()+kp);
+  if(std::strcmp(key,wanted)==0){size_t n=0;while(n<len&&b[dp+n])++n;return std::string(reinterpret_cast<const char*>(b.data()+dp),n);}
+ }
+ return {};
+}
+void scanInstalledGames(){
+ std::vector<Game> found;
+ DIR* dir=opendir("/user/app");
+ if(dir){
+  dirent* ent;
+  while((ent=readdir(dir))!=nullptr&&found.size()<40){
+   if(ent->d_name[0]=='.')continue;
+   std::string root="/user/app/"+std::string(ent->d_name);
+   struct stat st{};if(stat(root.c_str(),&st)!=0||!S_ISDIR(st.st_mode))continue;
+   std::string path=root+"/sce_sys/param.sfo";std::ifstream in(path.c_str(),std::ios::binary);
+   if(!in)continue;
+   std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(in)),std::istreambuf_iterator<char>());
+   std::string title=sfoString(bytes,"TITLE");
+   std::string id=sfoString(bytes,"TITLE_ID");
+   if(title.empty()||id.empty())continue;
+   found.push_back({title,{72,94,112,255},id});
+  }
+  closedir(dir);
+ }
+ if(!found.empty()){games.swap(found);selected=0;}
+}
+
 void update(float dt){focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
 void draw(){
  fill(0,0,W,H,{8,11,18,255});
@@ -69,12 +111,12 @@ void draw(){
   fill(x-5,y-5,w+10,h+10,{Uint8(i==selected?220:65),Uint8(i==selected?226:76),Uint8(i==selected?237:91),255});fill(x,y,w,h,c);
   fill(x+14,y+14,w-28,4,{Uint8(255),Uint8(255),Uint8(255),Uint8(75)});
   fill(x+18,y+h-27,w-36,5,{Uint8(15),Uint8(18),Uint8(25),Uint8(160)});
-  textBlock(games[i].title,x+16,y+h-55,2,{235,239,245,255});
+  textBlock(games[i].title.c_str(),x+16,y+h-55,2,{235,239,245,255});
  }
  const Game& g=games[selected];
  // Hero title and metadata zone.
  fill(112,510,5,130,{104,210,190,255});
- textBlock(g.title,140,530,5,{226,234,242,255});
+ textBlock(g.title.c_str(),140,530,5,{226,234,242,255});
  textBlock("DARK FANTASY",140,590,2,{117,184,180,255});
  textBlock("EXPLORE THE UNKNOWN",140,630,2,{166,184,202,255});
  if(hub){
@@ -103,7 +145,7 @@ int main(int,char**){
  if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
  if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}
  SDL_GameController* pad=nullptr;if(SDL_NumJoysticks()>0&&SDL_IsGameController(0))pad=SDL_GameControllerOpen(0);
- initParticles();Uint64 prev=SDL_GetPerformanceCounter();
+ initParticles();scanInstalledGames();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(hub)hubSelected=(hubSelected+3)%4;else move(-1);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub)hubSelected=(hubSelected+1)%4;else move(1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:hub=true;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:hub=false;break;case SDL_CONTROLLER_BUTTON_B:hub=false;break;case SDL_CONTROLLER_BUTTON_A:/* Launch backend intentionally not wired in prototype. */break;default:break;}}}
   update(dt);draw();
