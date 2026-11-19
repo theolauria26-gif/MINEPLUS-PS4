@@ -8,17 +8,19 @@ Independent PS4 homebrew application. This project is intentionally isolated fro
 - Triangle/Y rescans the installed-game library without restarting.
 - Animated particle backdrop and selected-tile focus animation.
 - Bottom control center with Games, Media, Settings and Profile sections.
-- Centered five-slot library carousel for up to 40 discovered games.
+- Centered five-slot library carousel for up to 40 discovered games, sorted alphabetically for predictable browsing.
 - Loads each installed title's real `sce_sys/icon0.png` when accessible, with a procedural fallback.
 - Caches at most five icon textures while browsing to keep GPU memory bounded.
 - Read-only discovery attempt under `/user/app/*/sce_sys/param.sfo`.
 - Bounded PARAM.SFO parser for `TITLE` and `TITLE_ID`, using bounded C stdio reads to avoid unsupported iostream locale code in the OpenOrbis libc++ headers.
+- Lowercase-aware bitmap text with basic punctuation for readable title IDs and names.
+- Visible feedback for rescans and for menu/game actions that are not yet implemented.
 - Honest empty/denied library states; no fake game entries are presented as installed games.
 
 ## Not implemented / not verified
 - Access to installed retail application directories is not guaranteed from a normal homebrew sandbox. The scan must be tested on the target console and may report access denied or no readable games.
 - Launching retail games is not implemented. OpenOrbis v0.5.4 declares `sceLncUtilLaunchApp` and `LncAppParam`, but does not declare `sceLncUtilInitialize`; the latter's linkage, initialization requirements and runtime behavior must be verified before wiring the Cross button. No guessed offsets or kernel calls are used.
-- Game cover downloads, artwork cache, analog navigation and settings actions are not implemented.
+- Game cover downloads, artwork cache, functional Media/Settings/Profile pages and game launching are not implemented.
 - The launcher has not been runtime-tested on a PS4.
 
 ## Safety and platform limits
