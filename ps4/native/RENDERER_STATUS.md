@@ -328,3 +328,10 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 
 - A geração de marcos passou a incluir propriedades rurais com celeiro, cerca e portão, trilha de entrada, canteiros em linhas e poço. Isso cria pontos de vida civil entre fortalezas, estradas e assentamentos.
 - A distribuição é determinística por seed e célula global; os canteiros reutilizam materiais já existentes. Não há ainda colheita, crescimento sazonal, animais de fazenda, NPCs, interior 3D ou telhado modelado.
+
+
+## Moinhos rurais medievais
+
+- A décima primeira família de marcos pode gerar um moinho com torre de pedra escura, quatro pás diagonais de madeira e areia, pátio parcialmente cercado, entrada voltada para a estrada e depósito de colheita.
+- A geração é determinística e reutiliza os IDs existentes Wood, DarkStone, Sand, Crystal e HayBale; não altera saves nem adiciona entidades.
+- A representação permanece estática na grade 2D projetada. As pás ainda não giram, e não há moagem, produção de farinha, interior 3D ou NPC trabalhando no moinho.
