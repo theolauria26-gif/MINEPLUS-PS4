@@ -343,3 +343,17 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - O celeiro da fazenda fica no lado oposto ao acesso para reduzir bloqueios visuais da entrada.
 - Sem vínculo viário, a orientação sul é mantida como fallback determinístico.
 - É integração visual no mapa 2D atual; não representa navegação de NPCs ou colisão de estruturas 3D.
+
+
+## Godot 4.3 — protótipo de mundo 3D em evolução
+
+O repositório também contém um protótipo separado em Godot 4.3. Ele já usa Node3D, Camera3D, CharacterBody3D, malhas por chunk e colisão de terreno. Neste incremento:
+
+- O streamer gera árvores 3D determinísticas por macro-células globais, com modelos de folhas largas, árvores antigas, coníferas frias e árvores retorcidas de pântano.
+- Raízes, copas em camadas e monólitos de pedra/cristal ampliam as silhuetas do exterior.
+- A decoração visual é agrupada por chunk e separada da malha de colisão para evitar colisores invisíveis em folhas/galhos.
+- O céu procedural, luz direcional, iluminação ambiente e neblina agora acompanham um ciclo de dia/noite de 15 minutos; glow fica restrito à qualidade alta.
+- O trabalho está no protótipo Godot, não no cliente SDL2 que gera o PKG PS4. A versão nativa ainda não desenha os meshes voxel na GPU.
+- Os modelos são geometria cúbica procedural e ainda não substituem assets finais, rigs, animações esqueléticas ou criaturas 3D.
+
+Detalhes e limitações: docs/GODOT_3D_WORLD.md.
