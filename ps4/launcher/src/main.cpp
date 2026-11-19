@@ -61,7 +61,8 @@ void draw(){
  for(int y=0;y<H;y+=8){float t=float(y)/H;fill(0,y,W,8,{Uint8(9+10*t),Uint8(14+13*t),Uint8(24+20*t),255});}
  for(int i=0;i<12;++i){int yy=590+i*18;line(0,yy,W,yy,{Uint8(25+i),Uint8(34+i),Uint8(51+i),90});}
  for(const auto& p:particles){SDL_SetRenderDrawColor(renderer,145,177,205,Uint8(p.a*180));SDL_Rect q{int(p.x),int(p.y),int(p.r),int(p.r)};SDL_RenderFillRect(renderer,&q);}
- textBlock("LIBRARY",110,55,2,{146,168,190,255});\n textBlock("MINEPLUS",W-360,48,3,{220,229,239,255});
+ textBlock("LIBRARY",110,55,2,{146,168,190,255});
+ textBlock("MINEPLUS",W-360,48,3,{220,229,239,255});
  // Horizontal game row, selected card grows and lifts.
  const int start=110,baseY=190,cardW=236,cardH=150,gap=24;
  for(int i=0;i<(int)games.size();++i){float active=(i==selected)?focus:0.0f;int w=cardW+int(active*28),h=cardH+int(active*18);int x=start+i*(cardW+gap)-int(active*14),y=baseY-int(active*26);auto c=games[i].color;
@@ -73,12 +74,23 @@ void draw(){
  const Game& g=games[selected];
  // Hero title and metadata zone.
  fill(112,510,5,130,{104,210,190,255});
- // Title shown as abstract title bars until a full font atlas is integrated.
- for(int i=0;i<8;++i)fill(140+i*26,530,18,7,{Uint8(210-i*5),Uint8(222-i*4),Uint8(231-i*3),255});
- fill(140,558,360,3,{90,117,137,190});fill(140,574,260,3,{70,94,113,160});
- textBlock("2026",140,610,3,{166,184,202,255});
- if(hub){fill(0,850,W,230,{10,15,24,245});
-  textBlock("CONTROL CENTER",110,872,2,{204,219,232,255});fill(0,850,W,2,{102,145,164,210});fill(110,900,360,104,{222,232,239,255});fill(122,912,336,80,{18,26,37,255});fill(150,948,220,8,{232,239,245,255});fill(520,900,250,104,{28,39,54,255});fill(550,948,180,8,{175,191,207,255});fill(810,900,250,104,{28,39,54,255});fill(840,948,180,8,{175,191,207,255});}
+ textBlock(g.title,140,530,5,{226,234,242,255});
+ textBlock("DARK FANTASY",140,590,2,{117,184,180,255});
+ textBlock("EXPLORE THE UNKNOWN",140,630,2,{166,184,202,255});
+ if(hub){
+  fill(0,850,W,230,{10,15,24,245});
+  textBlock("CONTROL CENTER",110,872,2,{204,219,232,255});
+  fill(0,850,W,2,{102,145,164,210});
+  const char* labels[4]={"GAMES","MEDIA","SETTINGS","PROFILE"};
+  const char* hints[4]={"YOUR LIBRARY","MUSIC AND VIDEO","SYSTEM OPTIONS","PLAYER ACCOUNT"};
+  for(int i=0;i<4;++i){int x=110+i*420;bool active=(i==hubSelected);
+   fill(x,910,380,112,active?SDL_Color{222,232,239,255}:SDL_Color{28,39,54,255});
+   if(active)fill(x+10,920,360,92,{18,26,37,255});
+   SDL_Color tc=active?SDL_Color{238,244,249,255}:SDL_Color{174,190,207,255};
+   textBlock(labels[i],x+28,940,2,tc);
+   textBlock(hints[i],x+28,976,1,tc);
+  }
+ }
  SDL_RenderPresent(renderer);
 }
 void move(int d){selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
