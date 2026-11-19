@@ -4,9 +4,11 @@ Independent PS4 homebrew application. This project is intentionally isolated fro
 
 ## Current implementation
 - SDL2-based 1080p interface prototype.
-- DualShock 4 D-pad navigation.
+- DualShock 4 D-pad and left-analog navigation, including controller hot-plug handling.
 - Animated particle backdrop and selected-tile focus animation.
 - Bottom control center with Games, Media, Settings and Profile sections.
+- Centered five-slot library carousel for up to 40 discovered games.
+- Procedural title-ID-based geometric card artwork (not official cover art).
 - Read-only discovery attempt under `/user/app/*/sce_sys/param.sfo`.
 - Bounded PARAM.SFO parser for `TITLE` and `TITLE_ID`, using bounded C stdio reads to avoid unsupported iostream locale code in the OpenOrbis libc++ headers.
 - Honest empty/denied library states; no fake game entries are presented as installed games.
