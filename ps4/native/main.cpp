@@ -345,6 +345,30 @@ void init_world(){
      if(ox==0&&oy==0) tile=ChestClosed;
      break;
     }
+    case 11: { // Medieval windmill with a stone tower, timber sails and fenced yard.
+     const int yard=radius-1;
+     // The lower yard is fenced on three sides; the southern opening faces the road.
+     if(oy>=1&&oy<=yard&&
+        (std::abs(ox)==yard||oy==yard))
+      tile=Wood;
+     if(oy==yard&&std::abs(ox)<=1) tile=Air;
+     // Four broad diagonal sails form a readable windmill silhouette on the map.
+     if(std::abs(ox)==std::abs(oy)&&std::abs(ox)>=2&&
+        std::abs(ox)<=radius-2){
+      const int arm=std::abs(ox);
+      tile=(arm%4==0)?Sand:Wood;
+     }
+     // A compact masonry tower anchors the rotor; the hub is a luminous crystal.
+     if(std::abs(ox)<=1&&std::abs(oy)<=1) tile=DarkStone;
+     if(ox==0&&oy==0) tile=Crystal;
+     // Small grain store and stacked harvest sit beside the tower, away from the sails.
+     if(ox<=-3&&ox>=-5&&oy>=2&&oy<=4)
+      tile=((ox+oy)&1)?Wood:DarkStone;
+     if(ox==-4&&oy==3) tile=HayBale;
+     // A packed path connects the yard gate to the mill entrance.
+     if(ox==0&&oy>=2&&oy<yard) tile=Sand;
+     break;
+    }
     case 8: { // Medieval border keep: curtain wall, four towers and a rune court.
      const int wall=radius-2;
      const int inner=std::max(3,radius/2);
