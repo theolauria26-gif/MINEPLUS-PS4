@@ -284,6 +284,7 @@ func _build_chunk(key: Vector2i) -> void:
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var decoration_st := SurfaceTool.new()
 	decoration_st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var chunk_decorations := decoration_anchors(key)
 	var start_x := key.x * CHUNK_SIZE
 	var start_z := key.y * CHUNK_SIZE
 
@@ -329,7 +330,7 @@ func _build_chunk(key: Vector2i) -> void:
 	var mesh := st.commit()
 	if mesh == null:
 		return
-	for anchor in decoration_anchors(key):
+	for anchor in chunk_decorations:
 		match int(anchor.kind):
 			5: _append_monolith(decoration_st, anchor)
 			6: _append_ruin(decoration_st, anchor)
@@ -338,7 +339,7 @@ func _build_chunk(key: Vector2i) -> void:
 	# SurfaceTool can return an empty ArrayMesh for chunks with no decorations.
 	# Do not attach that zero-surface resource to a MeshInstance3D.
 	var decoration_mesh: ArrayMesh = null
-	if decoration_st.get_vertex_count() > 0:
+	if not chunk_decorations.is_empty():
 		decoration_mesh = decoration_st.commit()
 	var root: Node3D
 	if not chunk_pool.is_empty():
