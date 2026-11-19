@@ -39,3 +39,9 @@ Este documento descreve o protótipo 3D Godot 4.3 do MINEPLUS. Ele é separado d
 6. Criar testes visuais automatizados e medir FPS/memória em hardware alvo.
 
 O objetivo é um mundo voxel dark fantasy com identidade própria, não uma cópia de assets ou marcas de outro jogo.
+
+### Estruturas de superfície em malha 3D
+
+- Âncoras PCG antigas agora são convertidas em modelos cúbicos 3D no chunk proprietário: árvores ancestrais, ruínas com paredes quebradas e pilares, e portais/portões de masmorra com degraus e pedra rúnica.
+- A propriedade por chunk evita desenhar a mesma estrutura duas vezes; as malhas podem ultrapassar ligeiramente o limite do chunk para preservar a silhueta.
+- Os modelos de ruína e entrada ainda são decoração visual sem colisão, interiores navegáveis, baús funcionais ou interação. A geometria de terreno continua com collider separado.
