@@ -114,13 +114,14 @@ bool validTitleId(const std::string& id){
 void scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
  for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);old.icon=nullptr;}
- std::vector<Game> found; bool scanLimitReached=false;
+ std::vector<Game> found; bool scanLimitReached=false; size_t scannedEntries=0;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED";games.clear();selected=0;return;}
  {
   dirent* ent;
   while((ent=readdir(dir))!=nullptr){
    if(ent->d_name[0]=='.')continue;
+   if(++scannedEntries>1024){scanLimitReached=true;break;}
    std::string root="/user/app/"+std::string(ent->d_name);
    struct stat st{};if(stat(root.c_str(),&st)!=0||!S_ISDIR(st.st_mode))continue;
    std::string path=root+"/sce_sys/param.sfo";
@@ -146,7 +147,7 @@ void scanInstalledGames(){
  bool moreThan40=found.size()>40;
  if(found.size()>40)found.resize(40);
  games.swap(found);selected=0;
- if(!games.empty())libraryStatus=scanLimitReached?"SCAN LIMIT 256 - 40 SHOWN":(moreThan40?"40+ GAMES - FIRST 40 SHOWN":"INSTALLED GAMES FOUND");
+ if(!games.empty())libraryStatus=scanLimitReached?"SCAN BOUNDED - FIRST 40 SHOWN":(moreThan40?"40+ GAMES - FIRST 40 SHOWN":"INSTALLED GAMES FOUND");
  else libraryStatus="NO READABLE GAMES FOUND";
 }
 
