@@ -67,3 +67,10 @@ O renderer nativo agora usa uma paleta mais saturada e motivos pixel-art determi
 O módulo `voxel_mesher.hpp/.cpp` converte dados de um chunk 16×16×128 em retângulos de faces expostas. Ele percorre os seis sentidos, usa uma máscara 2D por plano e mescla faces coplanares de mesmo material; o halo de um voxel permite ocultar faces compartilhadas com chunks vizinhos. O resultado é geometria compacta em coordenadas locais, ainda sem upload para GPU ou integração no renderer SDL do gameplay.
 
 A API aceita um limite `max_quads` (padrão 65.536). Se o limite for excedido, retorna falha e limpa a saída, evitando que o chamador use uma malha parcial. O limite pode ser reduzido conforme o orçamento de memória medido no PS4. O CI compila o módulo com `-Werror` e executa testes de faces isoladas, fusão de blocos, materiais diferentes, volumes sólidos e halo de fronteira.
+
+
+## Propriedade rural medieval
+
+- Uma nova família de marco exterior gera uma pequena propriedade rural: celeiro de madeira e pedra escura, cerca perimetral com portão, caminho de acesso, canteiros em faixas e poço com água.
+- A planta usa a seed e a âncora global; o mesmo terreno é reproduzido em qualquer ordem de carregamento. Os canteiros são composição visual de tiles existentes, não cultivo colhível, NPCs, economia ou simulação agrícola.
+- A estrutura é desenhada pelo mapa 2D atual. Não representa ainda um celeiro 3D com telhado/interior navegável.
