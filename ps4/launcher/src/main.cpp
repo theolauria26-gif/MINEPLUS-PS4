@@ -30,6 +30,28 @@ float focus=0.0f, bgMix=1.0f;
 SDL_Window* window=nullptr; SDL_Renderer* renderer=nullptr;
 void fill(int x,int y,int w,int h,SDL_Color c){SDL_SetRenderDrawColor(renderer,c.r,c.g,c.b,c.a);SDL_Rect r{x,y,w,h};SDL_RenderFillRect(renderer,&r);}
 void line(int x1,int y1,int x2,int y2,SDL_Color c){SDL_SetRenderDrawColor(renderer,c.r,c.g,c.b,c.a);SDL_RenderDrawLine(renderer,x1,y1,x2,y2);}
+void drawCircle(int cx,int cy,int radius,SDL_Color color){
+ SDL_SetRenderDrawColor(renderer,color.r,color.g,color.b,color.a);
+ for(int dy=-radius;dy<=radius;++dy){
+  int dx=int(std::sqrt(float(radius*radius-dy*dy)));
+  SDL_RenderDrawLine(renderer,cx-dx,cy+dy,cx+dx,cy+dy);
+ }
+}
+void drawDarkFantasySkyline(){
+ drawCircle(1510,238,92,{151,170,184,22});
+ drawCircle(1510,238,66,{166,183,194,30});
+ fill(1507,166,6,144,{182,198,205,22});
+ const SDL_Point farRidge[]={{0,505},{145,420},{250,466},{390,350},{510,445},{655,370},{790,470},{930,390},{1080,466},{1215,355},{1360,455},{1510,375},{1665,455},{1810,365},{1920,430}};
+ SDL_SetRenderDrawColor(renderer,30,43,59,105);
+ SDL_RenderDrawLines(renderer,farRidge,int(sizeof(farRidge)/sizeof(farRidge[0])));
+ fill(0,486,W,118,{7,12,20,105});
+ fill(105,410,58,170,{8,13,21,150});fill(118,378,32,34,{8,13,21,150});fill(95,396,78,12,{8,13,21,150});
+ fill(250,448,86,134,{8,13,21,145});fill(266,416,54,34,{8,13,21,145});fill(278,390,30,28,{8,13,21,145});
+ fill(1675,432,72,150,{8,13,21,150});fill(1688,398,46,38,{8,13,21,150});fill(1700,372,22,28,{8,13,21,150});
+ fill(1805,458,115,125,{8,13,21,145});fill(1823,425,80,35,{8,13,21,145});
+ for(int i=0;i<4;++i){fill(126+i*13,438,3,24,{128,157,170,45});fill(289+i*12,454,3,22,{128,157,170,38});fill(1698+i*10,445,3,25,{128,157,170,42});}
+ line(0,584,W,584,{67,91,111,42});line(0,596,W,596,{91,113,129,24});
+}
 void textBlock(const char* s,int x,int y,int scale,SDL_Color c){
  // Embedded 5x7 alphabet keeps typography crisp without external font dependencies.
  static const char* glyphs[36]={
@@ -168,6 +190,7 @@ void draw(){
  fill(0,0,W,H,{8,11,18,255});
  // Layered atmospheric gradients and subtle horizon glow.
  for(int y=0;y<H;y+=8){float t=float(y)/H;fill(0,y,W,8,{Uint8(9+10*t),Uint8(14+13*t),Uint8(24+20*t),255});}
+ drawDarkFantasySkyline();
  for(int i=0;i<12;++i){int yy=590+i*18;line(0,yy,W,yy,{Uint8(25+i),Uint8(34+i),Uint8(51+i),90});}
  if(particlesEnabled)for(const auto& p:particles){SDL_SetRenderDrawColor(renderer,145,177,205,Uint8(p.a*180));SDL_Rect q{int(p.x),int(p.y),int(p.r),int(p.r)};SDL_RenderFillRect(renderer,&q);}
  textBlock("LIBRARY",110,55,2,{146,168,190,255});
