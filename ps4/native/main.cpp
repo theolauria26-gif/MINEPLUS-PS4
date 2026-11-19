@@ -336,7 +336,7 @@ void init_world(){
      // Parallel crop beds are separated by narrow walkways and a water trench.
      const int fieldY=std::max(2,radius/3);
      if(oy>=fieldY&&oy<fence-1&&std::abs(ox)>=3&&std::abs(ox)<=fence-2){
-      if((ox&1)==0) tile=((oy+int(anchor.x))%5==0)?Water:Leaf;
+      if((ox&1)==0) tile=((oy+int(anchor.x))%5==0)?Water:Leaves;
       else if((oy&1)==0) tile=Moss;
      }
      // A stone well beside the yard path is the farmstead's landmark.
