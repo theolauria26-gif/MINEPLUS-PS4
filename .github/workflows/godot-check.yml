@@ -24,3 +24,5 @@ jobs:
         run: Godot_v4.3-stable_linux.x86_64 --headless --path . res://scenes/world.tscn --quit-after 90
       - name: Test versioned world-save recovery
         run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/world_save_test.gd
+      - name: Test deterministic 3D biome decorations
+        run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/world_visual_test.gd
