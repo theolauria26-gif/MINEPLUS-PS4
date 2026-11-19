@@ -8,7 +8,7 @@ Independent PS4 homebrew application. This project is intentionally isolated fro
 - Triangle/Y rescans the installed-game library without restarting.
 - Animated particle backdrop and selected-tile focus animation.
 - Bottom control center with Games, Media, Settings and Profile sections.
-- Centered five-slot library carousel for up to 40 discovered games, sorted alphabetically for predictable browsing.
+- Centered five-slot library carousel for up to 40 discovered games, sorted alphabetically from a bounded scan of up to 256 readable entries.
 - Loads each installed title's real `sce_sys/icon0.png` when accessible, with a procedural fallback.
 - Caches at most five icon textures while browsing to keep GPU memory bounded.
 - Read-only discovery attempt under `/user/app/*/sce_sys/param.sfo`.
@@ -19,7 +19,7 @@ Independent PS4 homebrew application. This project is intentionally isolated fro
 
 ## Not implemented / not verified
 - Access to installed retail application directories is not guaranteed from a normal homebrew sandbox. The scan must be tested on the target console and may report access denied or no readable games.
-- Launching retail games is not implemented. OpenOrbis v0.5.4 declares `sceLncUtilLaunchApp` and `LncAppParam`, but does not declare `sceLncUtilInitialize`; the latter's linkage, initialization requirements and runtime behavior must be verified before wiring the Cross button. No guessed offsets or kernel calls are used.
+- Launching retail games is not implemented. OpenOrbis v0.5.4 headers declare `sceLncUtilLaunchApp` and `LncAppParam`, but the standard toolchain link used by this project does not resolve `sceLncUtilLaunchApp` or `sceLncUtilInitialize`. A test link failed with both symbols undefined, so those calls were removed and the Cross action remains explicitly disabled. The PS4 Itemzflow reference performs LNC initialization inside its daemon; that is not proof the same route is available to a normal sandboxed application. No guessed offsets, kernel calls or unresolved imports are shipped.
 - Game cover downloads, artwork cache, functional Media/Settings/Profile pages and game launching are not implemented.
 - The launcher has not been runtime-tested on a PS4.
 
