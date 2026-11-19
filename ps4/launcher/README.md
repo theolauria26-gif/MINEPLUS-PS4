@@ -17,7 +17,7 @@ Independent PS4 homebrew application. This project is intentionally isolated fro
 
 ## Not implemented / not verified
 - Access to installed retail application directories is not guaranteed from a normal homebrew sandbox. The scan must be tested on the target console and may report access denied or no readable games.
-- Launching retail games is not implemented. No guessed SCE launch API is called.
+- Launching retail games is not implemented. OpenOrbis v0.5.4 declares `sceLncUtilLaunchApp` and `LncAppParam`, but does not declare `sceLncUtilInitialize`; the latter's linkage, initialization requirements and runtime behavior must be verified before wiring the Cross button. No guessed offsets or kernel calls are used.
 - Game cover downloads, artwork cache, analog navigation and settings actions are not implemented.
 - The launcher has not been runtime-tested on a PS4.
 
