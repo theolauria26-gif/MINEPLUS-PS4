@@ -36,6 +36,23 @@ func _run() -> void:
 			elif kind == 5:
 				_expect(biome == MineplusWorldGen.Biome.FOREST or biome == MineplusWorldGen.Biome.HIGHLANDS, "monoliths use ancient forest/highland biomes")
 
+	for kind in [1, 2, 3, 4]:
+		var tree_tool := SurfaceTool.new()
+		tree_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+		streamer._append_tree(tree_tool, {"x": 2, "y": 12, "z": -3, "kind": kind, "hash": 918273})
+		var tree_mesh := tree_tool.commit()
+		_expect(tree_mesh != null and tree_mesh.get_surface_count() == 1, "tree variant %d creates a 3D mesh" % kind)
+	var ruin_tool := SurfaceTool.new()
+	ruin_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	streamer._append_ruin(ruin_tool, {"x": 4, "y": 10, "z": 8, "kind": 6, "hash": 918273})
+	var ruin_mesh := ruin_tool.commit()
+	_expect(ruin_mesh != null and ruin_mesh.get_surface_count() == 1, "ruined keep creates a 3D mesh")
+	var gate_tool := SurfaceTool.new()
+	gate_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	streamer._append_dungeon_gate(gate_tool, {"x": -4, "y": 10, "z": 8, "kind": 7, "hash": 918273})
+	var gate_mesh := gate_tool.commit()
+	_expect(gate_mesh != null and gate_mesh.get_surface_count() == 1, "dungeon gate creates a 3D mesh")
+
 	if failures == 0:
 		print("MINEPLUS world-visual tests: OK")
 	else:
