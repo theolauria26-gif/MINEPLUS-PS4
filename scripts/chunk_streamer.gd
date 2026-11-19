@@ -151,6 +151,29 @@ func decoration_anchors(key: Vector2i) -> Array[Dictionary]:
 					if roll < 12: kind = 5
 			if kind != 0:
 				result.append({"x": x, "z": z, "y": int(sample[0]), "kind": kind, "hash": h})
+	# Promote the original PCG's giant trees, ruins and dungeon arches into 3D
+	# silhouettes. A structure belongs to exactly one chunk even when its mesh
+	# extends a few blocks beyond that chunk's edge.
+	var min_sx := floori(float(start_x) / generator.STRUCTURE_CELL)
+	var max_sx := floori(float(start_x + CHUNK_SIZE - 1) / generator.STRUCTURE_CELL)
+	var min_sz := floori(float(start_z) / generator.STRUCTURE_CELL)
+	var max_sz := floori(float(start_z + CHUNK_SIZE - 1) / generator.STRUCTURE_CELL)
+	for sz in range(min_sz, max_sz + 1):
+		for sx in range(min_sx, max_sx + 1):
+			var structure := generator._structure_anchor(sx, sz)
+			if structure.is_empty():
+				continue
+			var ax := int(structure.x)
+			var az := int(structure.z)
+			if floori(float(ax) / CHUNK_SIZE) != key.x or floori(float(az) / CHUNK_SIZE) != key.y:
+				continue
+			var structure_kind := 2
+			match int(structure.type):
+				1: structure_kind = 2
+				2: structure_kind = 6
+				3: structure_kind = 7
+			var structure_hash := MineplusWorldGen._hash2(sx, sz, generator.world_seed ^ 0x73A1)
+			result.append({"x": ax, "z": az, "y": generator.ground_height_at(ax, az), "kind": structure_kind, "hash": structure_hash})
 	return result
 
 func _append_tree(st: SurfaceTool, anchor: Dictionary) -> void:
@@ -207,6 +230,52 @@ func _append_monolith(st: SurfaceTool, anchor: Dictionary) -> void:
 	_add_box(st, Vector3(x, y + 3.18, z), Vector3(1.12, 0.28, 1.12), Color("#77717a"))
 	_add_box(st, Vector3(x, y + 3.48, z), Vector3(0.42, 0.48, 0.42), Color("#67b6a0"))
 
+func _append_ruin(st: SurfaceTool, anchor: Dictionary) -> void:
+	var x := float(anchor.x)
+	var y := float(anchor.y)
+	var z := float(anchor.z)
+	var stone := Color("#625d61")
+	var worn := Color("#81766d")
+	# Broken low walls leave several readable gaps instead of a solid box.
+	for side in [-1.0, 1.0]:
+		_add_box(st, Vector3(x + side * 4.0, y + 1.35, z - 2.15), Vector3(0.7, 2.7, 2.5), stone)
+		_add_box(st, Vector3(x + side * 4.0, y + 1.05, z + 2.25), Vector3(0.7, 2.1, 2.2), stone.darkened(0.12))
+		_add_box(st, Vector3(x - 2.1, y + 1.25, z + side * 4.0), Vector3(2.5, 2.5, 0.7), worn)
+		_add_box(st, Vector3(x + 2.25, y + 0.95, z + side * 4.0), Vector3(2.1, 1.9, 0.7), stone)
+	# Four irregular corner remnants suggest collapsed towers.
+	for sx in [-1.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			var height := 2.8 + float((int(anchor.hash) >> (int(sx + 1.0) * 2 + int(sz + 1.0))) & 3) * 0.38
+			_add_box(st, Vector3(x + sx * 4.0, y + height * 0.5, z + sz * 4.0), Vector3(0.95, height, 0.95), worn)
+	# Cracked flagstones and a rune plinth form a focal point in the courtyard.
+	for dx in [-1.5, 0.0, 1.5]:
+		for dz in [-1.5, 0.0, 1.5]:
+			if absf(dx) + absf(dz) > 2.7:
+				continue
+			_add_box(st, Vector3(x + dx, y + 0.12, z + dz), Vector3(1.35, 0.22, 1.35), stone.darkened(0.16))
+	_add_box(st, Vector3(x, y + 0.42, z), Vector3(1.35, 0.5, 1.35), Color("#4d5359"))
+	_add_box(st, Vector3(x, y + 0.78, z), Vector3(0.42, 0.28, 0.42), Color("#6a9b91"))
+
+func _append_dungeon_gate(st: SurfaceTool, anchor: Dictionary) -> void:
+	var x := float(anchor.x)
+	var y := float(anchor.y)
+	var z := float(anchor.z)
+	var dark_stone := Color("#494852")
+	var edge_stone := Color("#77717c")
+	# Heavy stepped threshold, paired rune pillars and a broken lintel.
+	for step in range(3):
+		_add_box(st, Vector3(x, y + 0.16 + float(step) * 0.16, z + 2.0 - float(step) * 0.55), Vector3(6.8 - float(step) * 0.65, 0.32, 1.15), dark_stone.lightened(float(step) * 0.035))
+	for side in [-1.0, 1.0]:
+		_add_box(st, Vector3(x + side * 3.0, y + 2.55, z), Vector3(1.0, 5.1, 1.15), dark_stone)
+		_add_box(st, Vector3(x + side * 3.0, y + 4.95, z), Vector3(1.35, 0.52, 1.45), edge_stone)
+		_add_box(st, Vector3(x + side * 3.0, y + 2.25, z - 0.63), Vector3(0.18, 2.1, 0.12), Color("#6f9b9b"))
+	_add_box(st, Vector3(x, y + 5.0, z), Vector3(5.9, 0.9, 1.25), dark_stone)
+	_add_box(st, Vector3(x, y + 5.5, z), Vector3(2.2, 0.22, 1.4), edge_stone)
+	# A recessed, non-interactive void gives the entrance a dark-fantasy focal point.
+	_add_box(st, Vector3(x, y + 2.45, z + 0.16), Vector3(4.25, 3.9, 0.16), Color("#211d31"))
+	_add_box(st, Vector3(x, y + 2.45, z + 0.05), Vector3(0.12, 3.55, 0.12), Color("#4c777f"))
+	_add_box(st, Vector3(x, y + 0.42, z - 0.12), Vector3(2.0, 0.32, 0.32), Color("#6b8b87"))
+
 func _build_chunk(key: Vector2i) -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -258,10 +327,11 @@ func _build_chunk(key: Vector2i) -> void:
 	if mesh == null or mesh.get_surface_count() == 0:
 		return
 	for anchor in decoration_anchors(key):
-		if int(anchor.kind) == 5:
-			_append_monolith(decoration_st, anchor)
-		else:
-			_append_tree(decoration_st, anchor)
+		match int(anchor.kind):
+			5: _append_monolith(decoration_st, anchor)
+			6: _append_ruin(decoration_st, anchor)
+			7: _append_dungeon_gate(decoration_st, anchor)
+			_: _append_tree(decoration_st, anchor)
 	var decoration_mesh := decoration_st.commit()
 	var root: Node3D
 	if not chunk_pool.is_empty():
