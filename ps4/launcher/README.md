@@ -8,7 +8,8 @@ Independent PS4 homebrew application. This project is intentionally isolated fro
 - Animated particle backdrop and selected-tile focus animation.
 - Bottom control center with Games, Media, Settings and Profile sections.
 - Centered five-slot library carousel for up to 40 discovered games.
-- Procedural title-ID-based geometric card artwork (not official cover art).
+- Loads each installed title's real `sce_sys/icon0.png` when accessible, with a procedural fallback.
+- Caches at most five icon textures while browsing to keep GPU memory bounded.
 - Read-only discovery attempt under `/user/app/*/sce_sys/param.sfo`.
 - Bounded PARAM.SFO parser for `TITLE` and `TITLE_ID`, using bounded C stdio reads to avoid unsupported iostream locale code in the OpenOrbis libc++ headers.
 - Honest empty/denied library states; no fake game entries are presented as installed games.
