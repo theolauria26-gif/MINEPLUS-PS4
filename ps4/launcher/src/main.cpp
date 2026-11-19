@@ -202,7 +202,7 @@ void draw(){
  for(int i=0;i<12;++i){int yy=590+i*18;line(0,yy,W,yy,{Uint8(25+i),Uint8(34+i),Uint8(51+i),90});}
  if(particlesEnabled)for(const auto& p:particles){SDL_SetRenderDrawColor(renderer,145,177,205,Uint8(p.a*180));SDL_Rect q{int(p.x),int(p.y),int(p.r),int(p.r)};SDL_RenderFillRect(renderer,&q);}
  textBlock("LIBRARY",110,55,2,{146,168,190,255});
- textBlock("MINEPLUS",W-360,48,3,{220,229,239,255});
+ textBlock("CONSOLE HUB",W-430,48,3,{220,229,239,255});
  // Five-slot carousel keeps the selected installed title centered, even with 40 entries.
  const int baseY=184,cardW=292,cardH=178,gap=26;
  const int visible=(int)std::min<size_t>(5,games.size());
