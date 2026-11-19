@@ -79,3 +79,8 @@ A API aceita um limite `max_quads` (padrão 65.536). Se o limite for excedido, r
 ## Moinho medieval no mundo exterior
 
 A família de marcos 11 pode gerar um moinho rural com torre de pedra escura, rotor de quatro pás em madeira e areia, pátio cercado, trilha de acesso e pequeno depósito de grãos. A orientação visual e a posição são derivadas da seed e da célula global, mantendo a estrutura estável entre gerações. No cliente atual, o rotor é uma silhueta estática de tiles 2D: não gira, não mói grãos e não possui interior 3D ou economia agrícola simulada.
+
+
+## Entradas rurais conectadas à malha de estradas
+
+Os portões da propriedade rural e do moinho agora escolhem a face voltada para o marco vizinho indicado pelo grafo determinístico de estradas. O celeiro da fazenda é reposicionado para o lado oposto à entrada, e o caminho interno acompanha o eixo do portão. Quando não existe ligação de estrada para a âncora, a orientação sul permanece como fallback estável. A representação ainda é uma composição 2D de tiles; não cria navegação de NPC nem uma estrada física 3D.
