@@ -160,6 +160,24 @@ void scanInstalledGames(){
  else libraryStatus="NO READABLE GAMES FOUND";
 }
 
+bool loadSettings(){
+ FILE* file=std::fopen("/data/launcher_settings.cfg","rb");
+ if(!file)return false;
+ char magic[16]{};int particles=1,titleId=1;
+ bool valid=std::fgets(magic,sizeof(magic),file)!=nullptr&&std::strcmp(magic,"MPLS1\\n")==0;
+ if(valid)valid=std::fscanf(file,"%d %d",&particles,&titleId)==2;
+ std::fclose(file);
+ if(!valid||(particles!=0&&particles!=1)||(titleId!=0&&titleId!=1))return false;
+ particlesEnabled=particles!=0;showTitleId=titleId!=0;return true;
+}
+bool saveSettings(){
+ FILE* file=std::fopen("/data/launcher_settings.cfg","wb");
+ if(!file)return false;
+ int written=std::fprintf(file,"MPLS1\\n%d %d\\n",particlesEnabled?1:0,showTitleId?1:0);
+ bool ok=written>0&&std::fflush(file)==0;
+ if(std::fclose(file)!=0)ok=false;
+ return ok;
+}
 void initializeLaunchServices(){
  int32_t systemResult=sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE);
  if(systemResult<0){launchServiceStatus="SYSTEM SERVICE LOAD FAILED";return;}
@@ -299,7 +317,7 @@ int main(int,char**){
  float axisRepeat=0.0f;
  IMG_Init(IMG_INIT_PNG);
  SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);
- initParticles();scanInstalledGames();initializeLaunchServices();Uint64 prev=SDL_GetPerformanceCounter();
+ initParticles();loadSettings();scanInstalledGames();initializeLaunchServices();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
   if(e.type==SDL_CONTROLLERDEVICEADDED&&!pad&&SDL_IsGameController(e.cdevice.which))pad=SDL_GameControllerOpen(e.cdevice.which);
@@ -314,7 +332,7 @@ int main(int,char**){
   case SDL_CONTROLLER_BUTTON_B:if(settingsPage)settingsPage=false;else hub=false;break;
   case SDL_CONTROLLER_BUTTON_Y:if(!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
   case SDL_CONTROLLER_BUTTON_A:
-   if(settingsPage){if(settingsCursor==0)particlesEnabled=!particlesEnabled;else showTitleId=!showTitleId;}
+   if(settingsPage){if(settingsCursor==0)particlesEnabled=!particlesEnabled;else showTitleId=!showTitleId;if(!saveSettings()){notice="SETTINGS SAVE FAILED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
    else if(hub){
     if(hubSelected==0){hub=false;notice.clear();noticeTimer=0.0f;}
     else if(hubSelected==2){settingsPage=true;settingsCursor=0;}
