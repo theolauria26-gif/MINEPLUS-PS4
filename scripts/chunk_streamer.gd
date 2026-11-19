@@ -101,9 +101,117 @@ func _add_quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, 
 	st.set_color(color); st.set_normal(normal); st.add_vertex(c)
 	st.set_color(color); st.set_normal(normal); st.add_vertex(d)
 
+func _add_box(st: SurfaceTool, center: Vector3, size: Vector3, color: Color) -> void:
+	var h := size * 0.5
+	var x0 := center.x - h.x
+	var x1 := center.x + h.x
+	var y0 := center.y - h.y
+	var y1 := center.y + h.y
+	var z0 := center.z - h.z
+	var z1 := center.z + h.z
+	# Six outward-facing quads; decorations share one batched mesh per chunk.
+	_add_quad(st, Vector3(x0,y1,z0), Vector3(x0,y1,z1), Vector3(x1,y1,z1), Vector3(x1,y1,z0), color)
+	_add_quad(st, Vector3(x0,y0,z1), Vector3(x0,y0,z0), Vector3(x1,y0,z0), Vector3(x1,y0,z1), color.darkened(0.25))
+	_add_quad(st, Vector3(x0,y0,z0), Vector3(x1,y0,z0), Vector3(x1,y1,z0), Vector3(x0,y1,z0), color.darkened(0.22))
+	_add_quad(st, Vector3(x1,y0,z1), Vector3(x0,y0,z1), Vector3(x0,y1,z1), Vector3(x1,y1,z1), color.lightened(0.04))
+	_add_quad(st, Vector3(x0,y0,z1), Vector3(x0,y0,z0), Vector3(x0,y1,z0), Vector3(x0,y1,z1), color.darkened(0.18))
+	_add_quad(st, Vector3(x1,y0,z0), Vector3(x1,y0,z1), Vector3(x1,y1,z1), Vector3(x1,y1,z0), color.darkened(0.12))
+
+func decoration_anchors(key: Vector2i) -> Array[Dictionary]:
+	# One stable candidate per 8x8 macro-cell; chunk ownership prevents duplicates.
+	var result: Array[Dictionary] = []
+	var start_x := key.x * CHUNK_SIZE
+	var start_z := key.y * CHUNK_SIZE
+	var min_mx := floori(float(start_x) / 8.0)
+	var max_mx := floori(float(start_x + CHUNK_SIZE - 1) / 8.0)
+	var min_mz := floori(float(start_z) / 8.0)
+	var max_mz := floori(float(start_z + CHUNK_SIZE - 1) / 8.0)
+	for mz in range(min_mz, max_mz + 1):
+		for mx in range(min_mx, max_mx + 1):
+			var h := MineplusWorldGen._hash2(mx, mz, generator.world_seed ^ 0x4D1F)
+			var x := mx * 8 + int((h >> 8) % 8)
+			var z := mz * 8 + int((h >> 16) % 8)
+			if x < start_x or x >= start_x + CHUNK_SIZE or z < start_z or z >= start_z + CHUNK_SIZE:
+				continue
+			var sample := _sample_world(x, z)
+			var biome := int(sample[2])
+			var roll := h % 100
+			var kind := 0
+			match biome:
+				MineplusWorldGen.Biome.FOREST:
+					if roll < 34: kind = 2 if h % 17 == 0 else 1
+					elif roll >= 91: kind = 5
+				MineplusWorldGen.Biome.TUNDRA:
+					if roll < 27: kind = 3
+				MineplusWorldGen.Biome.SWAMP:
+					if roll < 31: kind = 4
+				MineplusWorldGen.Biome.PLAINS:
+					if roll < 7: kind = 1
+				MineplusWorldGen.Biome.HIGHLANDS:
+					if roll < 12: kind = 5
+			if kind != 0:
+				result.append({"x": x, "z": z, "y": int(sample[0]), "kind": kind, "hash": h})
+	return result
+
+func _append_tree(st: SurfaceTool, anchor: Dictionary) -> void:
+	var x := float(anchor.x)
+	var y := float(anchor.y)
+	var z := float(anchor.z)
+	var kind := int(anchor.kind)
+	var h := int(anchor.hash)
+	var bark := Color("#514033") if kind == 4 else Color("#694b37")
+	if kind == 2: bark = Color("#443b36")
+	_add_box(st, Vector3(x, y + 1.9, z), Vector3(0.72, 3.8, 0.72), bark)
+	# Exposed roots make the trunk feel anchored in the terrain.
+	for side in [-1.0, 1.0]:
+		_add_box(st, Vector3(x + side * 0.48, y + 0.22, z), Vector3(1.15, 0.32, 0.34), bark.darkened(0.12))
+		_add_box(st, Vector3(x, y + 0.22, z + side * 0.48), Vector3(0.34, 0.32, 1.15), bark.darkened(0.12))
+	if kind == 3:
+		# Layered cold conifer: stacked, tapering dark evergreen boughs.
+		for tier in range(4):
+			var radius := 1.9 - float(tier) * 0.42
+			var level := y + 2.2 + float(tier) * 1.05
+			var shade := Color("#526d68").lightened(float((h >> (tier * 3)) & 3) * 0.025)
+			_add_box(st, Vector3(x, level, z), Vector3(radius * 2.0, 1.25, radius * 2.0), shade)
+			_add_box(st, Vector3(x, level + 0.48, z), Vector3(radius * 1.35, 0.72, radius * 1.35), shade.lightened(0.035))
+		return
+	if kind == 4:
+		# Swamp tree: crooked, staggered branches and sparse hanging moss.
+		_add_box(st, Vector3(x - 0.55, y + 3.5, z), Vector3(0.55, 0.55, 0.55), bark)
+		_add_box(st, Vector3(x + 0.48, y + 4.05, z + 0.12), Vector3(0.5, 0.5, 0.5), bark)
+		var moss := Color("#526f58")
+		_add_box(st, Vector3(x - 0.72, y + 3.0, z), Vector3(0.72, 1.5, 0.72), moss)
+		_add_box(st, Vector3(x + 0.62, y + 3.5, z + 0.12), Vector3(0.68, 1.4, 0.68), moss.darkened(0.12))
+		return
+	var canopy := Color("#355d43") if kind != 2 else Color("#304c3c")
+	if kind == 2: canopy = Color("#3d5944")
+	# Distinct cubic layers create a readable broadleaf/ancient silhouette.
+	_add_box(st, Vector3(x, y + 4.0, z), Vector3(3.5, 2.0, 3.5), canopy)
+	_add_box(st, Vector3(x - 1.15, y + 3.55, z + 0.12), Vector3(1.75, 1.55, 1.8), canopy.lightened(0.07))
+	_add_box(st, Vector3(x + 1.12, y + 3.72, z - 0.18), Vector3(1.8, 1.65, 1.7), canopy.darkened(0.08))
+	_add_box(st, Vector3(x, y + 5.15, z), Vector3(2.2, 1.55, 2.2), canopy.lightened(0.045))
+	if kind == 2:
+		_add_box(st, Vector3(x, y + 6.15, z), Vector3(1.25, 1.1, 1.25), Color("#53664a"))
+	# A few world-stable moss patches break up the flat canopy palette.
+	for i in range(3):
+		if ((h >> (i * 5)) & 3) == 0:
+			var side := -1.0 if i == 0 else (1.0 if i == 1 else 0.0)
+			_add_box(st, Vector3(x + side * 1.15, y + 4.85, z + (1.0 - absf(side)) * 0.9), Vector3(0.62, 0.34, 0.62), Color("#71805a"))
+
+func _append_monolith(st: SurfaceTool, anchor: Dictionary) -> void:
+	var x := float(anchor.x)
+	var y := float(anchor.y)
+	var z := float(anchor.z)
+	var stone := Color("#55515d")
+	_add_box(st, Vector3(x, y + 1.55, z), Vector3(0.9, 3.1, 0.9), stone)
+	_add_box(st, Vector3(x, y + 3.18, z), Vector3(1.12, 0.28, 1.12), Color("#77717a"))
+	_add_box(st, Vector3(x, y + 3.48, z), Vector3(0.42, 0.48, 0.42), Color("#67b6a0"))
+
 func _build_chunk(key: Vector2i) -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var decoration_st := SurfaceTool.new()
+	decoration_st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var start_x := key.x * CHUNK_SIZE
 	var start_z := key.y * CHUNK_SIZE
 
@@ -149,6 +257,12 @@ func _build_chunk(key: Vector2i) -> void:
 	var mesh := st.commit()
 	if mesh == null or mesh.get_surface_count() == 0:
 		return
+	for anchor in decoration_anchors(key):
+		if int(anchor.kind) == 5:
+			_append_monolith(decoration_st, anchor)
+		else:
+			_append_tree(decoration_st, anchor)
+	var decoration_mesh := decoration_st.commit()
 	var root: Node3D
 	if not chunk_pool.is_empty():
 		root = chunk_pool.pop_back()
@@ -165,6 +279,13 @@ func _build_chunk(key: Vector2i) -> void:
 		root.add_child(visual)
 	visual.mesh = mesh
 	visual.material_override = material
+	var decorations := root.get_node_or_null("Decorations") as MeshInstance3D
+	if decorations == null:
+		decorations = MeshInstance3D.new()
+		decorations.name = "Decorations"
+		root.add_child(decorations)
+	decorations.mesh = decoration_mesh
+	decorations.material_override = material
 	var body := root.get_node_or_null("CollisionBody") as StaticBody3D
 	if body == null:
 		body = StaticBody3D.new()
