@@ -272,9 +272,12 @@ int main(int,char**){
   case SDL_CONTROLLER_BUTTON_Y:if(!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
   case SDL_CONTROLLER_BUTTON_A:
    if(hub){
-    static const char* hubMessages[4]={"GAME LIBRARY","MEDIA CENTER NOT AVAILABLE","SETTINGS NOT AVAILABLE","PROFILE NOT AVAILABLE"};
-    notice=hubMessages[hubSelected];noticeTimer=3.0f;hub=false;
-   }else if(!games.empty()){notice="LAUNCH API NOT AVAILABLE";noticeTimer=3.5f;}
+    if(hubSelected==0){hub=false;notice.clear();noticeTimer=0.0f;}
+    else{
+     static const char* hubMessages[4]={"GAME LIBRARY","MEDIA CENTER NOT AVAILABLE","SETTINGS NOT AVAILABLE","PROFILE NOT AVAILABLE"};
+     notice=hubMessages[hubSelected];noticeTimer=3.0f;hub=false;
+    }
+   }else{launchSelectedGame();}
    break;default:break;}}}
   if(pad){Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);if(axis>16000||axis< -16000){axisRepeat-=dt;if(axisRepeat<=0.0f){if(hub)hubSelected=(hubSelected+(axis>0?1:3))%4;else move(axis>0?1:-1);axisRepeat=0.24f;}}else axisRepeat=0.0f;}
   update(dt);draw();
