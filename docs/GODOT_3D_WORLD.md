@@ -45,3 +45,9 @@ O objetivo é um mundo voxel dark fantasy com identidade própria, não uma cóp
 - Âncoras PCG antigas agora são convertidas em modelos cúbicos 3D no chunk proprietário: árvores ancestrais, ruínas com paredes quebradas e pilares, e portais/portões de masmorra com degraus e pedra rúnica.
 - A propriedade por chunk evita desenhar a mesma estrutura duas vezes; as malhas podem ultrapassar ligeiramente o limite do chunk para preservar a silhueta.
 - Os modelos de ruína e entrada ainda são decoração visual sem colisão, interiores navegáveis, baús funcionais ou interação. A geometria de terreno continua com collider separado.
+
+### Vento nas copas
+
+- A malha de decoração usa um shader espacial com deslocamento de vértices de baixa amplitude, animado por TIME.
+- O alpha da cor de vértice identifica folhas e musgo; troncos, pedra, cristais e ruínas permanecem rígidos.
+- A animação é barata e compartilhada por chunk, sem criar nós ou corpos físicos extras. Não é uma simulação de vento nem uma animação esquelética.
