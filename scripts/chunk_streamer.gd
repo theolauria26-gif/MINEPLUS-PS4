@@ -154,10 +154,10 @@ func decoration_anchors(key: Vector2i) -> Array[Dictionary]:
 	# Promote the original PCG's giant trees, ruins and dungeon arches into 3D
 	# silhouettes. A structure belongs to exactly one chunk even when its mesh
 	# extends a few blocks beyond that chunk's edge.
-	var min_sx := floori(float(start_x) / generator.STRUCTURE_CELL)
-	var max_sx := floori(float(start_x + CHUNK_SIZE - 1) / generator.STRUCTURE_CELL)
-	var min_sz := floori(float(start_z) / generator.STRUCTURE_CELL)
-	var max_sz := floori(float(start_z + CHUNK_SIZE - 1) / generator.STRUCTURE_CELL)
+	var min_sx := floori(float(start_x) / MineplusWorldGen.STRUCTURE_CELL)
+	var max_sx := floori(float(start_x + CHUNK_SIZE - 1) / MineplusWorldGen.STRUCTURE_CELL)
+	var min_sz := floori(float(start_z) / MineplusWorldGen.STRUCTURE_CELL)
+	var max_sz := floori(float(start_z + CHUNK_SIZE - 1) / MineplusWorldGen.STRUCTURE_CELL)
 	for sz in range(min_sz, max_sz + 1):
 		for sx in range(min_sx, max_sx + 1):
 			var structure := generator._structure_anchor(sx, sz)
@@ -173,7 +173,10 @@ func decoration_anchors(key: Vector2i) -> Array[Dictionary]:
 				2: structure_kind = 6
 				3: structure_kind = 7
 			var structure_hash := MineplusWorldGen._hash2(sx, sz, generator.world_seed ^ 0x73A1)
-			result.append({"x": ax, "z": az, "y": generator.ground_height_at(ax, az), "kind": structure_kind, "hash": structure_hash})
+			var base_y := generator.ground_height_at(ax, az)
+			if int(structure.type) == 1:
+				base_y += 9
+			result.append({"x": ax, "z": az, "y": base_y, "kind": structure_kind, "hash": structure_hash})
 	return result
 
 func _append_tree(st: SurfaceTool, anchor: Dictionary) -> void:
