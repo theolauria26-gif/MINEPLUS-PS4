@@ -1,5 +1,6 @@
 #include <time.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -12,7 +13,7 @@
 
 namespace {
 constexpr int W=1920,H=1080;
-struct Game { std::string title; SDL_Color color; std::string titleId; };
+struct Game { std::string title; SDL_Color color; std::string titleId; std::string iconPath; SDL_Texture* icon=nullptr; bool iconAttempted=false; };
 struct Particle { float x,y,vx,vy,r,a; };
 std::vector<Game> games;
 std::string libraryStatus="SCANNING LIBRARY";
@@ -92,7 +93,7 @@ void scanInstalledGames(){
    std::string title=sfoString(bytes,"TITLE");
    std::string id=sfoString(bytes,"TITLE_ID");
    if(title.empty()||id.empty())continue;
-   found.push_back({title,{72,94,112,255},id});
+   found.push_back({title,{72,94,112,255},id,root+"/sce_sys/icon0.png",nullptr,false});
   }
   closedir(dir);
  }
@@ -125,17 +126,30 @@ void draw(){
   SDL_Color shade{Uint8(accent.r/3),Uint8(accent.g/3),Uint8(accent.b/3),255};
   fill(x-5,y-5,w+10,h+10,chosen?SDL_Color{220,229,239,255}:SDL_Color{48,61,78,255});
   fill(x,y,w,h,shade);
-  fill(x,y,w,7,accent);
-  // Layered geometric artwork is generated from the real title ID, not a fake cover.
-  fill(x+18,y+25,w-36,2,{accent.r,accent.g,accent.b,105});
-  fill(x+26,y+43,w-52,72,{Uint8(accent.r/2),Uint8(accent.g/2),Uint8(accent.b/2),255});
-  fill(x+34,y+51,w-68,3,{accent.r,accent.g,accent.b,180});
-  fill(x+34,y+60,w-68,2,{accent.r,accent.g,accent.b,95});
-  fill(x+34,y+101,w-68,2,{accent.r,accent.g,accent.b,130});
+  if(!game.iconAttempted){game.iconAttempted=true;game.icon=IMG_LoadTexture(renderer,game.iconPath.c_str());}
+  if(game.icon){
+   int iw=0,ih=0;SDL_QueryTexture(game.icon,nullptr,nullptr,&iw,&ih);
+   if(iw>0&&ih>0){float target=float(w)/float(h),source=float(iw)/float(ih);SDL_Rect src{0,0,iw,ih};
+    if(source>target){src.w=int(float(ih)*target);src.x=(iw-src.w)/2;}
+    else{src.h=int(float(iw)/target);src.y=(ih-src.h)/2;}
+    SDL_Rect dst{x,y,w,h};SDL_RenderCopy(renderer,game.icon,&src,&dst);
+   }
+   fill(x,y,w,h,{5,9,15,95});
+  }else{
+   fill(x,y,w,7,accent);
+   // Deterministic fallback artwork when a game's official icon is inaccessible.
+   fill(x+18,y+25,w-36,2,{accent.r,accent.g,accent.b,105});
+   fill(x+26,y+43,w-52,72,{Uint8(accent.r/2),Uint8(accent.g/2),Uint8(accent.b/2),255});
+   fill(x+34,y+51,w-68,3,{accent.r,accent.g,accent.b,180});
+   fill(x+34,y+60,w-68,2,{accent.r,accent.g,accent.b,95});
+   fill(x+34,y+101,w-68,2,{accent.r,accent.g,accent.b,130});
+  }
   fill(x+18,y+h-35,w-36,3,{12,17,26,220});
   std::string label=game.title.substr(0,21);
   textBlock(label.c_str(),x+18,y+h-26,2,{235,240,247,255});
  }
+ // Retain at most five high-resolution icon textures while browsing the carousel.
+ for(size_t i=0;i<games.size();++i){bool visibleNow=false;for(int slot=0;slot<visible;++slot){int idx=(selected-visible/2+slot+(int)games.size())%(int)games.size();if((size_t)idx==i){visibleNow=true;break;}}if(!visibleNow&&games[i].icon){SDL_DestroyTexture(games[i].icon);games[i].icon=nullptr;games[i].iconAttempted=false;}}
  if(!games.empty()){
   char counter[24];std::snprintf(counter,sizeof(counter),"%02d / %02d",selected+1,(int)games.size());
   textBlock(counter,W-250,395,2,{158,178,199,255});
@@ -179,6 +193,8 @@ int main(int,char**){
  if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}
  SDL_GameController* pad=nullptr;for(int i=0;i<SDL_NumJoysticks();++i){if(SDL_IsGameController(i)){pad=SDL_GameControllerOpen(i);if(pad)break;}}
  float axisRepeat=0.0f;
+ IMG_Init(IMG_INIT_PNG);
+ SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);
  initParticles();scanInstalledGames();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
@@ -188,5 +204,6 @@ int main(int,char**){
   if(pad){Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);if(axis>16000||axis< -16000){axisRepeat-=dt;if(axisRepeat<=0.0f){if(hub)hubSelected=(hubSelected+(axis>0?1:3))%4;else move(axis>0?1:-1);axisRepeat=0.24f;}}else axisRepeat=0.0f;}
   update(dt);draw();
  }
- if(pad)SDL_GameControllerClose(pad);SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;
+ for(auto& game:games)if(game.icon)SDL_DestroyTexture(game.icon);
+ if(pad)SDL_GameControllerClose(pad);IMG_Quit();SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;
 }
