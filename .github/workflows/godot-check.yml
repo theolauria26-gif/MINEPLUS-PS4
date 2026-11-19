@@ -25,4 +25,7 @@ jobs:
       - name: Test versioned world-save recovery
         run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/world_save_test.gd
       - name: Test deterministic 3D biome decorations
-        run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/world_visual_test.gd
+        run: |
+          output=$(Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/world_visual_test.gd --quit-after 120 2>&1)
+          echo "$output"
+          echo "$output" | grep -q "MINEPLUS world-visual tests: OK"
