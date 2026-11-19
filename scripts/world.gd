@@ -864,7 +864,7 @@ func _interact(place: bool) -> void:
 	if hit.is_empty():
 		return
 	var body = hit.collider
-	var terrain_hit := body.has_meta("chunk") and chunk_streamer != null
+	var terrain_hit: bool = body.has_meta("chunk") and chunk_streamer != null
 	if not body.has_meta("cell") and not terrain_hit:
 		return
 	var cell: Vector3i
