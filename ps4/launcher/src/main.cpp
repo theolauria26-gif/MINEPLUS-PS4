@@ -73,6 +73,7 @@ std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
  return {};
 }
 void scanInstalledGames(){
+ libraryStatus="SCANNING LIBRARY";
  std::vector<Game> found;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED";games.clear();selected=0;return;}
@@ -97,6 +98,7 @@ void scanInstalledGames(){
   }
   closedir(dir);
  }
+ for(auto& old:games)if(old.icon)SDL_DestroyTexture(old.icon);
  games.swap(found);selected=0;
  if(!games.empty())libraryStatus="INSTALLED GAMES FOUND";
  else libraryStatus="NO READABLE GAMES FOUND";
@@ -166,6 +168,7 @@ void draw(){
   textBlock("LIBRARY SCAN RESULT",140,590,2,{117,184,180,255});
  }
  textBlock(libraryStatus.c_str(),110,790,2,{166,184,202,255});
+ textBlock("PRESS Y TO RESCAN",W-390,790,2,{117,184,180,255});
  if(hub){
   fill(0,850,W,230,{10,15,24,245});
   textBlock("CONTROL CENTER",110,872,2,{204,219,232,255});
@@ -200,7 +203,7 @@ int main(int,char**){
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
   if(e.type==SDL_CONTROLLERDEVICEADDED&&!pad&&SDL_IsGameController(e.cdevice.which))pad=SDL_GameControllerOpen(e.cdevice.which);
   if(e.type==SDL_CONTROLLERDEVICEREMOVED&&pad&&SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad))==e.cdevice.which){SDL_GameControllerClose(pad);pad=nullptr;}
-  if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(hub)hubSelected=(hubSelected+3)%4;else move(-1);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub)hubSelected=(hubSelected+1)%4;else move(1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:hub=true;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:hub=false;break;case SDL_CONTROLLER_BUTTON_B:hub=false;break;case SDL_CONTROLLER_BUTTON_A:/* Launch backend intentionally not wired in prototype. */break;default:break;}}}
+  if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(hub)hubSelected=(hubSelected+3)%4;else move(-1);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub)hubSelected=(hubSelected+1)%4;else move(1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:hub=true;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:hub=false;break;case SDL_CONTROLLER_BUTTON_B:hub=false;break;case SDL_CONTROLLER_BUTTON_Y:if(!hub)scanInstalledGames();break;case SDL_CONTROLLER_BUTTON_A:/* Launch backend intentionally not wired in prototype. */break;default:break;}}}
   if(pad){Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);if(axis>16000||axis< -16000){axisRepeat-=dt;if(axisRepeat<=0.0f){if(hub)hubSelected=(hubSelected+(axis>0?1:3))%4;else move(axis>0?1:-1);axisRepeat=0.24f;}}else axisRepeat=0.0f;}
   update(dt);draw();
  }
