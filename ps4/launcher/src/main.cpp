@@ -6,7 +6,6 @@
 #include <cstdio>
 #include <cstring>
 #include <dirent.h>
-#include <fstream>
 #include <string>
 #include <sys/stat.h>
 #include <vector>
@@ -82,9 +81,14 @@ void scanInstalledGames(){
    if(ent->d_name[0]=='.')continue;
    std::string root="/user/app/"+std::string(ent->d_name);
    struct stat st{};if(stat(root.c_str(),&st)!=0||!S_ISDIR(st.st_mode))continue;
-   std::string path=root+"/sce_sys/param.sfo";std::ifstream in(path.c_str(),std::ios::binary);
-   if(!in)continue;
-   std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(in)),std::istreambuf_iterator<char>());
+   std::string path=root+"/sce_sys/param.sfo";
+   FILE* file=std::fopen(path.c_str(),"rb");if(!file)continue;
+   if(std::fseek(file,0,SEEK_END)!=0){std::fclose(file);continue;}
+   long fileSize=std::ftell(file);
+   if(fileSize<20||fileSize>1024*1024||std::fseek(file,0,SEEK_SET)!=0){std::fclose(file);continue;}
+   std::vector<uint8_t> bytes(static_cast<size_t>(fileSize));
+   size_t readBytes=std::fread(bytes.data(),1,bytes.size(),file);std::fclose(file);
+   if(readBytes!=bytes.size())continue;
    std::string title=sfoString(bytes,"TITLE");
    std::string id=sfoString(bytes,"TITLE_ID");
    if(title.empty()||id.empty())continue;
