@@ -1,0 +1,68 @@
+name: Build PS5-style Launcher PKG
+on:
+  workflow_dispatch:
+  push:
+    branches: [launcher-foundation]
+    paths:
+      - "ps4/launcher/**"
+      - ".github/workflows/launcher-ps4.yml"
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang lld llvm make python3 curl tar
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
+      - name: Download OpenOrbis v0.5.4
+        run: |
+          mkdir -p "$RUNNER_TEMP/openorbis"
+          curl -L --fail --retry 5 "https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain/releases/download/v0.5.4/toolchain-llvm-18.tar.gz" -o "$RUNNER_TEMP/openorbis.tar.gz"
+          echo "3c7cd5bb593ca74fa1c13fd59f3938dc0fc07985167f7275063019e63abe4526  $RUNNER_TEMP/openorbis.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/openorbis.tar.gz" -C "$RUNNER_TEMP/openorbis"
+          LINKER_SCRIPT="$(find "$RUNNER_TEMP/openorbis" -name link.x -print -quit)"
+          test -n "$LINKER_SCRIPT"
+          TOOLCHAIN_DIR="$(dirname "$LINKER_SCRIPT")"
+          echo "OO_PS4_TOOLCHAIN=$TOOLCHAIN_DIR" >> "$GITHUB_ENV"
+      - name: Prepare package tools
+        run: |
+          sudo apt-get install -y libssl1.1 || true
+          test -x "$OO_PS4_TOOLCHAIN/bin/linux/create-fself"
+          test -x "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4"
+          test -x "$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core"
+      - name: Build EBOOT
+        run: make -C ps4/launcher clean all
+      - name: Package
+        run: |
+          set -euo pipefail
+          mkdir -p ps4/launcher/staging/sce_sys ps4/launcher/out
+          cp ps4/launcher/eboot.bin ps4/launcher/staging/eboot.bin
+          python3 - <<'PY'
+          import struct,zlib
+          S=512
+          def ch(t,d): return struct.pack('>I',len(d))+t+d+struct.pack('>I',zlib.crc32(t+d)&0xffffffff)
+          rows=b''.join(b'\\0'+bytes((12,18,28))*S for _ in range(S))
+          png=b'\\x89PNG\\r\\n\\x1a\\n'+ch(b'IHDR',struct.pack('>2I5B',S,S,8,2,0,0,0))+ch(b'IDAT',zlib.compress(rows,9))+ch(b'IEND',b'')
+          open('ps4/launcher/staging/sce_sys/icon0.png','wb').write(png)
+          PY
+          cd ps4/launcher/staging
+          PKG="$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core"
+          "$PKG" sfo_new sce_sys/param.sfo
+          "$PKG" sfo_setentry sce_sys/param.sfo APP_TYPE --type Integer --maxsize 4 --value 1
+          "$PKG" sfo_setentry sce_sys/param.sfo APP_VER --type Utf8 --maxsize 8 --value 0.1.0
+          "$PKG" sfo_setentry sce_sys/param.sfo CATEGORY --type Utf8 --maxsize 4 --value gd
+          "$PKG" sfo_setentry sce_sys/param.sfo CONTENT_ID --type Utf8 --maxsize 48 --value IV0000-LCHR00001_00-PS5LAUNCHER00001
+          "$PKG" sfo_setentry sce_sys/param.sfo TITLE --type Utf8 --maxsize 128 --value 'PS5 Style Launcher'
+          "$PKG" sfo_setentry sce_sys/param.sfo TITLE_ID --type Utf8 --maxsize 12 --value LCHR00001
+          "$PKG" sfo_setentry sce_sys/param.sfo VERSION --type Utf8 --maxsize 8 --value 0.1.0
+          "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4" -out pkg.gp4 --content-id=IV0000-LCHR00001_00-PS5LAUNCHER00001 --files 'eboot.bin sce_sys/param.sfo sce_sys/icon0.png'
+          "$PKG" pkg_build pkg.gp4 ../out
+          "$PKG" pkg_validate --verbose ../out/*.pkg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PS5-LAUNCHER-PKG
+          path: ps4/launcher/out/*.pkg
+          if-no-files-found: error
