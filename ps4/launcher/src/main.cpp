@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <cctype>
 #include <dirent.h>
 #include <string>
 #include <sys/stat.h>
@@ -19,6 +20,7 @@ std::vector<Game> games;
 std::string libraryStatus="SCANNING LIBRARY";
 std::vector<Particle> particles;
 int selected=0,hubSelected=0; bool hub=false,running=true;
+std::string notice; float noticeTimer=0.0f;
 float focus=0.0f, bgMix=1.0f;
 SDL_Window* window=nullptr; SDL_Renderer* renderer=nullptr;
 void fill(int x,int y,int w,int h,SDL_Color c){SDL_SetRenderDrawColor(renderer,c.r,c.g,c.b,c.a);SDL_Rect r{x,y,w,h};SDL_RenderFillRect(renderer,&r);}
@@ -47,9 +49,17 @@ void textBlock(const char* s,int x,int y,int scale,SDL_Color c){
  };
  for(;*s;++s,x+=6*scale){
   char ch=*s;int index=-1;
+  if(ch>='a'&&ch<='z')ch=char(ch-'a'+'A');
   if(ch>='A'&&ch<='Z')index=ch-'A';
   else if(ch>='0'&&ch<='9')index=26+ch-'0';
-  if(index<0)continue;
+  if(index<0){
+   if(ch=='-')fill(x,y+3*scale,4*scale,scale,c);
+   else if(ch=='.')fill(x,y+6*scale,scale,scale,c);
+   else if(ch==':'){fill(x,y+2*scale,scale,scale,c);fill(x,y+6*scale,scale,scale,c);}
+   else if(ch=='/')for(int k=0;k<6;++k)fill(x+(5-k)*scale,y+k*scale,scale,scale,c);
+   else if(ch=='_')fill(x,y+6*scale,5*scale,scale,c);
+   continue;
+  }
   const char* p=glyphs[index];
   for(int row=0;row<7;++row)for(int col=0;col<5;++col)
    if(p[row*5+col]=='1')fill(x+col*scale,y+row*scale,scale,scale,c);
@@ -99,12 +109,16 @@ void scanInstalledGames(){
   }
   closedir(dir);
  }
+ std::sort(found.begin(),found.end(),[](const Game& a,const Game& b){
+  return std::lexicographical_compare(a.title.begin(),a.title.end(),b.title.begin(),b.title.end(),
+   [](unsigned char x,unsigned char y){return std::tolower(x)<std::tolower(y);});
+ });
  games.swap(found);selected=0;
  if(!games.empty())libraryStatus="INSTALLED GAMES FOUND";
  else libraryStatus="NO READABLE GAMES FOUND";
 }
 
-void update(float dt){focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
+void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
 void draw(){
  fill(0,0,W,H,{8,11,18,255});
  // Layered atmospheric gradients and subtle horizon glow.
@@ -169,6 +183,11 @@ void draw(){
  }
  textBlock(libraryStatus.c_str(),110,790,2,{166,184,202,255});
  textBlock("PRESS Y TO RESCAN",W-390,790,2,{117,184,180,255});
+ if(!notice.empty()&&!hub){
+  fill(105,830,760,64,{20,34,48,235});
+  fill(105,830,4,64,{104,210,190,255});
+  textBlock(notice.c_str(),128,850,2,{226,235,243,255});
+ }
  if(hub){
   fill(0,850,W,230,{10,15,24,245});
   textBlock("CONTROL CENTER",110,872,2,{204,219,232,255});
@@ -203,7 +222,14 @@ int main(int,char**){
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
   if(e.type==SDL_CONTROLLERDEVICEADDED&&!pad&&SDL_IsGameController(e.cdevice.which))pad=SDL_GameControllerOpen(e.cdevice.which);
   if(e.type==SDL_CONTROLLERDEVICEREMOVED&&pad&&SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad))==e.cdevice.which){SDL_GameControllerClose(pad);pad=nullptr;}
-  if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(hub)hubSelected=(hubSelected+3)%4;else move(-1);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub)hubSelected=(hubSelected+1)%4;else move(1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:hub=true;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:hub=false;break;case SDL_CONTROLLER_BUTTON_B:hub=false;break;case SDL_CONTROLLER_BUTTON_Y:if(!hub)scanInstalledGames();break;case SDL_CONTROLLER_BUTTON_A:/* Launch backend intentionally not wired in prototype. */break;default:break;}}}
+  if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(hub)hubSelected=(hubSelected+3)%4;else move(-1);break;case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub)hubSelected=(hubSelected+1)%4;else move(1);break;case SDL_CONTROLLER_BUTTON_DPAD_DOWN:hub=true;break;case SDL_CONTROLLER_BUTTON_DPAD_UP:hub=false;break;case SDL_CONTROLLER_BUTTON_B:hub=false;break;
+  case SDL_CONTROLLER_BUTTON_Y:if(!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
+  case SDL_CONTROLLER_BUTTON_A:
+   if(hub){
+    static const char* hubMessages[4]={"GAME LIBRARY","MEDIA CENTER NOT AVAILABLE","SETTINGS NOT AVAILABLE","PROFILE NOT AVAILABLE"};
+    notice=hubMessages[hubSelected];noticeTimer=3.0f;hub=false;
+   }else if(!games.empty()){notice="GAME LAUNCH NOT YET IMPLEMENTED";noticeTimer=3.5f;}
+   break;default:break;}}}
   if(pad){Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);if(axis>16000||axis< -16000){axisRepeat-=dt;if(axisRepeat<=0.0f){if(hub)hubSelected=(hubSelected+(axis>0?1:3))%4;else move(axis>0?1:-1);axisRepeat=0.24f;}}else axisRepeat=0.0f;}
   update(dt);draw();
  }
