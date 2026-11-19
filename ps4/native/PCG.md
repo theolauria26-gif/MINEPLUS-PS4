@@ -74,3 +74,8 @@ A API aceita um limite `max_quads` (padrão 65.536). Se o limite for excedido, r
 - Uma nova família de marco exterior gera uma pequena propriedade rural: celeiro de madeira e pedra escura, cerca perimetral com portão, caminho de acesso, canteiros em faixas e poço com água.
 - A planta usa a seed e a âncora global; o mesmo terreno é reproduzido em qualquer ordem de carregamento. Os canteiros são composição visual de tiles existentes, não cultivo colhível, NPCs, economia ou simulação agrícola.
 - A estrutura é desenhada pelo mapa 2D atual. Não representa ainda um celeiro 3D com telhado/interior navegável.
+
+
+## Moinho medieval no mundo exterior
+
+A família de marcos 11 pode gerar um moinho rural com torre de pedra escura, rotor de quatro pás em madeira e areia, pátio cercado, trilha de acesso e pequeno depósito de grãos. A orientação visual e a posição são derivadas da seed e da célula global, mantendo a estrutura estável entre gerações. No cliente atual, o rotor é uma silhueta estática de tiles 2D: não gira, não mói grãos e não possui interior 3D ou economia agrícola simulada.
