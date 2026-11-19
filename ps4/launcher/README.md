@@ -5,6 +5,7 @@ Independent PS4 homebrew application. This project is intentionally isolated fro
 ## Current implementation
 - SDL2-based 1080p interface prototype.
 - DualShock 4 D-pad and left-analog navigation, including controller hot-plug handling.
+- Triangle/Y rescans the installed-game library without restarting.
 - Animated particle backdrop and selected-tile focus animation.
 - Bottom control center with Games, Media, Settings and Profile sections.
 - Centered five-slot library carousel for up to 40 discovered games.
