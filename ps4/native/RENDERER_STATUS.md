@@ -357,3 +357,11 @@ O repositório também contém um protótipo separado em Godot 4.3. Ele já usa 
 - Os modelos são geometria cúbica procedural e ainda não substituem assets finais, rigs, animações esqueléticas ou criaturas 3D.
 
 Detalhes e limitações: docs/GODOT_3D_WORLD.md.
+
+
+### Malhas 3D de superfície no protótipo Godot
+
+- Âncoras PCG de árvores ancestrais, ruínas circulares e entradas de masmorra agora produzem silhuetas 3D cúbicas no protótipo Godot 4.3, além das árvores de folhas largas, coníferas, árvores de pântano e monólitos.
+- As malhas decorativas são agrupadas no chunk proprietário, enquanto o collider continua limitado ao terreno. Isso evita duplicação nas bordas e colisores invisíveis em folhas e ornamentos.
+- Ruínas e portões ainda são modelos decorativos sem colisão, interiores navegáveis ou interação. Não são modelos artísticos finais.
+- O teste headless dedicado cobre determinismo de âncoras e geração de malhas de árvores, ruínas e portões; a qualidade visual/FPS ainda precisa de avaliação em hardware real.
