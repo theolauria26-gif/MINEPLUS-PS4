@@ -91,12 +91,12 @@ std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
 void scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
  for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);old.icon=nullptr;}
- std::vector<Game> found;
+ std::vector<Game> found; bool scanLimitReached=false;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED";games.clear();selected=0;return;}
  {
   dirent* ent;
-  while((ent=readdir(dir))!=nullptr&&found.size()<256){
+  while((ent=readdir(dir))!=nullptr){
    if(ent->d_name[0]=='.')continue;
    std::string root="/user/app/"+std::string(ent->d_name);
    struct stat st{};if(stat(root.c_str(),&st)!=0||!S_ISDIR(st.st_mode))continue;
@@ -111,7 +111,8 @@ void scanInstalledGames(){
    std::string title=sfoString(bytes,"TITLE");
    std::string id=sfoString(bytes,"TITLE_ID");
    if(title.empty()||id.empty())continue;
-   found.push_back({title,{72,94,112,255},id,root+"/sce_sys/icon0.png",nullptr,false});
+   if(found.size()<256)found.push_back({title,{72,94,112,255},id,root+"/sce_sys/icon0.png",nullptr,false});
+   else scanLimitReached=true;
   }
   closedir(dir);
  }
@@ -119,9 +120,10 @@ void scanInstalledGames(){
   return std::lexicographical_compare(a.title.begin(),a.title.end(),b.title.begin(),b.title.end(),
    [](unsigned char x,unsigned char y){return std::tolower(x)<std::tolower(y);});
  });
+ bool moreThan40=found.size()>40;
  if(found.size()>40)found.resize(40);
  games.swap(found);selected=0;
- if(!games.empty())libraryStatus="INSTALLED GAMES FOUND";
+ if(!games.empty())libraryStatus=scanLimitReached?"SCAN LIMIT 256 - 40 SHOWN":(moreThan40?"40+ GAMES - FIRST 40 SHOWN":"INSTALLED GAMES FOUND");
  else libraryStatus="NO READABLE GAMES FOUND";
 }
 
