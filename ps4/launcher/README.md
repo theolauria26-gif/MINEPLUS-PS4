@@ -5,6 +5,7 @@ Independent PS4 homebrew application. This project is intentionally isolated fro
 ## Current implementation
 - SDL2-based 1080p interface prototype.
 - DualShock 4 D-pad and left-analog navigation, including controller hot-plug handling.
+- PlayStation-native prompts for D-pad/stick browsing and Triangle library refresh.
 - Triangle/Y rescans the installed-game library without restarting.
 - Animated particle backdrop and selected-tile focus animation.
 - Bottom control center with Games, Media, Settings and Profile sections.
@@ -19,7 +20,7 @@ Independent PS4 homebrew application. This project is intentionally isolated fro
 
 ## Not implemented / not verified
 - Access to installed retail application directories is not guaranteed from a normal homebrew sandbox. The scan must be tested on the target console and may report access denied or no readable games.
-- Launching retail games is not implemented. OpenOrbis v0.5.4 headers declare `sceLncUtilLaunchApp` and `LncAppParam`, but the standard toolchain link used by this project does not resolve `sceLncUtilLaunchApp` or `sceLncUtilInitialize`. A test link failed with both symbols undefined, so those calls were removed and the Cross action remains explicitly disabled. The PS4 Itemzflow reference performs LNC initialization inside its daemon; that is not proof the same route is available to a normal sandboxed application. No guessed offsets, kernel calls or unresolved imports are shipped.
+- Game launch is wired through `sceLncUtilInitialize` and `sceLncUtilLaunchApp`, with the System Service and User Service internal modules loaded first and the foreground user passed to `LncAppParam`. The OpenOrbis link includes both `-lSceLncUtil` and `-lSceSystemService`, preserving the LncUtil/SystemService import pairing used by PS4 homebrew references. The PKG has compiled with these imports, but launch behavior is not yet verified on a physical console or on firmware 14.02 / GoldHEN 2.4b18.14. A successful build is not proof that the firmware exposes the same runtime behavior.
 - Game cover downloads, artwork cache, functional Media/Settings/Profile pages and game launching are not implemented.
 - The launcher has not been runtime-tested on a PS4.
 
