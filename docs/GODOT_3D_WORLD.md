@@ -51,3 +51,12 @@ O objetivo é um mundo voxel dark fantasy com identidade própria, não uma cóp
 - A malha de decoração usa um shader espacial com deslocamento de vértices de baixa amplitude, animado por TIME.
 - O alpha da cor de vértice identifica folhas e musgo; troncos, pedra, cristais e ruínas permanecem rígidos.
 - A animação é barata e compartilhada por chunk, sem criar nós ou corpos físicos extras. Não é uma simulação de vento nem uma animação esquelética.
+
+
+### Entrada touch no mobile
+
+- O gesto de olhar é associado ao índice do dedo que iniciou o toque na zona superior direita (acima de 78% da altura e à direita de 48% da largura).
+- Somente arrastos desse mesmo dedo rotacionam a câmera; um segundo dedo usado nos controles não altera a visão.
+- O toque inicial na zona de olhar não minera blocos. Mineração, colocação e pulo permanecem nos botões virtuais dedicados, evitando que um gesto de câmera consuma ferramentas ou altere o mundo.
+- A captura é liberada quando o dedo correspondente é solto e também ao abrir inventário/pausa.
+- O teste headless verifica a zona direita, a zona de movimento, a faixa inferior de ações, coordenadas fora da viewport e viewport sem dimensões. A CI não substitui teste de usabilidade em aparelho Android real.
