@@ -68,9 +68,9 @@ func _run() -> void:
 	_expect(FileAccess.file_exists(path), "recovered backup is restored to the primary path")
 	_expect(not MineplusWorldSave.save_world(path, {"version": 99, "blocks": []}), "future save versions are rejected")
 	var current_payload := {"version": 7, "blocks": [], "inventory": [1, 2, 3, 4, 5, 6, 7], "axe_durability": 27, "day_clock": 0.73}
-	_expect(MineplusWorldSave.save_world(path, current_payload), "version-six inventory and tool state are saved")
+	_expect(MineplusWorldSave.save_world(path, current_payload), "version-seven inventory and tool state are saved")
 	var current_loaded := MineplusWorldSave.load_world(path)
-	_expect(current_loaded.get("inventory", []).size() == 7 and current_loaded.get("inventory", [])[6] == 7, "wood stack survives version-six round trip")
+	_expect(current_loaded.get("inventory", []).size() == 7 and current_loaded.get("inventory", [])[6] == 7, "wood stack survives version-seven round trip")
 	_expect(current_loaded.get("axe_durability", 0) == 27, "axe durability survives version-seven round trip")
 	_expect(is_equal_approx(float(current_loaded.get("day_clock", 0.0)), 0.73), "day-night phase survives version-seven round trip")
 	var migrated_six := MineplusWorldSave.normalize_payload({"version": 6, "blocks": [], "day_clock": 1.5})
