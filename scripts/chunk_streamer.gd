@@ -352,7 +352,7 @@ func _rebuild_cell_and_seams(cell: Vector3i) -> void:
 func export_edits() -> Array:
 	var result: Array = []
 	for key in terrain_edits.keys():
-		var parts := key.split(",")
+		var parts: PackedStringArray = str(key).split(",")
 		result.append([int(parts[0]), int(parts[1]), int(terrain_edits[key].height), int(terrain_edits[key].type)])
 	return result
 
