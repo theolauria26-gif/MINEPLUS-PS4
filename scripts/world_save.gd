@@ -2,7 +2,7 @@ extends RefCounted
 class_name MineplusWorldSave
 ## Versioned, bounded and recoverable world persistence for the Godot prototype.
 
-const CURRENT_VERSION := 6
+const CURRENT_VERSION := 7
 const MAX_SAVE_BYTES := 32 * 1024 * 1024
 const MAX_WORLD_BLOCKS := 100000
 const MAX_TERRAIN_EDITS := 250000
@@ -97,6 +97,7 @@ static func normalize_payload(raw: Variant) -> Dictionary:
 
 	var rotation_value: Variant = source.get("player_rotation_y", 0.0)
 	var pitch_value: Variant = source.get("camera_pitch", 0.0)
+	var day_clock_value: Variant = source.get("day_clock", 0.5)
 	var seed_value: Variant = source.get("world_seed", 4839201)
 	return {
 		"version": CURRENT_VERSION,
@@ -109,6 +110,7 @@ static func normalize_payload(raw: Variant) -> Dictionary:
 		"player_position": player_position,
 		"player_rotation_y": float(rotation_value) if _is_number(rotation_value) else 0.0,
 		"camera_pitch": clampf(float(pitch_value), -1.45, 1.45) if _is_number(pitch_value) else 0.0,
+		"day_clock": clampf(float(day_clock_value), 0.0, 0.999999) if _is_number(day_clock_value) else 0.5,
 		"selected_block": _bounded_int(source.get("selected_block", 0), 0, BLOCK_TYPE_COUNT - 1, 0)
 	}
 
