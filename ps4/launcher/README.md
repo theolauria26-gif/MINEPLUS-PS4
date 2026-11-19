@@ -8,7 +8,7 @@ Independent PS4 homebrew application. This project is isolated from the MINEPLUS
 - DualShock 4 D-pad and left-analog navigation, controller hot-plug handling, and PlayStation-style button prompts.
 - Five-slot game carousel with selected-tile focus animation and L1/R1 page skips.
 - Bounded read-only discovery attempt under `/user/app/*/sce_sys/param.sfo`, parsing `TITLE` and `TITLE_ID` with strict PS4 title-ID validation and self-entry filtering.
-- Up to 40 discovered games shown, sorted alphabetically from a bounded scan of up to 256 readable entries.
+- Up to 40 discovered games shown, sorted alphabetically while limiting traversal to 1,024 directory entries and retaining at most 256 readable games.
 - Loads real `sce_sys/icon0.png` artwork when accessible, with procedural fallback artwork.
 - Caches at most five visible icon textures to bound GPU memory use.
 - Triangle rescans the installed-game library without restarting.
