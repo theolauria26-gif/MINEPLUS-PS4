@@ -282,6 +282,11 @@ void draw(){
     textBlock(names[i],136,y,2,{226,235,243,255});
     textBlock(values[i],760,y,2,active?SDL_Color{117,224,190,255}:SDL_Color{166,184,202,255});
    }
+   if(!notice.empty()){
+    fill(920,934,850,48,{20,34,48,245});
+    fill(920,934,4,48,{104,210,190,255});
+    textBlockFit(notice,940,951,1,810,{226,235,243,255});
+   }
   }else{
    textBlock("CONTROL CENTER",110,842,2,{204,219,232,255});
    const char* labels[4]={"GAMES","MEDIA","SETTINGS","PROFILE"};
