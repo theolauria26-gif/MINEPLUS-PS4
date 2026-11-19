@@ -318,6 +318,33 @@ void init_world(){
      if(along==0&&across==0)tile=ChestClosed;
      break;
     }
+    case 10: { // Medieval farmstead: timber barn, fenced plots and irrigation.
+     const int fence=radius-1;
+     const bool perimeter=(std::abs(ox)==fence&&std::abs(oy)<=fence)||
+                          (std::abs(oy)==fence&&std::abs(ox)<=fence);
+     if(perimeter) tile=Wood;
+     // A south-facing gate and a packed-earth lane lead into the yard.
+     if(oy==fence&&std::abs(ox)<=1) tile=Air;
+     if(oy>=0&&oy<=fence-1&&std::abs(ox)<=1) tile=Sand;
+     // The barn occupies the northern half; its open central aisle remains clear.
+     const int barnY=-std::max(2,radius/3);
+     const bool barnInside=std::abs(ox)<=3&&std::abs(oy-barnY)<=2;
+     const bool barnWall=(std::abs(ox)==3&&std::abs(oy-barnY)<=2)||
+                         (std::abs(oy-barnY)==2&&std::abs(ox)<=3);
+     if(barnInside) tile=barnWall?Wood:DarkStone;
+     if(ox==0&&oy==barnY+2) tile=Air;
+     // Parallel crop beds are separated by narrow walkways and a water trench.
+     const int fieldY=std::max(2,radius/3);
+     if(oy>=fieldY&&oy<fence-1&&std::abs(ox)>=3&&std::abs(ox)<=fence-2){
+      if((ox&1)==0) tile=((oy+int(anchor.x))%5==0)?Water:Leaf;
+      else if((oy&1)==0) tile=Moss;
+     }
+     // A stone well beside the yard path is the farmstead's landmark.
+     if(std::abs(ox-3)<=1&&std::abs(oy-1)<=1)
+      tile=(std::abs(ox-3)==1||std::abs(oy-1)==1)?DarkStone:Water;
+     if(ox==0&&oy==0) tile=ChestClosed;
+     break;
+    }
     case 8: { // Medieval border keep: curtain wall, four towers and a rune court.
      const int wall=radius-2;
      const int inner=std::max(3,radius/2);
