@@ -18,7 +18,7 @@ extern "C" int32_t sceLncUtilInitialize(void);
 
 namespace {
 constexpr int W=1920,H=1080;
-struct Game { std::string title; SDL_Color color; std::string titleId; std::string iconPath; SDL_Texture* icon=nullptr; bool iconAttempted=false; };
+struct Game { std::string title; SDL_Color color; std::string titleId; std::string iconPath; SDL_Texture* icon=nullptr; bool iconAttempted=false; SDL_Texture* background=nullptr; bool backgroundAttempted=false; };
 struct Particle { float x,y,vx,vy,r,a; };
 std::vector<Game> games;
 std::string libraryStatus="SCANNING LIBRARY";
@@ -113,7 +113,7 @@ bool validTitleId(const std::string& id){
 }
 void scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
- for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);old.icon=nullptr;}
+ for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);if(old.background)SDL_DestroyTexture(old.background);old.icon=nullptr;old.background=nullptr;}
  std::vector<Game> found; bool scanLimitReached=false; size_t scannedEntries=0;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED";games.clear();selected=0;return;}
@@ -247,14 +247,39 @@ void draw(){
   char counter[24];std::snprintf(counter,sizeof(counter),"%02d / %02d",selected+1,(int)games.size());
   textBlock(counter,W-250,395,2,{158,178,199,255});
  }
- // Hero area reports real scan results; never presents fake games as installed titles.
- fill(112,510,5,130,{104,210,190,255});
+ // Selected-game hero artwork follows EmuFive's pic0/pic1 idea, but is loaded only on demand.
+ fill(112,478,1696,220,{10,16,26,235});
  if(!games.empty()){
-  const Game& g=games[selected];
+  Game& g=games[selected];
+  if(!g.backgroundAttempted){
+   g.backgroundAttempted=true;
+   std::string artPath=g.iconPath;
+   size_t iconPos=artPath.rfind("icon0.png");
+   if(iconPos!=std::string::npos)artPath.replace(iconPos,9,"pic0.png");
+   g.background=IMG_LoadTexture(renderer,artPath.c_str());
+   if(!g.background&&iconPos!=std::string::npos){
+    artPath.replace(iconPos,8,"pic1.png");
+    g.background=IMG_LoadTexture(renderer,artPath.c_str());
+   }
+  }
+  if(g.background){
+   int iw=0,ih=0;SDL_QueryTexture(g.background,nullptr,nullptr,&iw,&ih);
+   if(iw>0&&ih>0){
+    const int dx=112,dy=478,dw=1696,dh=220;
+    float target=float(dw)/float(dh),source=float(iw)/float(ih);
+    SDL_Rect src{0,0,iw,ih};
+    if(source>target){src.w=int(float(ih)*target);src.x=(iw-src.w)/2;}
+    else{src.h=int(float(iw)/target);src.y=(ih-src.h)/2;}
+    SDL_Rect dst{dx,dy,dw,dh};SDL_RenderCopy(renderer,g.background,&src,&dst);
+   }
+   fill(112,478,1696,220,{5,10,18,190});
+  }
+  fill(112,478,5,220,{104,210,190,255});
   textBlockFit(g.title,140,530,5,1640,{226,234,242,255});
   textBlock("INSTALLED GAME",140,590,2,{117,184,180,255});
   if(showTitleId)textBlock(g.titleId.c_str(),140,630,2,{166,184,202,255});
  }else{
+  fill(112,478,5,130,{104,210,190,255});
   textBlock("NO GAMES FOUND",140,530,4,{226,234,242,255});
   textBlock("LIBRARY SCAN RESULT",140,590,2,{117,184,180,255});
  }
@@ -302,7 +327,7 @@ void draw(){
  }
  SDL_RenderPresent(renderer);
 }
-void move(int d){if(games.empty())return;selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
+void move(int d){if(games.empty())return;if(games[selected].background){SDL_DestroyTexture(games[selected].background);games[selected].background=nullptr;}games[selected].backgroundAttempted=false;selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
 }
 int main(int,char**){
  if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER)!=0)return 1;
@@ -343,6 +368,6 @@ int main(int,char**){
   if(pad){Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);if(axis>16000||axis< -16000){axisRepeat-=dt;if(axisRepeat<=0.0f){if(settingsPage)settingsCursor=(settingsCursor+1)%2;else if(hub)hubSelected=(hubSelected+(axis>0?1:3))%4;else move(axis>0?1:-1);axisRepeat=0.24f;}}else axisRepeat=0.0f;}
   update(dt);draw();
  }
- for(auto& game:games)if(game.icon)SDL_DestroyTexture(game.icon);
+ for(auto& game:games){if(game.icon)SDL_DestroyTexture(game.icon);if(game.background)SDL_DestroyTexture(game.background);}
  if(pad)SDL_GameControllerClose(pad);IMG_Quit();SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;
 }
