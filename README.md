@@ -50,7 +50,7 @@ O script interrompe o processo se faltar uma dependência, se o EBOOT não for c
 
 ### Bloqueio verificado no ambiente atual
 
-Em 16/11/2026, o ambiente de trabalho usado nesta execução não possui OpenOrbis montado (`OO_PS4_TOOLCHAIN`/SDK), `PkgTool.Core`, `create-fself`, `create-gp4`, .NET ou os headers de desenvolvimento SDL2. Também não há `ANDROID_HOME`/`ANDROID_SDK_ROOT`, `adb`, `sdkmanager` ou Gradle, e esta branch nativa PS4 não contém um projeto Android configurado. Há compiladores C++ e Make disponíveis, mas isso não basta para gerar EBOOT/PKG nem APK. O workflow do GitHub está configurado para provisionar a toolchain PS4; nenhum artefato PKG ou APK foi gerado ou validado nesta execução e não há confirmação de instalação no console.
+Em 19/11/2026, o container local desta execução continua sem `OO_PS4_TOOLCHAIN`, `PkgTool.Core`, `create-fself`, `create-gp4` e .NET; há `clang++`, `ld.lld` e Make, mas sem SDK/header SDL2 eles não geram EBOOT/PKG. O workflow do GitHub provisiona OpenOrbis v0.5.4 e já produziu pacotes nativos estruturalmente validados (último artefato: `MINEPLUS-PS4-PKG`, 5.978.572 bytes, run [44549940509](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44549940509), artefato 14542986299). Isso não comprova instalação ou execução em console físico. Para Android, não existem `ANDROID_HOME`/`ANDROID_SDK_ROOT`, `adb`, `sdkmanager`, Gradle ou `export_presets.cfg` neste ambiente/repositório; o projeto ainda não tem preset de exportação Android e nenhum APK foi gerado. A validação final do PKG ainda exige instalação e execução em um PS4 compatível.
 
 Para concluir a etapa local, é necessário disponibilizar OpenOrbis v0.5.4, as ferramentas de empacotamento e dependências listadas acima. A validação final ainda exige instalar e executar o pacote em um PS4 compatível.
 
@@ -62,7 +62,7 @@ O workflow executa testes C++ portáveis para:
 - runtime, edição de voxels, exportação/importação e checksum de saves;
 - adaptadores de mundo fixo e streamed.
 
-O workflow Godot também verifica a instanciação do mundo streamed e os testes do codec de save versão 5 em modo headless. Os testes não substituem teste de desempenho, controles e instalação no hardware PS4.
+O workflow Godot também verifica a instanciação do mundo streamed, os testes de recuperação do codec de save versão 7 e as regras de entrada touch em modo headless. Os testes não substituem teste de desempenho, controles e instalação no hardware PS4.
 
 ## Estrutura principal
 
@@ -112,3 +112,5 @@ O atlas de coordenadas de materiais mede 128×64 pixels, com células de 16×16 
 
 
 - A correção de toque móvel `5f037535` separa o dedo de olhar dos botões de ação; os testes de zona touch passaram em [44596287768](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44596287768). A persistência do ciclo dia/noite foi ampliada para save versão 7 nos commits `e9fdc690`, `886c0523` e `767feedc`; a validação funcional do save versão 7 passou no workflow [44596413847](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44596413847), com Godot 4.3 headless, parsing, migração/recuperação de saves e testes de decoração 3D. O ajuste de rótulos dos asserts `80ac3e1` também passou em [44596494523](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44596494523).
+
+- Em 19/11/2026, a correção de input touch e a persistência do relógio do mundo passaram no Godot 4.3 headless: [44596494523](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44596494523), commit `80ac3e1b`. O ciclo dia/noite agora é restaurado com o save versão 7; o gesto de olhar não minera mais por acidente.
