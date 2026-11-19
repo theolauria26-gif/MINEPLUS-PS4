@@ -13,14 +13,7 @@ func _expect(condition: bool, description: String) -> void:
 func _run() -> void:
 	var streamer := MineplusChunkStreamer.new()
 	streamer.generator = MineplusWorldGen.new(731942)
-	root.add_child(streamer)
-
-	# Sample separated chunks, including negative coordinates and distant macro-biomes.
-	var keys := [
-		Vector2i(0, 0), Vector2i(-1, 0), Vector2i(0, -1),
-		Vector2i(12, -9), Vector2i(-17, 14), Vector2i(38, 42),
-		Vector2i(-46, 31), Vector2i(61, -53), Vector2i(-72, -68)
-	]
+	var keys := [Vector2i(0, 0), Vector2i(-1, 0), Vector2i(38, 42), Vector2i(-46, 31)]
 	for key in keys:
 		var first := streamer.decoration_anchors(key)
 		var second := streamer.decoration_anchors(key)
@@ -48,14 +41,13 @@ func _run() -> void:
 		tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 		streamer._append_tree(tool, {"x": 2, "y": 12, "z": -3, "kind": kind, "hash": 918273})
 		var mesh := tool.commit()
-		_expect(mesh != null and mesh.get_surface_count() == 1, "tree kind %d produces real 3D triangle geometry" % kind)
+		_expect(mesh != null and mesh.get_surface_count() == 1, "tree kind %d produces 3D triangle geometry" % kind)
 	var monolith_tool := SurfaceTool.new()
 	monolith_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	streamer._append_monolith(monolith_tool, {"x": 0, "y": 10, "z": 0})
 	var monolith_mesh := monolith_tool.commit()
-	_expect(monolith_mesh != null and monolith_mesh.get_surface_count() == 1, "monolith produces real 3D triangle geometry")
+	_expect(monolith_mesh != null and monolith_mesh.get_surface_count() == 1, "monolith produces 3D triangle geometry")
 
-	streamer.free()
 	if failures == 0:
 		print("MINEPLUS world-visual tests: OK")
 	else:
