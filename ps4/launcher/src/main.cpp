@@ -119,7 +119,7 @@ void draw(){
  const int start=(W-(visible*cardW+(visible-1)*gap))/2;
  for(int slot=0;slot<visible;++slot){
   int idx=(selected-visible/2+slot+(int)games.size())%(int)games.size();
-  const Game& game=games[idx];bool chosen=(idx==selected);
+  Game& game=games[idx];bool chosen=(idx==selected);
   float active=chosen?focus:0.0f;
   int w=cardW+int(active*24),h=cardH+int(active*18);
   int x=start+slot*(cardW+gap)-int(active*12),y=baseY-int(active*22);
