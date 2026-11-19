@@ -206,8 +206,7 @@ void draw(){
    fill(x+34,y+101,w-68,2,{accent.r,accent.g,accent.b,130});
   }
   fill(x+18,y+h-35,w-36,3,{12,17,26,220});
-  std::string label=game.title.substr(0,21);
-  textBlock(label.c_str(),x+18,y+h-26,2,{235,240,247,255});
+  textBlockFit(game.title,x+18,y+h-26,2,w-36,{235,240,247,255});
  }
  // Retain at most five high-resolution icon textures while browsing the carousel.
  for(size_t i=0;i<games.size();++i){bool visibleNow=false;for(int slot=0;slot<visible;++slot){int idx=(selected-visible/2+slot+(int)games.size())%(int)games.size();if((size_t)idx==i){visibleNow=true;break;}}if(!visibleNow&&games[i].icon){SDL_DestroyTexture(games[i].icon);games[i].icon=nullptr;games[i].iconAttempted=false;}}
@@ -227,7 +226,9 @@ void draw(){
   textBlock("LIBRARY SCAN RESULT",140,590,2,{117,184,180,255});
  }
  textBlock(libraryStatus.c_str(),110,790,2,{166,184,202,255});
+ textBlock(launchServiceStatus.c_str(),110,820,1,{117,184,180,255});
  textBlock("D-PAD / STICK TO BROWSE",110,730,2,{166,184,202,255});
+ textBlock("L1 / R1: SKIP 5 GAMES",110,760,1,{145,165,187,255});
  textBlock("TRIANGLE TO RESCAN",W-430,730,2,{117,184,180,255});
  if(!notice.empty()&&!hub){
   fill(105,830,760,64,{20,34,48,235});
@@ -285,6 +286,8 @@ int main(int,char**){
   case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
   case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(settingsPage)settingsCursor=(settingsCursor+1)%2;else hub=true;break;
   case SDL_CONTROLLER_BUTTON_DPAD_UP:if(settingsPage)settingsCursor=(settingsCursor+1)%2;else hub=false;break;
+  case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(!hub&&!games.empty())move(-5);break;
+  case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(!hub&&!games.empty())move(5);break;
   case SDL_CONTROLLER_BUTTON_B:if(settingsPage)settingsPage=false;else hub=false;break;
   case SDL_CONTROLLER_BUTTON_Y:if(!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
   case SDL_CONTROLLER_BUTTON_A:
@@ -298,7 +301,7 @@ int main(int,char**){
     }
    }else{launchSelectedGame();}
    break;default:break;}}}
-  if(pad){Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);if(axis>16000||axis< -16000){axisRepeat-=dt;if(axisRepeat<=0.0f){if(hub)hubSelected=(hubSelected+(axis>0?1:3))%4;else move(axis>0?1:-1);axisRepeat=0.24f;}}else axisRepeat=0.0f;}
+  if(pad){Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);if(axis>16000||axis< -16000){axisRepeat-=dt;if(axisRepeat<=0.0f){if(settingsPage)settingsCursor=(settingsCursor+1)%2;else if(hub)hubSelected=(hubSelected+(axis>0?1:3))%4;else move(axis>0?1:-1);axisRepeat=0.24f;}}else axisRepeat=0.0f;}
   update(dt);draw();
  }
  for(auto& game:games)if(game.icon)SDL_DestroyTexture(game.icon);
