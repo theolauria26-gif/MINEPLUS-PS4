@@ -10,6 +10,7 @@ Independent PS4 homebrew application. This project is isolated from the MINEPLUS
 - Bounded read-only discovery attempt under `/user/app/*/sce_sys/param.sfo`, parsing `TITLE` and `TITLE_ID` with strict PS4 title-ID validation and self-entry filtering.
 - Up to 40 discovered games shown, sorted alphabetically while limiting traversal to 1,024 directory entries and retaining at most 256 readable games.
 - Loads real `sce_sys/icon0.png` artwork when accessible, with procedural fallback artwork.
+- Inspired by EmuFive's controller-first library presentation and per-game artwork approach; this native SDL2 launcher uses its own implementation and does not include EmuFive or KytyPS5 code.
 - Caches at most five visible icon textures to bound GPU memory use.
 - Triangle rescans the installed-game library without restarting.
 - Settings page offers ambient particles and title-ID visibility toggles. The app attempts to persist these values in `/data/launcher_settings.cfg`; actual path permissions and persistence must be verified on-console.
