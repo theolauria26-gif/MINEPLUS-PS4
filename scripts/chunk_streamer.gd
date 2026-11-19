@@ -388,9 +388,11 @@ func _build_chunk(key: Vector2i) -> void:
 		collision = CollisionShape3D.new()
 		collision.name = "CollisionShape3D"
 		body.add_child(collision)
-	# The headless dummy renderer has no mesh RID storage; skip physics baking there.
-	# Real game builds still receive the full per-chunk concave collider.
-	if DisplayServer.get_name() != "headless":
+	# Godot's headless/dummy renderer cannot bake physics shapes from its mesh RIDs.
+	# Real display backends still receive the full per-chunk concave collider.
+	var display_name := DisplayServer.get_name().to_lower()
+	var adapter_name := RenderingServer.get_video_adapter_name().to_lower()
+	if not display_name.contains("headless") and not display_name.contains("dummy") and not adapter_name.contains("dummy"):
 		collision.shape = mesh.create_trimesh_shape()
 	chunks[key] = root
 
