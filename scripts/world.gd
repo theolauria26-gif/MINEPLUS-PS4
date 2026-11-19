@@ -275,12 +275,12 @@ func _animate_axe_swing() -> void:
 
 func _create_hud() -> void:
 	var hud := CanvasLayer.new()
-	add_child(hud_root)
+	add_child(hud)
 	var hud_root := Control.new()
 	hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.modulate.a = hud_opacity
-	hud_root.add_child(hud_root)
+	hud.add_child(hud_root)
 	var top := Label.new()
 	top.text = "MINEPLUS  /  SURVIVAL PROTOTYPE"
 	top.position = Vector2(22, 18)
@@ -326,7 +326,7 @@ func _add_touch_controls(hud: Control) -> void:
 	move_box.position = Vector2(14, -112 * ui_scale)
 	move_box.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	move_box.add_theme_constant_override("separation", maxi(3, roundi(7.0 * ui_scale)))
-	hud_root.add_child(move_box)
+	hud.add_child(move_box)
 	_add_hold_button(move_box, "◀", "move_left", ui_scale)
 	_add_hold_button(move_box, "▲", "move_forward", ui_scale)
 	_add_hold_button(move_box, "▼", "move_back", ui_scale)
@@ -338,7 +338,7 @@ func _add_touch_controls(hud: Control) -> void:
 	break_button.custom_minimum_size = Vector2(96, 54) * ui_scale
 	break_button.add_theme_font_size_override("font_size", 10)
 	break_button.pressed.connect(func(): _interact(false))
-	hud_root.add_child(break_button)
+	hud.add_child(break_button)
 	var place_button := Button.new()
 	place_button.text = "COLOCAR"
 	place_button.position = Vector2(-322 * ui_scale, -112 * ui_scale)
@@ -346,7 +346,7 @@ func _add_touch_controls(hud: Control) -> void:
 	place_button.custom_minimum_size = Vector2(96, 54) * ui_scale
 	place_button.add_theme_font_size_override("font_size", 10)
 	place_button.pressed.connect(func(): _interact(true))
-	hud_root.add_child(place_button)
+	hud.add_child(place_button)
 	var jump := Button.new()
 	jump.text = "PULAR"
 	jump.position = Vector2(-112 * ui_scale, -112 * ui_scale)
@@ -355,7 +355,7 @@ func _add_touch_controls(hud: Control) -> void:
 	jump.add_theme_font_size_override("font_size", 10)
 	jump.button_down.connect(func(): Input.action_press("jump"))
 	jump.button_up.connect(func(): Input.action_release("jump"))
-	hud_root.add_child(jump)
+	hud.add_child(jump)
 
 func _add_hotbar_buttons(hud: Control) -> void:
 	var bar := HBoxContainer.new()
@@ -366,7 +366,7 @@ func _add_hotbar_buttons(hud: Control) -> void:
 	bar.size = Vector2(bar_width, 42)
 	bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	bar.add_theme_constant_override("separation", 5)
-	hud_root.add_child(bar)
+	hud.add_child(bar)
 	for i in range(BLOCK_NAMES.size()):
 		var slot := Button.new()
 		slot.text = str(i + 1) + " " + BLOCK_NAMES[i].substr(0, 3).to_upper()
@@ -388,7 +388,7 @@ func _add_inventory_button(hud: Control) -> void:
 	button.position = Vector2(166, 76)
 	button.custom_minimum_size = Vector2(132, 42)
 	button.pressed.connect(_toggle_inventory)
-	hud_root.add_child(button)
+	hud.add_child(button)
 
 func _create_inventory_panel(hud: Control) -> void:
 	inventory_panel = PanelContainer.new()
@@ -442,7 +442,7 @@ func _create_inventory_panel(hud: Control) -> void:
 	close.text = "FECHAR  [E]"
 	close.pressed.connect(_toggle_inventory)
 	stack.add_child(close)
-	hud_root.add_child(inventory_panel)
+	hud.add_child(inventory_panel)
 	_refresh_inventory()
 
 func _toggle_inventory() -> void:
@@ -493,7 +493,7 @@ func _create_pause_menu(hud: Control) -> void:
 	pause_button.position = Vector2(-156, 68)
 	pause_button.custom_minimum_size = Vector2(138, 42)
 	pause_button.pressed.connect(_toggle_pause)
-	hud_root.add_child(pause_button)
+	hud.add_child(pause_button)
 	pause_layer = CanvasLayer.new()
 	pause_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	pause_layer.visible = false
@@ -573,7 +573,7 @@ func _add_save_button(hud: Control) -> void:
 	save_button.position = Vector2(-156, 18)
 	save_button.custom_minimum_size = Vector2(138, 42)
 	save_button.pressed.connect(_save_world)
-	hud_root.add_child(save_button)
+	hud.add_child(save_button)
 
 
 func _add_craft_button(hud: Control) -> void:
@@ -583,7 +583,7 @@ func _add_craft_button(hud: Control) -> void:
 	craft_button.position = Vector2(22, 76)
 	craft_button.custom_minimum_size = Vector2(132, 42)
 	craft_button.pressed.connect(_show_crafting)
-	hud_root.add_child(craft_button)
+	hud.add_child(craft_button)
 
 func _show_crafting() -> void:
 	var dialog := Window.new()
