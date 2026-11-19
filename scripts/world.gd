@@ -45,6 +45,11 @@ var saved_player_position := Vector3(0, 13.0, 5)
 var saved_player_rotation_y := 0.0
 var saved_camera_pitch := 0.0
 var saved_selected_block := 0
+var world_environment: Environment
+var sky_material: ProceduralSkyMaterial
+var sun_light: DirectionalLight3D
+var day_clock := 0.5
+const DAY_LENGTH_SECONDS := 900.0
 const SKIN_COLORS := [Color("#d9a47c"), Color("#8b5a3c"), Color("#e7c7a5"), Color("#c8b0e8")]
 
 func _ready() -> void:
@@ -65,22 +70,34 @@ func _setup_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	env.sky = Sky.new()
-	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color("#263a55")
-	sky_mat.sky_horizon_color = Color("#9ab6bd")
-	sky_mat.ground_bottom_color = Color("#202b2b")
-	sky_mat.ground_horizon_color = Color("#647b76")
-	env.sky.sky_material = sky_mat
+	sky_material = ProceduralSkyMaterial.new()
+	sky_material.sky_top_color = Color("#182238")
+	sky_material.sky_horizon_color = Color("#705e69")
+	sky_material.ground_bottom_color = Color("#151b20")
+	sky_material.ground_horizon_color = Color("#3c4948")
+	env.sky.sky_material = sky_material
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color("#b9cbd0")
+	env.ambient_light_color = Color("#9aabb0")
 	env.ambient_light_energy = 0.7 + float(graphics_quality) * 0.1
+	# Atmospheric depth is enabled on the actual 3D scene, not painted into tiles.
+	env.fog_enabled = true
+	env.fog_light_color = Color("#667783")
+	env.fog_light_energy = 0.8
+	env.fog_density = 0.006
+	env.fog_sky_affect = 0.28
+	env.fog_aerial_perspective = 0.18
+	env.glow_enabled = graphics_quality >= 2
+	env.glow_intensity = 0.32
+	world_environment = env
 	world_env.environment = env
 	add_child(world_env)
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-52, -28, 0)
-	sun.light_energy = 1.0 + float(graphics_quality) * 0.1
-	sun.shadow_enabled = graphics_quality >= 2
-	add_child(sun)
+	sun_light = DirectionalLight3D.new()
+	sun_light.rotation_degrees = Vector3(-72, -28, 0)
+	sun_light.light_energy = 1.0 + float(graphics_quality) * 0.1
+	sun_light.light_color = Color("#ffe0b4")
+	sun_light.shadow_enabled = graphics_quality >= 2
+	add_child(sun_light)
+	_update_environment(0.0)
 
 func _generate_world() -> void:
 	# Mundo base infinito em chunks; construções do jogador ficam no save separado.
@@ -659,10 +676,35 @@ func _craft_bricks() -> void:
 	status_label.text = "Fabricação concluída: +2 Tijolos."
 
 func _process(delta: float) -> void:
+	_update_environment(delta)
 	autosave_elapsed += delta
 	if autosave_elapsed >= AUTOSAVE_INTERVAL:
 		autosave_elapsed = 0.0
 		_save_world(true)
+
+func _update_environment(delta: float) -> void:
+	if world_environment == null or sky_material == null or sun_light == null:
+		return
+	day_clock = fposmod(day_clock + delta / DAY_LENGTH_SECONDS, 1.0)
+	var phase := day_clock * TAU - PI * 0.5
+	var sun_height := sin(phase)
+	var daylight := clampf((sun_height + 0.12) / 0.82, 0.0, 1.0)
+	var twilight := clampf(1.0 - absf(sun_height) * 3.2, 0.0, 1.0) * (1.0 - daylight)
+	var night_top := Color("#111a30")
+	var day_top := Color("#557fa0")
+	var night_horizon := Color("#252c43")
+	var day_horizon := Color("#b4c6c4")
+	var dusk_horizon := Color("#c17d68")
+	sky_material.sky_top_color = night_top.lerp(day_top, daylight)
+	sky_material.sky_horizon_color = night_horizon.lerp(day_horizon, daylight).lerp(dusk_horizon, twilight * 0.82)
+	sky_material.ground_bottom_color = Color("#10161d").lerp(Color("#46534b"), daylight)
+	sky_material.ground_horizon_color = Color("#303844").lerp(Color("#75867b"), daylight).lerp(Color("#795a58"), twilight * 0.55)
+	sun_light.rotation_degrees = Vector3(-10.0 - sun_height * 65.0, -28.0, 0.0)
+	sun_light.light_energy = lerpf(0.025, 1.25 + float(graphics_quality) * 0.08, pow(daylight, 0.85))
+	sun_light.light_color = Color("#e69a78").lerp(Color("#fff0d6"), daylight)
+	world_environment.ambient_light_color = Color("#39475f").lerp(Color("#b9cbd0"), daylight)
+	world_environment.ambient_light_energy = lerpf(0.22, 0.82 + float(graphics_quality) * 0.06, daylight)
+	world_environment.fog_light_color = sky_material.sky_horizon_color.darkened(0.12)
 
 func _world_save_path() -> String:
 	if world_slot == 1:
