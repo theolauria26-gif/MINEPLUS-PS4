@@ -77,13 +77,13 @@ uint16_t le16(const std::vector<uint8_t>& b,size_t p){return uint16_t(b[p])|(uin
 std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
  if(b.size()<20||std::memcmp(b.data(),"\0PSF",4)!=0)return {};
  uint32_t keys=le32(b,8),data=le32(b,12),count=le32(b,16);
- if(count>512||keys>=b.size()||data>=b.size())return {};
+ if(keys<20||data<keys||data>b.size()||count>512||count>(keys-20)/16)return {};
  for(uint32_t i=0;i<count;++i){size_t e=20+size_t(i)*16;if(e+16>b.size())break;
   uint16_t ko=le16(b,e);uint32_t len=le32(b,e+4),off=le32(b,e+12);
   size_t kp=size_t(keys)+ko,dp=size_t(data)+off;
-  if(kp>=b.size()||dp>b.size()||len>b.size()-dp)continue;
+  if(kp>=data||dp>b.size()||len>b.size()-dp)continue;
   const char* key=reinterpret_cast<const char*>(b.data()+kp);
-  const void* keyEnd=std::memchr(key,0,b.size()-kp);if(!keyEnd)continue;
+  const void* keyEnd=std::memchr(key,0,data-kp);if(!keyEnd)continue;
   if(std::string(key,static_cast<const char*>(keyEnd)-key)==wanted){size_t n=0;while(n<len&&b[dp+n])++n;return std::string(reinterpret_cast<const char*>(b.data()+dp),n);}
  }
  return {};
