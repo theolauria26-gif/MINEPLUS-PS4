@@ -335,3 +335,11 @@ This audit narrows the next task: the toolchain exposes low-level GNM draw/submi
 - A décima primeira família de marcos pode gerar um moinho com torre de pedra escura, quatro pás diagonais de madeira e areia, pátio parcialmente cercado, entrada voltada para a estrada e depósito de colheita.
 - A geração é determinística e reutiliza os IDs existentes Wood, DarkStone, Sand, Crystal e HayBale; não altera saves nem adiciona entidades.
 - A representação permanece estática na grade 2D projetada. As pás ainda não giram, e não há moagem, produção de farinha, interior 3D ou NPC trabalhando no moinho.
+
+
+### Portões rurais orientados pela rede viária
+
+- Fazendas e moinhos consultam o vínculo determinístico de estrada da própria âncora e orientam portão e caminho interno para o marco vizinho conectado.
+- O celeiro da fazenda fica no lado oposto ao acesso para reduzir bloqueios visuais da entrada.
+- Sem vínculo viário, a orientação sul é mantida como fallback determinístico.
+- É integração visual no mapa 2D atual; não representa navegação de NPCs ou colisão de estruturas 3D.
