@@ -60,3 +60,11 @@ O objetivo é um mundo voxel dark fantasy com identidade própria, não uma cóp
 - O toque inicial na zona de olhar não minera blocos. Mineração, colocação e pulo permanecem nos botões virtuais dedicados, evitando que um gesto de câmera consuma ferramentas ou altere o mundo.
 - A captura é liberada quando o dedo correspondente é solto e também ao abrir inventário/pausa.
 - O teste headless verifica a zona direita, a zona de movimento, a faixa inferior de ações, coordenadas fora da viewport e viewport sem dimensões. A CI não substitui teste de usabilidade em aparelho Android real.
+
+
+### Persistência do ciclo dia/noite
+
+- O save versão 7 registra a fase normalizada do relógio de 15 minutos junto com seed, alterações de terreno, blocos, inventário, ferramentas e posição do jogador.
+- Ao carregar um mundo, o céu, a luz direcional e a neblina são atualizados imediatamente para a fase persistida, em vez de reiniciar sempre no mesmo horário.
+- Saves até a versão 6 continuam migrando; quando não existe `day_clock`, é usada a fase padrão 0,5. Valores inválidos são substituídos pelo padrão e valores fora da faixa são limitados.
+- Os testes headless verificam round-trip da fase, migração da versão 6, limite superior e fallback para dados inválidos. Isso valida o codec, não uma sessão de jogo prolongada em Android.
