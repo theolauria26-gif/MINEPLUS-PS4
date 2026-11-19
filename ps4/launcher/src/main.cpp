@@ -93,6 +93,12 @@ std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
  }
  return {};
 }
+bool validTitleId(const std::string& id){
+ if(id.size()!=9)return false;
+ for(size_t i=0;i<4;++i)if(id[i]<'A'||id[i]>'Z')return false;
+ for(size_t i=4;i<9;++i)if(id[i]<'0'||id[i]>'9')return false;
+ return true;
+}
 void scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
  for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);old.icon=nullptr;}
@@ -115,7 +121,7 @@ void scanInstalledGames(){
    if(readBytes!=bytes.size())continue;
    std::string title=sfoString(bytes,"TITLE");
    std::string id=sfoString(bytes,"TITLE_ID");
-   if(title.empty()||id.empty())continue;
+   if(title.empty()||!validTitleId(id)||id=="LCHR00001")continue;
    if(found.size()<256)found.push_back({title,{72,94,112,255},id,root+"/sce_sys/icon0.png",nullptr,false});
    else scanLimitReached=true;
   }
