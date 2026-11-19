@@ -22,6 +22,7 @@ var hotbar_buttons: Array[Button] = []
 var status_label: Label
 var pitch := 0.0
 var touch_look_active := false
+var touch_look_index := -1
 var inventory_panel: PanelContainer
 var inventory_grid: GridContainer
 var inventory_panel_width := 460.0
@@ -448,6 +449,8 @@ func _create_inventory_panel(hud: Control) -> void:
 func _toggle_inventory() -> void:
 	if inventory_panel == null:
 		return
+	touch_look_active = false
+	touch_look_index = -1
 	inventory_panel.visible = not inventory_panel.visible
 	if inventory_panel.visible:
 		_refresh_inventory()
@@ -552,6 +555,8 @@ func _create_pause_menu(hud: Control) -> void:
 	stack.add_child(lobby)
 
 func _toggle_pause() -> void:
+	touch_look_active = false
+	touch_look_index = -1
 	if get_tree().paused:
 		_resume_game()
 	else:
@@ -823,7 +828,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		_rotate_view(event.relative)
 	elif event is InputEventScreenDrag:
-		if event.position.x > get_viewport().get_visible_rect().size.x * 0.32:
+		if touch_look_active and event.index == touch_look_index:
 			_rotate_view(event.relative)
 	elif event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
@@ -839,9 +844,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			_select_block(event.keycode - KEY_1)
 		elif event.keycode == KEY_SPACE:
 			Input.action_press("jump")
-	elif event is InputEventScreenTouch and event.pressed:
-		if event.position.x > get_viewport().get_visible_rect().size.x * 0.48 and event.position.y < get_viewport().get_visible_rect().size.y * 0.78:
-			_interact(false)
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			if _touch_starts_look(event.position, get_viewport().get_visible_rect().size):
+				touch_look_active = true
+				touch_look_index = event.index
+		elif event.index == touch_look_index:
+			touch_look_active = false
+			touch_look_index = -1
+
+static func _touch_starts_look(position: Vector2, viewport_size: Vector2) -> bool:
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return false
+	return position.x > viewport_size.x * 0.48 and position.y >= 0.0 and position.y < viewport_size.y * 0.78
 
 func _rotate_view(relative: Vector2) -> void:
 	player.rotate_y(-relative.x * look_sensitivity)
