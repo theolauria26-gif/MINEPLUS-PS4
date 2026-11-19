@@ -44,6 +44,7 @@ func _run() -> void:
 	_expect(loaded.get("axe_durability", -1) == 0, "legacy saves receive an empty axe slot")
 	_expect(loaded.get("pickaxe_durability", 0) == 40, "tool durability is bounded")
 	_expect(loaded.get("camera_pitch", 0.0) == 1.45, "camera pitch is bounded")
+	_expect(loaded.get("day_clock", -1.0) == 0.5, "legacy saves start at the default day-night phase")
 	_expect(loaded.get("selected_block", 0) == 5, "selected hotbar slot is bounded")
 
 	var backup := FileAccess.open(path + ".bak", FileAccess.WRITE)
@@ -66,11 +67,16 @@ func _run() -> void:
 	_expect(recovered.get("inventory", []).size() == 7 and recovered.get("axe_durability", -1) == 0, "version-five backup migrates inventory and tool fields")
 	_expect(FileAccess.file_exists(path), "recovered backup is restored to the primary path")
 	_expect(not MineplusWorldSave.save_world(path, {"version": 99, "blocks": []}), "future save versions are rejected")
-	var current_payload := {"version": 6, "blocks": [], "inventory": [1, 2, 3, 4, 5, 6, 7], "axe_durability": 27}
+	var current_payload := {"version": 7, "blocks": [], "inventory": [1, 2, 3, 4, 5, 6, 7], "axe_durability": 27, "day_clock": 0.73}
 	_expect(MineplusWorldSave.save_world(path, current_payload), "version-six inventory and tool state are saved")
 	var current_loaded := MineplusWorldSave.load_world(path)
 	_expect(current_loaded.get("inventory", []).size() == 7 and current_loaded.get("inventory", [])[6] == 7, "wood stack survives version-six round trip")
-	_expect(current_loaded.get("axe_durability", 0) == 27, "axe durability survives version-six round trip")
+	_expect(current_loaded.get("axe_durability", 0) == 27, "axe durability survives version-seven round trip")
+	_expect(is_equal_approx(float(current_loaded.get("day_clock", 0.0)), 0.73), "day-night phase survives version-seven round trip")
+	var migrated_six := MineplusWorldSave.normalize_payload({"version": 6, "blocks": [], "day_clock": 1.5})
+	_expect(is_equal_approx(float(migrated_six.get("day_clock", 0.0)), 0.999999), "version-six saves migrate and clamp day-night phase")
+	var invalid_clock := MineplusWorldSave.normalize_payload({"version": 7, "blocks": [], "day_clock": "night"})
+	_expect(invalid_clock.get("day_clock", 0.0) == 0.5, "invalid day-night phase uses a safe default")
 
 	_remove_test_file(path)
 	_remove_test_file(path + ".bak")
