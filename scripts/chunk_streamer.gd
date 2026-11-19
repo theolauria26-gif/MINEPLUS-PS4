@@ -17,11 +17,18 @@ var pending_chunks: Array[Vector2i] = []
 var queued_chunks: Dictionary = {}
 var terrain_edits: Dictionary = {}
 var material: StandardMaterial3D
+var foliage_material: ShaderMaterial
 
 func _ready() -> void:
 	material = StandardMaterial3D.new()
 	material.vertex_color_use_as_albedo = true
 	material.roughness = 0.94
+	var foliage_shader := load("res://shaders/foliage_wind.gdshader") as Shader
+	if foliage_shader != null:
+		foliage_material = ShaderMaterial.new()
+		foliage_material.shader = foliage_shader
+		foliage_material.set_shader_parameter("wind_strength", 0.045)
+		foliage_material.set_shader_parameter("wind_speed", 1.15)
 	set_process(true)
 
 func _process(_delta: float) -> void:
@@ -197,7 +204,7 @@ func _append_tree(st: SurfaceTool, anchor: Dictionary) -> void:
 		for tier in range(4):
 			var radius := 1.9 - float(tier) * 0.42
 			var level := y + 2.2 + float(tier) * 1.05
-			var shade := Color("#526d68").lightened(float((h >> (tier * 3)) & 3) * 0.025)
+			var shade := Color("#526d68", 0.82).lightened(float((h >> (tier * 3)) & 3) * 0.025)
 			_add_box(st, Vector3(x, level, z), Vector3(radius * 2.0, 1.25, radius * 2.0), shade)
 			_add_box(st, Vector3(x, level + 0.48, z), Vector3(radius * 1.35, 0.72, radius * 1.35), shade.lightened(0.035))
 		return
@@ -205,24 +212,24 @@ func _append_tree(st: SurfaceTool, anchor: Dictionary) -> void:
 		# Swamp tree: crooked, staggered branches and sparse hanging moss.
 		_add_box(st, Vector3(x - 0.55, y + 3.5, z), Vector3(0.55, 0.55, 0.55), bark)
 		_add_box(st, Vector3(x + 0.48, y + 4.05, z + 0.12), Vector3(0.5, 0.5, 0.5), bark)
-		var moss := Color("#526f58")
+		var moss := Color("#526f58", 0.82)
 		_add_box(st, Vector3(x - 0.72, y + 3.0, z), Vector3(0.72, 1.5, 0.72), moss)
 		_add_box(st, Vector3(x + 0.62, y + 3.5, z + 0.12), Vector3(0.68, 1.4, 0.68), moss.darkened(0.12))
 		return
-	var canopy := Color("#355d43") if kind != 2 else Color("#304c3c")
-	if kind == 2: canopy = Color("#3d5944")
+	var canopy := Color("#355d43", 0.82) if kind != 2 else Color("#304c3c", 0.82)
+	if kind == 2: canopy = Color("#3d5944", 0.82)
 	# Distinct cubic layers create a readable broadleaf/ancient silhouette.
 	_add_box(st, Vector3(x, y + 4.0, z), Vector3(3.5, 2.0, 3.5), canopy)
 	_add_box(st, Vector3(x - 1.15, y + 3.55, z + 0.12), Vector3(1.75, 1.55, 1.8), canopy.lightened(0.07))
 	_add_box(st, Vector3(x + 1.12, y + 3.72, z - 0.18), Vector3(1.8, 1.65, 1.7), canopy.darkened(0.08))
 	_add_box(st, Vector3(x, y + 5.15, z), Vector3(2.2, 1.55, 2.2), canopy.lightened(0.045))
 	if kind == 2:
-		_add_box(st, Vector3(x, y + 6.15, z), Vector3(1.25, 1.1, 1.25), Color("#53664a"))
+		_add_box(st, Vector3(x, y + 6.15, z), Vector3(1.25, 1.1, 1.25), Color("#53664a", 0.82))
 	# A few world-stable moss patches break up the flat canopy palette.
 	for i in range(3):
 		if ((h >> (i * 5)) & 3) == 0:
 			var side := -1.0 if i == 0 else (1.0 if i == 1 else 0.0)
-			_add_box(st, Vector3(x + side * 1.15, y + 4.85, z + (1.0 - absf(side)) * 0.9), Vector3(0.62, 0.34, 0.62), Color("#71805a"))
+			_add_box(st, Vector3(x + side * 1.15, y + 4.85, z + (1.0 - absf(side)) * 0.9), Vector3(0.62, 0.34, 0.62), Color("#71805a", 0.82))
 
 func _append_monolith(st: SurfaceTool, anchor: Dictionary) -> void:
 	var x := float(anchor.x)
@@ -366,7 +373,7 @@ func _build_chunk(key: Vector2i) -> void:
 			decorations = MeshInstance3D.new()
 			decorations.name = "Decorations"
 			decorations.mesh = decoration_mesh
-			decorations.material_override = material
+			decorations.material_override = foliage_material if foliage_material != null else material
 			root.add_child(decorations)
 		else:
 			decorations.mesh = decoration_mesh
