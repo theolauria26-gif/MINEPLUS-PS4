@@ -164,7 +164,7 @@ bool loadSettings(){
  FILE* file=std::fopen("/data/launcher_settings.cfg","rb");
  if(!file)return false;
  char magic[16]{};int particles=1,titleId=1;
- bool valid=std::fgets(magic,sizeof(magic),file)!=nullptr&&std::strcmp(magic,"MPLS1\\n")==0;
+ bool valid=std::fgets(magic,sizeof(magic),file)!=nullptr&&std::strcmp(magic,"MPLS1\n")==0;
  if(valid)valid=std::fscanf(file,"%d %d",&particles,&titleId)==2;
  std::fclose(file);
  if(!valid||(particles!=0&&particles!=1)||(titleId!=0&&titleId!=1))return false;
@@ -173,7 +173,7 @@ bool loadSettings(){
 bool saveSettings(){
  FILE* file=std::fopen("/data/launcher_settings.cfg","wb");
  if(!file)return false;
- int written=std::fprintf(file,"MPLS1\\n%d %d\\n",particlesEnabled?1:0,showTitleId?1:0);
+ int written=std::fprintf(file,"MPLS1\n%d %d\n",particlesEnabled?1:0,showTitleId?1:0);
  bool ok=written>0&&std::fflush(file)==0;
  if(std::fclose(file)!=0)ok=false;
  return ok;
