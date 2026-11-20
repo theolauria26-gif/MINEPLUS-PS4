@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang-18 lld-18 llvm-18 make python3 curl tar
+        run: sudo apt-get update && sudo apt-get install -y clang-18 lld-18 llvm-18 make python3 curl tar git
       - name: Install .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -27,6 +27,13 @@ jobs:
           test -n "$LINKER_SCRIPT"
           TOOLCHAIN_DIR="$(dirname "$LINKER_SCRIPT")"
           echo "OO_PS4_TOOLCHAIN=$TOOLCHAIN_DIR" >> "$GITHUB_ENV"
+      - name: Build GoldHEN SDK
+        run: |
+          git clone https://github.com/GoldHEN/GoldHEN_Plugins_SDK.git "$RUNNER_TEMP/GoldHEN_Plugins_SDK"
+          git -C "$RUNNER_TEMP/GoldHEN_Plugins_SDK" checkout bcea3c7ef01dac6d7f9f49ebf9e90fe66d86f5f7
+          make -C "$RUNNER_TEMP/GoldHEN_Plugins_SDK" all OO_PS4_TOOLCHAIN="$OO_PS4_TOOLCHAIN" CC=clang-18 CCX=clang++-18 LD=ld.lld-18 AR=llvm-ar-18
+          test -s "$RUNNER_TEMP/GoldHEN_Plugins_SDK/libGoldHEN_Hook.a"
+          echo "GOLDHEN_SDK=$RUNNER_TEMP/GoldHEN_Plugins_SDK" >> "$GITHUB_ENV"
       - name: Prepare package tools
         run: |
           curl -L --fail --retry 5 "https://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb" -o "$RUNNER_TEMP/libssl1.1.deb"
