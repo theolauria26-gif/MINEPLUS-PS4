@@ -5,7 +5,7 @@ Independent PS4 homebrew application. This project is isolated from the MINEPLUS
 ## Current implementation
 - SDL2 interface prototype rendered at 1920x1080.
 - Dark blue/black gradient background with restrained blue ambient lighting and optional floating particles. No medieval scenery or MINEPLUS game artwork.
-- DualShock 4 D-pad and left-analog navigation, controller hot-plug handling, and PlayStation-style button prompts.
+- DualShock 4 input through the raw SDL joystick API used by the official OpenOrbis SDL2 sample, with PS4 button-index mapping, D-pad, left-analog navigation, controller hot-plug handling, and PlayStation-style button prompts.
 - Five-slot game carousel with selected-tile focus animation and L1/R1 page skips.
 - Bounded read-only discovery attempt under `/user/app/*/sce_sys/param.sfo`, parsing `TITLE` and `TITLE_ID` with strict PS4 title-ID validation, self-entry filtering, display-safe title cleanup, and duplicate Title ID suppression.
 - Up to 256 discovered games remain navigable in the library, with favorites pinned ahead of the alphabetical list; the five-slot carousel shows the current neighborhood while traversal is limited to 1,024 directory entries.
