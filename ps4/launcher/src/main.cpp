@@ -429,7 +429,7 @@ int main(int,char**){
   case SDL_CONTROLLER_BUTTON_Y:if(!detailsPage&&!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
   case SDL_CONTROLLER_BUTTON_X:if(!hub)toggleSelectedFavorite();break;
   case SDL_CONTROLLER_BUTTON_A:
-   if(settingsPage){if(settingsCursor==0)particlesEnabled=!particlesEnabled;else if(settingsCursor==1)showTitleId=!showTitleId;else{reduceMotion=!reduceMotion;if(reduceMotion){focus=1.0f;bgMix=1.0f;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}}}if(!saveSettings()){notice="SETTINGS SAVE FAILED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
+   if(settingsPage){bool oldParticles=particlesEnabled,oldTitleId=showTitleId,oldReduceMotion=reduceMotion;if(settingsCursor==0)particlesEnabled=!particlesEnabled;else if(settingsCursor==1)showTitleId=!showTitleId;else{reduceMotion=!reduceMotion;if(reduceMotion){focus=1.0f;bgMix=1.0f;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}}}if(!saveSettings()){particlesEnabled=oldParticles;showTitleId=oldTitleId;reduceMotion=oldReduceMotion;notice="SETTINGS SAVE FAILED - CHANGE REVERTED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
    else if(hub){
     if(hubSelected==0){hub=false;notice.clear();noticeTimer=0.0f;}
     else if(hubSelected==2){settingsPage=true;settingsCursor=0;}
