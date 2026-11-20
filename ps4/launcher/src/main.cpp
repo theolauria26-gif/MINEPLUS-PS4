@@ -151,11 +151,11 @@ void toggleSelectedFavorite(){
 }
 void scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
- for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);if(old.background)SDL_DestroyTexture(old.background);old.icon=nullptr;old.background=nullptr;}
- if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}bgMix=1.0f;
  std::vector<Game> found; bool scanLimitReached=false; size_t scannedEntries=0;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return;}
+ for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);if(old.background)SDL_DestroyTexture(old.background);old.icon=nullptr;old.background=nullptr;}
+ if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}bgMix=1.0f;
  {
   dirent* ent;
   while((ent=readdir(dir))!=nullptr){
