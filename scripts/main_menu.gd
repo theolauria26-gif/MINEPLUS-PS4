@@ -96,7 +96,7 @@ func _add_menu_button(parent: VBoxContainer, caption: String, primary: bool, cal
 	parent.add_child(button)
 
 func _on_play_pressed() -> void:
-	get_tree().change_scene_to_file("res://scenes/world.tscn")
+	get_tree().change_scene_to_file("res://scenes/world_lobby.tscn")
 
 func _on_hud_pressed() -> void:
 	var config := ConfigFile.new()
