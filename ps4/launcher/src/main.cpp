@@ -25,7 +25,7 @@ std::vector<std::string> favoriteIds;
 SDL_Texture* previousHeroBackground=nullptr;
 std::string libraryStatus="SCANNING LIBRARY";
 std::vector<Particle> particles;
-int selected=0,hubSelected=0,settingsCursor=0; bool hub=false,settingsPage=false,detailsPage=false,running=true; bool particlesEnabled=true,showTitleId=true;
+int selected=0,hubSelected=0,settingsCursor=0; bool hub=false,settingsPage=false,detailsPage=false,running=true; bool particlesEnabled=true,showTitleId=true,reduceMotion=false;
 std::string notice; float noticeTimer=0.0f;
 bool launchServicesReady=false; int32_t launchUserId=-1; std::string launchServiceStatus="LAUNCH SERVICE NOT INITIALIZED";
 float focus=0.0f, bgMix=1.0f;
@@ -175,17 +175,18 @@ void scanInstalledGames(){
 bool loadSettings(){
  FILE* file=std::fopen("/data/launcher_settings.cfg","rb");
  if(!file)return false;
- char magic[16]{};int particles=1,titleId=1;
+ char magic[16]{};int particles=1,titleId=1,motion=0;
  bool valid=std::fgets(magic,sizeof(magic),file)!=nullptr&&std::strcmp(magic,"MPLS1\n")==0;
  if(valid)valid=std::fscanf(file,"%d %d",&particles,&titleId)==2;
+  if(valid){int readMotion=std::fscanf(file,"%d",&motion);if(readMotion!=1)motion=0;}
  std::fclose(file);
- if(!valid||(particles!=0&&particles!=1)||(titleId!=0&&titleId!=1))return false;
- particlesEnabled=particles!=0;showTitleId=titleId!=0;return true;
+ if(!valid||(particles!=0&&particles!=1)||(titleId!=0&&titleId!=1)||(motion!=0&&motion!=1))return false;
+ particlesEnabled=particles!=0;showTitleId=titleId!=0;reduceMotion=motion!=0;return true;
 }
 bool saveSettings(){
  FILE* file=std::fopen("/data/launcher_settings.cfg","wb");
  if(!file)return false;
- int written=std::fprintf(file,"MPLS1\n%d %d\n",particlesEnabled?1:0,showTitleId?1:0);
+ int written=std::fprintf(file,"MPLS1\n%d %d %d\n",particlesEnabled?1:0,showTitleId?1:0,reduceMotion?1:0);
  bool ok=written>0&&std::fflush(file)==0;
  if(std::fclose(file)!=0)ok=false;
  return ok;
@@ -215,7 +216,7 @@ void launchSelectedGame(){
  if((result&0x80000000u)==0){notice="LAUNCH REQUEST ACCEPTED";noticeTimer=4.0f;}
  else{char message[48];std::snprintf(message,sizeof(message),"LAUNCH ERROR 0x%08X",result);notice=message;noticeTimer=5.0f;}
 }
-void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);if(previousHeroBackground&&bgMix>0.995f){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
+void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}if(reduceMotion){focus=1.0f;bgMix=1.0f;}else{focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);}if(previousHeroBackground&&bgMix>0.995f){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
 void draw(){
  fill(0,0,W,H,{8,11,18,255});
  // Layered atmospheric gradients and subtle horizon glow.
@@ -315,9 +316,9 @@ void draw(){
   if(settingsPage){
    textBlock("SETTINGS",110,850,3,{226,235,243,255});
    textBlock("CIRCLE BACK - UP / DOWN SELECT - CROSS CHANGE",110,900,1,{166,184,202,255});
-   const char* names[2]={"AMBIENT PARTICLES","SHOW GAME TITLE ID"};
-   const char* values[2]={particlesEnabled?"ON":"OFF",showTitleId?"ON":"OFF"};
-   for(int i=0;i<2;++i){int y=950+i*62;bool active=i==settingsCursor;
+   const char* names[3]={"AMBIENT PARTICLES","SHOW GAME TITLE ID","REDUCE MOTION"};
+   const char* values[3]={particlesEnabled?"ON":"OFF",showTitleId?"ON":"OFF",reduceMotion?"ON":"OFF"};
+   for(int i=0;i<3;++i){int y=930+i*48;bool active=i==settingsCursor;
     fill(110,y-12,760,48,active?SDL_Color{45,65,82,255}:SDL_Color{24,35,49,255});
     textBlock(names[i],136,y,2,{226,235,243,255});
     textBlock(values[i],760,y,2,active?SDL_Color{117,224,190,255}:SDL_Color{166,184,202,255});
@@ -391,7 +392,7 @@ int main(int,char**){
   if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){
   case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+3)%4;else if(!hub)move(-1);break;
   case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
-  case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+1)%2;else hub=true;break;
+  case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+1)%3;else hub=true;break;
   case SDL_CONTROLLER_BUTTON_DPAD_UP:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+1)%2;else hub=false;break;
   case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(!detailsPage&&!hub&&!games.empty())move(-5);break;
   case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(!detailsPage&&!hub&&!games.empty())move(5);break;
@@ -400,7 +401,7 @@ int main(int,char**){
   case SDL_CONTROLLER_BUTTON_Y:if(!detailsPage&&!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
   case SDL_CONTROLLER_BUTTON_X:if(!hub)toggleSelectedFavorite();break;
   case SDL_CONTROLLER_BUTTON_A:
-   if(settingsPage){if(settingsCursor==0)particlesEnabled=!particlesEnabled;else showTitleId=!showTitleId;if(!saveSettings()){notice="SETTINGS SAVE FAILED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
+   if(settingsPage){if(settingsCursor==0)particlesEnabled=!particlesEnabled;else if(settingsCursor==1)showTitleId=!showTitleId;else{reduceMotion=!reduceMotion;if(reduceMotion){focus=1.0f;bgMix=1.0f;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}}}if(!saveSettings()){notice="SETTINGS SAVE FAILED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
    else if(hub){
     if(hubSelected==0){hub=false;notice.clear();noticeTimer=0.0f;}
     else if(hubSelected==2){settingsPage=true;settingsCursor=0;}
