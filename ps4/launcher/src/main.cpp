@@ -549,7 +549,8 @@ int main(int,char**){
  if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}
  SDL_GameController* pad=nullptr;for(int i=0;i<SDL_NumJoysticks();++i){if(SDL_IsGameController(i)){pad=SDL_GameControllerOpen(i);if(pad)break;}}
  float axisRepeat=0.0f,verticalAxisRepeat=0.0f;
- IMG_Init(IMG_INIT_PNG);
+ const int imageInit=IMG_Init(IMG_INIT_PNG);
+ if((imageInit&IMG_INIT_PNG)==0){notice="PNG SUPPORT UNAVAILABLE - USING FALLBACK ART";noticeTimer=5.0f;}
  SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);
  initParticles();loadSettings();loadFavorites();scanInstalledGames();loadLastSelectedGame();initializeLaunchServices();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
