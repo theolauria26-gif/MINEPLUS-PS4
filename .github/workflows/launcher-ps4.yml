@@ -97,7 +97,8 @@ jobs:
           "$PKG" sfo_setentry sce_sys/param.sfo TITLE_ID --type Utf8 --maxsize 12 --value LCHR00001
           "$PKG" sfo_setentry sce_sys/param.sfo VERSION --type Utf8 --maxsize 8 --value 0.1.0
           PKG_FILES="eboot.bin sce_sys/about/right.sprx sce_sys/param.sfo sce_sys/icon0.png"
-          while IFS= read -r module; do PKG_FILES="$PKG_FILES $module"; done < <(find sce_module -maxdepth 1 -type f -name '*.prx' -printf '%p\\n' | sort)
+          MODULE_FILES="$(find sce_module -maxdepth 1 -type f -name '*.prx' -printf '%p ' | sort)"
+          PKG_FILES="$PKG_FILES $MODULE_FILES"
           "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4" -out pkg.gp4 --content-id=IV0000-LCHR00001_00-PS5LAUNCHER00001 --files "$PKG_FILES"
           echo "=== GP4 generated ==="
           test -s pkg.gp4
