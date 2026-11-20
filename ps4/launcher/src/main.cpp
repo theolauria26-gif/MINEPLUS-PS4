@@ -176,10 +176,8 @@ void scanInstalledGames(){
  }
  for(auto& game:found)game.favorite=isFavoriteId(game.titleId);
  sortGames(found);
- bool moreThan40=found.size()>40;
- if(found.size()>40)found.resize(40);
  games.swap(found);selected=0;
- if(!games.empty())libraryStatus=scanLimitReached?"SCAN BOUNDED - FIRST 40 SHOWN":(moreThan40?"40+ GAMES - FIRST 40 SHOWN":"INSTALLED GAMES FOUND");
+ if(!games.empty())libraryStatus=scanLimitReached?"SCAN BOUNDED - 256 GAME CAPACITY":"INSTALLED GAMES FOUND";
  else libraryStatus="NO READABLE GAMES FOUND";
 }
 
