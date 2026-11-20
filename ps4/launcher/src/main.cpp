@@ -21,6 +21,7 @@ constexpr int W=1920,H=1080;
 struct Game { std::string title; SDL_Color color; std::string titleId; std::string iconPath; SDL_Texture* icon=nullptr; bool iconAttempted=false; SDL_Texture* background=nullptr; bool backgroundAttempted=false; };
 struct Particle { float x,y,vx,vy,r,a; };
 std::vector<Game> games;
+SDL_Texture* previousHeroBackground=nullptr;
 std::string libraryStatus="SCANNING LIBRARY";
 std::vector<Particle> particles;
 int selected=0,hubSelected=0,settingsCursor=0; bool hub=false,settingsPage=false,running=true; bool particlesEnabled=true,showTitleId=true;
@@ -114,9 +115,10 @@ bool validTitleId(const std::string& id){
 void scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
  for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);if(old.background)SDL_DestroyTexture(old.background);old.icon=nullptr;old.background=nullptr;}
+ if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}bgMix=1.0f;
  std::vector<Game> found; bool scanLimitReached=false; size_t scannedEntries=0;
  DIR* dir=opendir("/user/app");
- if(!dir){libraryStatus="LIBRARY ACCESS DENIED";games.clear();selected=0;return;}
+ if(!dir){if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}libraryStatus="LIBRARY ACCESS DENIED";games.clear();selected=0;bgMix=1.0f;return;}
  {
   dirent* ent;
   while((ent=readdir(dir))!=nullptr){
@@ -194,7 +196,7 @@ void launchSelectedGame(){
  if((result&0x80000000u)==0){notice="LAUNCH REQUEST ACCEPTED";noticeTimer=4.0f;}
  else{char message[48];std::snprintf(message,sizeof(message),"LAUNCH ERROR 0x%08X",result);notice=message;noticeTimer=5.0f;}
 }
-void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
+void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);if(previousHeroBackground&&bgMix>0.995f){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
 void draw(){
  fill(0,0,W,H,{8,11,18,255});
  // Layered atmospheric gradients and subtle horizon glow.
@@ -262,18 +264,10 @@ void draw(){
     g.background=IMG_LoadTexture(renderer,artPath.c_str());
    }
   }
-  if(g.background){
-   int iw=0,ih=0;SDL_QueryTexture(g.background,nullptr,nullptr,&iw,&ih);
-   if(iw>0&&ih>0){
-    const int dx=112,dy=478,dw=1696,dh=220;
-    float target=float(dw)/float(dh),source=float(iw)/float(ih);
-    SDL_Rect src{0,0,iw,ih};
-    if(source>target){src.w=int(float(ih)*target);src.x=(iw-src.w)/2;}
-    else{src.h=int(float(iw)/target);src.y=(ih-src.h)/2;}
-    SDL_Rect dst{dx,dy,dw,dh};SDL_RenderCopy(renderer,g.background,&src,&dst);
-   }
-   fill(112,478,1696,220,{5,10,18,190});
-  }
+  auto drawHeroTexture=[&](SDL_Texture* texture,Uint8 alpha){if(!texture||alpha==0)return;int iw=0,ih=0;SDL_QueryTexture(texture,nullptr,nullptr,&iw,&ih);if(iw<=0||ih<=0)return;const int dx=112,dy=478,dw=1696,dh=220;float target=float(dw)/float(dh),source=float(iw)/float(ih);SDL_Rect src{0,0,iw,ih};if(source>target){src.w=int(float(ih)*target);src.x=(iw-src.w)/2;}else{src.h=int(float(iw)/target);src.y=(ih-src.h)/2;}SDL_Rect dst{dx,dy,dw,dh};SDL_SetTextureBlendMode(texture,SDL_BLENDMODE_BLEND);if(SDL_SetTextureAlphaMod(texture,alpha)==0){SDL_RenderCopy(renderer,texture,&src,&dst);SDL_SetTextureAlphaMod(texture,255);}else if(alpha>=128)SDL_RenderCopy(renderer,texture,&src,&dst);};
+  if(previousHeroBackground)drawHeroTexture(previousHeroBackground,Uint8(255.0f*(1.0f-bgMix)));
+  if(g.background)drawHeroTexture(g.background,Uint8(255.0f*bgMix));
+  if(g.background||previousHeroBackground)fill(112,478,1696,220,{5,10,18,190});
   fill(112,478,5,220,{104,210,190,255});
   textBlockFit(g.title,140,530,5,1640,{226,234,242,255});
   textBlock("INSTALLED GAME",140,590,2,{117,184,180,255});
@@ -327,7 +321,7 @@ void draw(){
  }
  SDL_RenderPresent(renderer);
 }
-void move(int d){if(games.empty())return;if(games[selected].background){SDL_DestroyTexture(games[selected].background);games[selected].background=nullptr;}games[selected].backgroundAttempted=false;selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
+void move(int d){if(games.empty())return;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}previousHeroBackground=games[selected].background;games[selected].background=nullptr;games[selected].backgroundAttempted=false;selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
 }
 int main(int,char**){
  if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER)!=0)return 1;
@@ -369,5 +363,6 @@ int main(int,char**){
   update(dt);draw();
  }
  for(auto& game:games){if(game.icon)SDL_DestroyTexture(game.icon);if(game.background)SDL_DestroyTexture(game.background);}
+ if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=null;}
  if(pad)SDL_GameControllerClose(pad);IMG_Quit();SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;
 }
