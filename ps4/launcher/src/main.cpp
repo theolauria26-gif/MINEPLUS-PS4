@@ -66,6 +66,8 @@ void requestGameImage(const std::string& id,bool background,const std::vector<st
  if(std::find(imageRequests.begin(),imageRequests.end(),key)!=imageRequests.end())return;
  imageRequests.push_back(key);imageJobs.push_back({id,background,paths});imageCv.notify_one();
 }
+extern std::vector<Game> games;
+extern SDL_Renderer* renderer;
 void applyImageResults(){
  std::deque<ImageResult> ready;{std::lock_guard<std::mutex> lock(imageMutex);ready.swap(imageResults);for(const auto& result:ready){const std::string key=result.titleId+(result.background?":background":":icon");auto it=std::find(imageRequests.begin(),imageRequests.end(),key);if(it!=imageRequests.end())imageRequests.erase(it);}}
  for(auto& result:ready){auto game=std::find_if(games.begin(),games.end(),[&](const Game& item){return item.titleId==result.titleId;});if(game!=games.end()){if(result.background){game->backgroundAttempted=true;if(result.surface)game->background=SDL_CreateTextureFromSurface(renderer,result.surface);}else{game->iconAttempted=true;if(result.surface)game->icon=SDL_CreateTextureFromSurface(renderer,result.surface);}}if(result.surface)SDL_FreeSurface(result.surface);}
