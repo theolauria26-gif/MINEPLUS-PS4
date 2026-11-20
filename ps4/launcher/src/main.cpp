@@ -25,7 +25,7 @@ std::vector<std::string> favoriteIds;
 SDL_Texture* previousHeroBackground=nullptr;
 std::string libraryStatus="SCANNING LIBRARY";
 std::vector<Particle> particles;
-int selected=0,hubSelected=0,settingsCursor=0; bool hub=false,settingsPage=false,detailsPage=false,running=true; bool particlesEnabled=true,showTitleId=true,reduceMotion=false;
+int selected=0,hubSelected=0,settingsCursor=0; bool favoritesOnly=false; bool hub=false,settingsPage=false,detailsPage=false,running=true; bool particlesEnabled=true,showTitleId=true,reduceMotion=false;
 std::string notice; float noticeTimer=0.0f;
 bool launchServicesReady=false; int32_t launchUserId=-1; std::string launchServiceStatus="LAUNCH SERVICE NOT INITIALIZED";
 float focus=0.0f, bgMix=1.0f;
@@ -135,12 +135,13 @@ bool saveFavorites(){
  if(std::fflush(file)!=0)ok=false;if(std::fclose(file)!=0)ok=false;return ok;
 }
 void sortGames(std::vector<Game>& list){std::sort(list.begin(),list.end(),[](const Game& a,const Game& b){if(a.favorite!=b.favorite)return a.favorite>b.favorite;return std::lexicographical_compare(a.title.begin(),a.title.end(),b.title.begin(),b.title.end(),[](unsigned char x,unsigned char y){return std::tolower(x)<std::tolower(y);});});}
+size_t activeLibrarySize(){if(!favoritesOnly)return games.size();return size_t(std::count_if(games.begin(),games.end(),[](const Game& game){return game.favorite;}));}
 void toggleSelectedFavorite(){
- if(games.empty())return;const std::string id=games[selected].titleId;auto it=std::find(favoriteIds.begin(),favoriteIds.end(),id);bool removing=it!=favoriteIds.end();
+ if(games.empty()||size_t(selected)>=activeLibrarySize())return;const std::string id=games[selected].titleId;auto it=std::find(favoriteIds.begin(),favoriteIds.end(),id);bool removing=it!=favoriteIds.end();
  if(removing)favoriteIds.erase(it);else if(favoriteIds.size()<256)favoriteIds.push_back(id);else{notice="FAVORITE LIMIT REACHED";noticeTimer=2.5f;return;}
  if(!saveFavorites()){if(removing)favoriteIds.push_back(id);else favoriteIds.erase(std::remove(favoriteIds.begin(),favoriteIds.end(),id),favoriteIds.end());notice="FAVORITES SAVE FAILED";noticeTimer=3.0f;return;}
  for(auto& game:games)game.favorite=isFavoriteId(game.titleId);sortGames(games);
- auto selectedIt=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==id;});if(selectedIt!=games.end())selected=int(selectedIt-games.begin());
+ auto selectedIt=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==id;});if(selectedIt!=games.end())selected=int(selectedIt-games.begin());if(favoritesOnly&&size_t(selected)>=activeLibrarySize())selected=0;
  notice=removing?"REMOVED FROM FAVORITES":"ADDED TO FAVORITES";noticeTimer=2.0f;
 }
 void scanInstalledGames(){
@@ -233,14 +234,15 @@ void draw(){
  drawAmbientGlow();
  for(int i=0;i<12;++i){int yy=590+i*18;line(0,yy,W,yy,{Uint8(25+i),Uint8(34+i),Uint8(51+i),90});}
  if(particlesEnabled)for(const auto& p:particles){SDL_SetRenderDrawColor(renderer,145,177,205,Uint8(p.a*180));SDL_Rect q{int(p.x),int(p.y),int(p.r),int(p.r)};SDL_RenderFillRect(renderer,&q);}
- textBlock("LIBRARY",110,55,2,{146,168,190,255});
+ textBlock(favoritesOnly?"FAVORITES":"LIBRARY",110,55,2,{146,168,190,255});
  textBlock("CONSOLE HUB",W-430,48,3,{220,229,239,255});
  // Five-slot carousel keeps the selected installed title centered across the full bounded library.
  const int baseY=184,cardW=292,cardH=178,gap=26;
- const int visible=(int)std::min<size_t>(5,games.size());
+ const size_t activeCount=activeLibrarySize();
+ const int visible=(int)std::min<size_t>(5,activeCount);
  const int start=(W-(visible*cardW+(visible-1)*gap))/2;
  for(int slot=0;slot<visible;++slot){
-  int idx=(selected-visible/2+slot+(int)games.size())%(int)games.size();
+  int idx=(selected-visible/2+slot+(int)activeCount)%(int)activeCount;
   Game& game=games[idx];bool chosen=(idx==selected);
   float active=chosen?focus:0.0f;
   int w=cardW+int(active*24),h=cardH+int(active*18);
@@ -276,7 +278,7 @@ void draw(){
  // Retain at most five high-resolution icon textures while browsing the carousel.
  for(size_t i=0;i<games.size();++i){bool visibleNow=false;for(int slot=0;slot<visible;++slot){int idx=(selected-visible/2+slot+(int)games.size())%(int)games.size();if((size_t)idx==i){visibleNow=true;break;}}if(!visibleNow&&games[i].icon){SDL_DestroyTexture(games[i].icon);games[i].icon=nullptr;games[i].iconAttempted=false;}}
  if(!games.empty()){
-  char counter[24];std::snprintf(counter,sizeof(counter),"%02d / %02d",selected+1,(int)games.size());
+  char counter[24];std::snprintf(counter,sizeof(counter),"%02d / %02d",selected+1,(int)activeCount);
   textBlock(counter,W-250,395,2,{158,178,199,255});
  }
  int favoriteCount=0;
@@ -318,6 +320,7 @@ void draw(){
  textBlock("SQUARE TO TOGGLE FAVORITE",110,675,1,{117,184,180,255});
  textBlock("D-PAD / STICK TO BROWSE",110,730,2,{166,184,202,255});
  textBlock("L1 / R1: SKIP 5 GAMES",110,760,1,{145,165,187,255});
+ textBlock("L3: FAVORITES FILTER",W-430,790,1,{145,165,187,255});
  textBlock("TRIANGLE TO RESCAN",W-430,730,2,{117,184,180,255});
  textBlock("R3: GAME DETAILS",W-430,760,1,{145,165,187,255});
  if(!notice.empty()&&!hub){
@@ -386,7 +389,7 @@ void draw(){
  }
  SDL_RenderPresent(renderer);
 }
-void move(int d){if(games.empty())return;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}previousHeroBackground=games[selected].background;games[selected].background=nullptr;games[selected].backgroundAttempted=false;selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
+void move(int d){size_t activeCount=activeLibrarySize();if(activeCount==0)return;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}previousHeroBackground=games[selected].background;games[selected].background=nullptr;games[selected].backgroundAttempted=false;selected=(selected+d+(int)activeCount)%(int)activeCount;focus=0.0f;bgMix=0.0f;}
 }
 int main(int,char**){
  if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER)!=0)return 1;
@@ -412,9 +415,10 @@ int main(int,char**){
   case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(!detailsPage&&!hub&&!games.empty())move(-5);break;
   case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(!detailsPage&&!hub&&!games.empty())move(5);break;
   case SDL_CONTROLLER_BUTTON_B:if(detailsPage)detailsPage=false;else if(settingsPage)settingsPage=false;else hub=false;break;
-  case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(!hub&&!games.empty())detailsPage=!detailsPage;break;
+  case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(!hub&&activeLibrarySize()>0)detailsPage=!detailsPage;break;
+  case SDL_CONTROLLER_BUTTON_LEFTSTICK:if(!hub&&!detailsPage){favoritesOnly=!favoritesOnly;selected=0;focus=0.0f;bgMix=1.0f;notice=favoritesOnly?"SHOWING FAVORITES":"SHOWING ALL GAMES";noticeTimer=2.0f;}break;
   case SDL_CONTROLLER_BUTTON_Y:if(!detailsPage&&!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
-  case SDL_CONTROLLER_BUTTON_X:if(!hub)toggleSelectedFavorite();break;
+  case SDL_CONTROLLER_BUTTON_X:if(!hub&&!detailsPage)toggleSelectedFavorite();break;
   case SDL_CONTROLLER_BUTTON_A:
    if(settingsPage){if(settingsCursor==0)particlesEnabled=!particlesEnabled;else if(settingsCursor==1)showTitleId=!showTitleId;else{reduceMotion=!reduceMotion;if(reduceMotion){focus=1.0f;bgMix=1.0f;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}}}if(!saveSettings()){notice="SETTINGS SAVE FAILED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
    else if(hub){
