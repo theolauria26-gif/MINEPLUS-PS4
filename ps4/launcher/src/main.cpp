@@ -40,7 +40,7 @@ std::vector<std::string> favoriteIds;
 SDL_Texture* previousHeroBackground=nullptr;
 std::string libraryStatus="SCANNING LIBRARY";
 std::vector<Particle> particles;
-int selected=0,hubSelected=0,settingsCursor=0; bool favoritesOnly=false; bool hub=false,settingsPage=false,detailsPage=false,running=true; bool particlesEnabled=true,showTitleId=true,reduceMotion=false;
+int selected=0,hubSelected=0,settingsCursor=0; bool favoritesOnly=false; bool hub=false,settingsPage=false,detailsPage=false,running=true; bool particlesEnabled=false,showTitleId=true,reduceMotion=false;
 std::string notice; float noticeTimer=0.0f;
 bool launchServicesReady=false; int32_t launchUserId=-1; std::string launchServiceStatus="LAUNCH SERVICE NOT INITIALIZED";
 float focus=0.0f, bgMix=1.0f;
@@ -63,7 +63,7 @@ void textBlock(const char* s,int x,int y,int scale,SDL_Color c){
  static const char* glyphs[36]={
  "01110100011000111111100011000110001","11110100011000111110100011000111110","01111100001000010000100001000001111","11110100011000110001100011000111110","11111100001000011110100001000011111","11111100001000011110100001000010000","01111100001000010111100011000101111","10001100011000111111100011000110001","11111001000010000100001000010011111","00111000100001000010100101001001100","10001100101010011000101001001010001","10000100001000010000100001000011111","10001110111010110101100011000110001","10001110011010110011100011000110001","01110100011000110001100011000101110","11110100011000111110100001000010000","01110100011000110001101011001001101","11110100011000111110101001001010001","01111100001000001110000010000111110","11111001000010000100001000010000100","10001100011000110001100011000101110","10001100011000110001010100101000100","10001100011000110101101011010101010","10001100010101000100010101000110001","10001100010101000100001000010000100","11111000010001000100010001000011111","01110100011001110101110011000101110","00100011000010000100001000010001110","01110100011000100010001000100011111","11110000010000101110000010000111110","00010001100101010010111110001000010","11111100001000011110000010000111110","01110100001000011110100011000101110","11111000010001000100010000100001000","01110100011000101110100011000101110","01110100011000101111000010000101110"
  };
- std::vector<SDL_Rect> pixels;pixels.reserve(std::strlen(s)*18);
+ static std::vector<SDL_Rect> pixels;pixels.clear();if(pixels.capacity()<4096)pixels.reserve(4096);
  for(;*s;++s,x+=6*scale){
   char ch=*s;int index=-1;if(ch>='a'&&ch<='z')ch=char(ch-'a'+'A');
   if(ch>='A'&&ch<='Z')index=ch-'A';else if(ch>='0'&&ch<='9')index=26+ch-'0';
@@ -460,7 +460,7 @@ void launchSelectedGame(){
   notice=message;noticeTimer=6.0f;
  }
 }
-void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}if(reduceMotion){focus=1.0f;bgMix=1.0f;}else{focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);}if(previousHeroBackground&&bgMix>0.995f){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
+void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}if(reduceMotion){focus=1.0f;bgMix=1.0f;}else{focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);}if(previousHeroBackground&&bgMix>0.995f){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}if(particlesEnabled)for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
 void draw(){
  fill(0,0,W,H,{12,17,27,255});
  const size_t activeCount=activeLibrarySize();
