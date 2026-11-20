@@ -501,11 +501,20 @@ void draw(){
   Game& hero=games[selected];
   if(!hero.backgroundAttempted){
    hero.backgroundAttempted=true;
-   std::string artPath=hero.iconPath;
-   size_t iconPos=artPath.rfind("icon0.png");
-   if(iconPos!=std::string::npos)artPath.replace(iconPos,9,"pic0.png");
-   hero.background=IMG_LoadTexture(renderer,artPath.c_str());
-   if(!hero.background&&iconPos!=std::string::npos){artPath.replace(iconPos,8,"pic1.png");hero.background=IMG_LoadTexture(renderer,artPath.c_str());}
+   // Full-size preview artwork lives with the installed app; appmeta may only
+   // contain icon0.png. Try internal, both USB mounts, then appmeta fallbacks.
+   const std::string id=hero.titleId;
+   const std::string candidates[]={
+    "/user/app/"+id+"/sce_sys/pic0.png",
+    "/user/app/"+id+"/sce_sys/pic1.png",
+    "/mnt/ext0/user/app/"+id+"/sce_sys/pic0.png",
+    "/mnt/ext0/user/app/"+id+"/sce_sys/pic1.png",
+    "/mnt/ext1/user/app/"+id+"/sce_sys/pic0.png",
+    "/mnt/ext1/user/app/"+id+"/sce_sys/pic1.png",
+    "/user/appmeta/"+id+"/pic0.png",
+    "/user/appmeta/external/"+id+"/pic0.png"
+   };
+   for(const auto& artPath:candidates){hero.background=IMG_LoadTexture(renderer,artPath.c_str());if(hero.background)break;}
   }
   auto drawBackdrop=[&](SDL_Texture* texture,Uint8 alpha){
    if(!texture||alpha==0)return;int iw=0,ih=0;SDL_QueryTexture(texture,nullptr,nullptr,&iw,&ih);if(iw<=0||ih<=0)return;
