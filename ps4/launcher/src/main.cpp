@@ -133,7 +133,7 @@ void loadFavorites(){
 bool loadLastSelectedGame(){
  FILE* file=std::fopen("/data/launcher_last_game.cfg","rb");if(!file)return false;
  char id[16]{};bool ok=std::fgets(id,sizeof(id),file)!=nullptr;std::fclose(file);
- if(!ok)return false;std::string wanted(id);while(!wanted.empty()&&(wanted.back()=='\\n'||wanted.back()=='\\r'))wanted.pop_back();
+ if(!ok)return false;std::string wanted(id);while(!wanted.empty()&&(wanted.back()=='\n'||wanted.back()=='\r'))wanted.pop_back();
  if(!validTitleId(wanted))return false;
  auto it=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==wanted;});
  if(it==games.end())return false;
@@ -143,7 +143,7 @@ bool saveLastSelectedGame(){
  if(selected<0||size_t(selected)>=games.size())return false;
  const char* tempPath="/data/launcher_last_game.cfg.tmp";
  FILE* file=std::fopen(tempPath,"wb");if(!file)return false;
- bool ok=std::fprintf(file,"%s\\n",games[selected].titleId.c_str())>0;
+ bool ok=std::fprintf(file,"%s\n",games[selected].titleId.c_str())>0;
  if(std::fflush(file)!=0)ok=false;if(std::fclose(file)!=0)ok=false;
  if(!ok){std::remove(tempPath);return false;}
  if(std::rename(tempPath,"/data/launcher_last_game.cfg")!=0){std::remove(tempPath);return false;}
