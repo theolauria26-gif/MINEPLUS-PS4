@@ -173,7 +173,7 @@ void loadFavorites(){
   }
   std::string id(line);
   while(!id.empty()&&(id.back()=='\n'||id.back()=='\r'))id.pop_back();
-  if(validTitleId(id)&&loaded.size()<256&&std::find(loaded.begin(),loaded.end(),id)==loaded.end())loaded.push_back(id);
+  if(validTitleId(id)&&std::find(loaded.begin(),loaded.end(),id)==loaded.end())loaded.push_back(id);
   if(std::ferror(file)){readOk=false;break;}
  }
  if(std::ferror(file))readOk=false;
@@ -209,7 +209,6 @@ bool saveLastSelectedGame(){
 }
 bool saveFavorites(){
  const char* tempPath="/data/launcher_favorites.cfg.tmp";
- if(favoriteIds.size()>256)return false;
  for(auto it=favoriteIds.begin();it!=favoriteIds.end();++it){
   if(!validTitleId(*it))return false;
   if(std::find(favoriteIds.begin(),it,*it)!=it)return false;
@@ -241,8 +240,7 @@ void toggleSelectedFavorite(){
  auto it=std::find(favoriteIds.begin(),favoriteIds.end(),id);
  const bool removing=it!=favoriteIds.end();
  if(removing)favoriteIds.erase(it);
- else if(favoriteIds.size()<256)favoriteIds.push_back(id);
- else{notice="FAVORITE LIMIT REACHED";noticeTimer=2.5f;return;}
+ else favoriteIds.push_back(id);
  if(!saveFavorites()){
   favoriteIds=previousFavoriteIds;
   notice="FAVORITES SAVE FAILED";
@@ -269,7 +267,7 @@ bool scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
  const std::string previouslySelectedId=(selected>=0&&size_t(selected)<games.size())?games[selected].titleId:std::string();
  std::vector<Game> found;
- bool entryLimitReached=false,gameLimitReached=false,scanReadError=false;
+ bool scanReadError=false;
  size_t scannedEntries=0,appDirectories=0,sfoFiles=0,readableSfos=0,structurallyValidSfos=0,validGameRecords=0;
  auto scanRoot=[&](const std::string& root,bool legacyLayout,const std::string& iconRoot){
   DIR* dir=opendir(root.c_str());
@@ -279,7 +277,7 @@ bool scanInstalledGames(){
    errno=0;ent=readdir(dir);
    if(!ent){if(errno!=0)scanReadError=true;break;}
    if(ent->d_name[0]=='.')continue;
-   if(++scannedEntries>2048){entryLimitReached=true;break;}
+   ++scannedEntries;
    const std::string id=ent->d_name;
    if(!validTitleId(id)||id=="LCHR00001")continue;
    const std::string folder=root+"/"+id;
@@ -309,8 +307,7 @@ bool scanInstalledGames(){
     if(legacyLayout)iconPath=folder+"/sce_sys/icon0.png";
     else iconPath="/user/app/"+id+"/sce_sys/icon0.png";
    }
-   if(found.size()<256)found.push_back({title,{72,94,112,255},id,iconPath,nullptr,false});
-   else gameLimitReached=true;
+   found.push_back({title,{72,94,112,255},id,iconPath,nullptr,false});
   }
   closedir(dir);
  };
@@ -330,7 +327,7 @@ bool scanInstalledGames(){
  if(!games.empty()){
   char diagnostic[128];
   std::snprintf(diagnostic,sizeof(diagnostic),"GAMES %zu / META %zu / SFO %zu / VALID %zu",games.size(),appDirectories,sfoFiles,validGameRecords);
-  libraryStatus=entryLimitReached?"SCAN STOPPED - 2048 ENTRY LIMIT":(gameLimitReached?"LIBRARY LIMITED - 256 GAMES":diagnostic);
+  libraryStatus=diagnostic;
  }else{
   char diagnostic[128];
   std::snprintf(diagnostic,sizeof(diagnostic),"NO GAMES - META %zu SFO %zu READ %zu VALID %zu",appDirectories,sfoFiles,readableSfos,structurallyValidSfos);
