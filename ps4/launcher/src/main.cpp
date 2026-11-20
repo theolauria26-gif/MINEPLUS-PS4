@@ -11,6 +11,7 @@ extern "C" int32_t sceLncUtilInitialize(void);
 #include <cstdio>
 #include <cstring>
 #include <cctype>
+#include <cerrno>
 #include <dirent.h>
 #include <string>
 #include <sys/stat.h>
@@ -151,14 +152,13 @@ void toggleSelectedFavorite(){
 }
 void scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
- std::vector<Game> found; bool scanLimitReached=false; size_t scannedEntries=0;
+ std::vector<Game> found; bool scanLimitReached=false; size_t scannedEntries=0; bool scanReadError=false;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return;}
- for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);if(old.background)SDL_DestroyTexture(old.background);old.icon=nullptr;old.background=nullptr;}
- if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}bgMix=1.0f;
  {
   dirent* ent;
-  while((ent=readdir(dir))!=nullptr){
+  while(true){
+   errno=0;ent=readdir(dir);if(!ent){if(errno!=0)scanReadError=true;break;}
    if(ent->d_name[0]=='.')continue;
    if(++scannedEntries>1024){scanLimitReached=true;break;}
    std::string root="/user/app/"+std::string(ent->d_name);
@@ -180,6 +180,9 @@ void scanInstalledGames(){
   }
   closedir(dir);
  }
+ if(scanReadError){libraryStatus="LIBRARY SCAN ERROR - PREVIOUS LIST KEPT";notice="SCAN INTERRUPTED - LIBRARY PRESERVED";noticeTimer=3.0f;return;}
+ for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);if(old.background)SDL_DestroyTexture(old.background);old.icon=nullptr;old.background=nullptr;}
+ if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}bgMix=1.0f;
  for(auto& game:found)game.favorite=isFavoriteId(game.titleId);
  sortGames(found);
  games.swap(found);selected=0;
