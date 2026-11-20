@@ -130,9 +130,13 @@ void loadFavorites(){
  std::fclose(file);
 }
 bool saveFavorites(){
- FILE* file=std::fopen("/data/launcher_favorites.cfg","wb");if(!file)return false;bool ok=true;
+ const char* tempPath="/data/launcher_favorites.cfg.tmp";
+ FILE* file=std::fopen(tempPath,"wb");if(!file)return false;bool ok=true;
  for(const auto& id:favoriteIds)if(std::fprintf(file,"%s\n",id.c_str())<0){ok=false;break;}
- if(std::fflush(file)!=0)ok=false;if(std::fclose(file)!=0)ok=false;return ok;
+ if(std::fflush(file)!=0)ok=false;if(std::fclose(file)!=0)ok=false;
+ if(!ok){std::remove(tempPath);return false;}
+ if(std::rename(tempPath,"/data/launcher_favorites.cfg")!=0){std::remove(tempPath);return false;}
+ return true;
 }
 void sortGames(std::vector<Game>& list){std::sort(list.begin(),list.end(),[](const Game& a,const Game& b){if(a.favorite!=b.favorite)return a.favorite>b.favorite;return std::lexicographical_compare(a.title.begin(),a.title.end(),b.title.begin(),b.title.end(),[](unsigned char x,unsigned char y){return std::tolower(x)<std::tolower(y);});});}
 size_t activeLibrarySize(){if(!favoritesOnly)return games.size();return size_t(std::count_if(games.begin(),games.end(),[](const Game& game){return game.favorite;}));}
@@ -195,12 +199,15 @@ bool loadSettings(){
  particlesEnabled=particles!=0;showTitleId=titleId!=0;reduceMotion=motion!=0;return true;
 }
 bool saveSettings(){
- FILE* file=std::fopen("/data/launcher_settings.cfg","wb");
+ const char* tempPath="/data/launcher_settings.cfg.tmp";
+ FILE* file=std::fopen(tempPath,"wb");
  if(!file)return false;
  int written=std::fprintf(file,"MPLS1\n%d %d %d\n",particlesEnabled?1:0,showTitleId?1:0,reduceMotion?1:0);
  bool ok=written>0&&std::fflush(file)==0;
  if(std::fclose(file)!=0)ok=false;
- return ok;
+ if(!ok){std::remove(tempPath);return false;}
+ if(std::rename(tempPath,"/data/launcher_settings.cfg")!=0){std::remove(tempPath);return false;}
+ return true;
 }
 void initializeLaunchServices(){
  int32_t systemResult=sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE);
