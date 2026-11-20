@@ -155,7 +155,7 @@ void scanInstalledGames(){
  if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}bgMix=1.0f;
  std::vector<Game> found; bool scanLimitReached=false; size_t scannedEntries=0;
  DIR* dir=opendir("/user/app");
- if(!dir){if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}libraryStatus="LIBRARY ACCESS DENIED";games.clear();selected=0;bgMix=1.0f;return;}
+ if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return;}
  {
   dirent* ent;
   while((ent=readdir(dir))!=nullptr){
