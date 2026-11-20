@@ -386,6 +386,11 @@ void launchSelectedGame(){
   char message[64];std::snprintf(message,sizeof(message),"GOLDHEN JAILBREAK FAILED: %d",jailbreakResult);
   notice=message;noticeTimer=5.0f;return;
  }
+ // Restore retail credentials after every launch attempt, including accepted requests.
+ struct LaunchPrivilegeGuard {
+  jailbreak_backup* backup;
+  ~LaunchPrivilegeGuard(){if(backup)sys_sdk_unjailbreak(backup);}
+ } launchPrivilegeGuard{&jailbreakBackup};
 
  const int systemModuleResult=sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE);
  const int systemServiceHandle=sceKernelLoadStartModule("/system/common/lib/libSceSystemService.sprx",0,nullptr,0,nullptr,nullptr);
@@ -456,7 +461,6 @@ void launchSelectedGame(){
   notice=selectionSaved?"LAUNCH REQUEST ACCEPTED":"LAUNCH ACCEPTED - LAST GAME NOT SAVED";
   noticeTimer=4.0f;
  }else{
-  sys_sdk_unjailbreak(&jailbreakBackup);
   char message[112];
   std::snprintf(message,sizeof(message),"LNC ERROR 0x%08X (init %d / sys %d / mod %d)",static_cast<uint32_t>(result),initializeResult,systemModuleResult,systemServiceHandle);
   notice=message;noticeTimer=6.0f;
