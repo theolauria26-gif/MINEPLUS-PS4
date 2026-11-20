@@ -414,6 +414,8 @@ void launchSelectedGame(){
   uint64_t crash_report;
   uint32_t check_flag;
  };
+ static_assert(sizeof(LncParam24)==24, "Unexpected compact LNC parameter size");
+ static_assert(offsetof(LncParam24, crash_report)==12, "Unexpected compact LNC crash_report offset");
  LncParam24 compactParam{};
  compactParam.size=sizeof(compactParam);
  compactParam.user_id=launchUserId;
