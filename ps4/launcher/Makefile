@@ -7,7 +7,7 @@ INTDIR := build
 CXX := clang++-18
 LD := ld.lld-18
 CXXFLAGS := --target=x86_64-pc-freebsd12-elf -std=c++17 -D_POSIX_C_SOURCE=200809L -O2 -fPIC -funwind-tables -c -isysroot $(TOOLCHAIN) -isystem $(TOOLCHAIN)/include
-LIBS := -lc -lm -lkernel -lc++ -lSceUserService -lSceLncUtil -lSceSystemService -lSceVideoOut -lSceAudioOut -lScePad -lSceSysmodule -lSDL2 -lSDL2_image
+LIBS := -lc -lkernel -lc++ -lSceUserService -lSceLncUtil -lSceSystemService -lSceVideoOut -lSceAudioOut -lScePad -lSceSysmodule -lSDL2 -lSDL2_image -lm
 LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr -L$(TOOLCHAIN)/lib $(LIBS) $(TOOLCHAIN)/lib/crt1.o
 .PHONY: all clean
 all: eboot.bin
