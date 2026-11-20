@@ -15,7 +15,7 @@ Independent PS4 homebrew application. This project is isolated from the MINEPLUS
 - Triangle rescans the installed-game library without restarting.
 - Right-stick click opens a game-details overlay with the selected title, Title ID, favorite state, install directory, and available hero artwork; Circle closes it.
 - Square toggles a selected game's favorite status; favorites are stored by Title ID in `/data/launcher_favorites.cfg` and sorted before the remaining titles. The list is capped at 256 entries.
-- Settings page offers ambient particles and title-ID visibility toggles. The app attempts to persist these values in `/data/launcher_settings.cfg`; actual path permissions and persistence must be verified on-console.
+- Settings page offers ambient particles, title-ID visibility, and reduced-motion toggles. Reduced motion disables focus and hero crossfade animation. The app attempts to persist these values in `/data/launcher_settings.cfg`; older two-option settings files remain readable and default reduced motion to off. Actual path permissions and persistence must be verified on-console.
 - Launch action calls `sceLncUtilLaunchApp` after attempting System Service/User Service initialization and foreground-user lookup.
 - Clear status and error feedback; no fake installed games are presented.
 
