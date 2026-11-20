@@ -69,8 +69,9 @@ O workflow executa testes C++ portáveis para:
 - cache LRU, persistência de alterações e limites do journal;
 - runtime, edição de voxels, exportação/importação e checksum de saves;
 - adaptadores de mundo fixo e streamed.
+- seleção dos três slots Godot, seeds distintas, classificação de saves inválidos e recuperação de backup no lobby.
 
-O workflow Godot também verifica a instanciação do mundo streamed, os testes de recuperação do codec de save versão 7, as regras de entrada touch em modo headless e a tela de lobby/seleção dos três slots, incluindo seeds distintas e proteção contra sobrescrita de saves inválidos. Os testes não substituem teste de desempenho, controles e instalação no hardware PS4.
+O workflow Godot também verifica o script e a cena do lobby (`scripts/world_lobby.gd` e `scenes/world_lobby.tscn`), a instanciação do mundo streamed, os testes de recuperação do codec de save versão 7, as regras de entrada touch em modo headless e a tela de lobby/seleção dos três slots, incluindo seeds distintas e proteção contra sobrescrita de saves inválidos. Os testes não substituem teste de desempenho, controles e instalação no hardware PS4.
 
 ## Estrutura principal
 
@@ -84,6 +85,7 @@ O workflow Godot também verifica a instanciação do mundo streamed, os testes 
 - `ps4/native/tests/`: testes C++ portáveis.
 - `ps4/native/Makefile`: compilação do EBOOT.
 - `ps4/build-native.sh`: geração e validação do PKG.
+- `scripts/world_lobby.gd` e `scenes/world_lobby.tscn`: lobby local de seleção dos três mundos no protótipo Godot.
 
 Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e as limitações atuais.
 
@@ -104,7 +106,7 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 
 - Atualização nativa mais recente: o workflow [44379732777](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44379732777), no commit `f9b85d84`, concluiu com sucesso testes portáveis, compilação do EBOOT/PKG, validação estrutural e publicação do artefato `MINEPLUS-PS4-PKG` (5.978.581 bytes; artefato [14463836288](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44379732777)). A validação não inclui instalação ou execução em console físico.
 - A validação Godot mais recente, [44384221699](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44384221699), no commit `93f1f8e5`, instalou Godot 4.3 headless e passou pela importação/parsing do projeto, instanciação de `scenes/world.tscn` e testes de migração/recuperação do save versão 6. Ela inclui a nova madeira, durabilidade do machado e a interface de inventário com rolagem para telas estreitas.
-- Em 20/11/2026, o workflow [44803441060](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44803441060), no commit `643aab1a`, instalou Godot 4.3 headless e passou pela importação do projeto, recuperação de saves, novos testes do lobby de três slots e testes visuais determinísticos. O lobby é parte do protótipo Godot e ainda não está integrado ao cliente C++/PKG de PS4.
+- Em 20/11/2026, o workflow [44803648862](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44803648862), no commit `d0588521`, instalou Godot 4.3 headless e passou pela importação do projeto, recuperação do save versão 7, testes do lobby de três slots (save válido, arquivo corrompido, recuperação de backup e três cartões de mundo) e testes visuais determinísticos. O lobby é parte do protótipo Godot e ainda não está integrado ao cliente C++/PKG de PS4.
 
 ## Direção visual: materiais pixel-art
 
