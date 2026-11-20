@@ -9,6 +9,7 @@ extern "C" int32_t sceLncUtilInitialize(void);
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <cctype>
 #include <cerrno>
@@ -245,13 +246,32 @@ bool scanInstalledGames(){
 bool loadSettings(){
  FILE* file=std::fopen("/data/launcher_settings.cfg","rb");
  if(!file)return false;
- char magic[16]{};int particles=1,titleId=1,motion=0;
+ char magic[16]{},valuesLine[128]{};
  bool valid=std::fgets(magic,sizeof(magic),file)!=nullptr&&std::strcmp(magic,"MPLS1\n")==0;
- if(valid)valid=std::fscanf(file,"%d %d",&particles,&titleId)==2;
-  if(valid){int readMotion=std::fscanf(file,"%d",&motion);if(readMotion!=1)motion=0;}
+ int values[3]={1,1,0},parsed=0;
+ if(valid){
+  if(!std::fgets(valuesLine,sizeof(valuesLine),file))valid=false;
+  else{
+   char* cursor=valuesLine;
+   while(valid&&parsed<3){
+    while(*cursor&&std::isspace(static_cast<unsigned char>(*cursor)))++cursor;
+    if(!*cursor)break;
+    errno=0;char* end=nullptr;long value=std::strtol(cursor,&end,10);
+    if(end==cursor||errno==ERANGE||value<0||value>1){valid=false;break;}
+    values[parsed++]=static_cast<int>(value);cursor=end;
+   }
+   while(*cursor&&std::isspace(static_cast<unsigned char>(*cursor)))++cursor;
+   if(*cursor||parsed<2)valid=false;
+  }
+ }
+ if(valid){
+  int ch;
+  while((ch=std::fgetc(file))!=EOF)if(!std::isspace(static_cast<unsigned char>(ch))){valid=false;break;}
+ }
+ if(std::ferror(file))valid=false;
  std::fclose(file);
- if(!valid||(particles!=0&&particles!=1)||(titleId!=0&&titleId!=1)||(motion!=0&&motion!=1))return false;
- particlesEnabled=particles!=0;showTitleId=titleId!=0;reduceMotion=motion!=0;return true;
+ if(!valid)return false;
+ particlesEnabled=values[0]!=0;showTitleId=values[1]!=0;reduceMotion=values[2]!=0;return true;
 }
 bool saveSettings(){
  const char* tempPath="/data/launcher_settings.cfg.tmp";
