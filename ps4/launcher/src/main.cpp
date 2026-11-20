@@ -172,7 +172,7 @@ void toggleSelectedFavorite(){
 bool scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
  const std::string previouslySelectedId=(selected>=0&&size_t(selected)<games.size())?games[selected].titleId:std::string();
- std::vector<Game> found; bool entryLimitReached=false; bool gameLimitReached=false; size_t scannedEntries=0; size_t appDirectories=0; size_t readableMetadataFiles=0; bool scanReadError=false;
+ std::vector<Game> found; bool entryLimitReached=false; bool gameLimitReached=false; size_t scannedEntries=0; size_t readableMetadataFiles=0; bool scanReadError=false;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
  {
@@ -183,7 +183,6 @@ bool scanInstalledGames(){
    if(++scannedEntries>1024){entryLimitReached=true;break;}
    std::string root="/user/app/"+std::string(ent->d_name);
    struct stat st{};if(stat(root.c_str(),&st)!=0||!S_ISDIR(st.st_mode))continue;
-   ++appDirectories;
    std::string path=root+"/sce_sys/param.sfo";
    FILE* file=std::fopen(path.c_str(),"rb");if(!file)continue;
    if(std::fseek(file,0,SEEK_END)!=0){std::fclose(file);continue;}
