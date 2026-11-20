@@ -150,11 +150,11 @@ void toggleSelectedFavorite(){
  auto selectedIt=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==id;});if(selectedIt!=games.end())selected=int(selectedIt-games.begin());if(favoritesOnly&&size_t(selected)>=activeLibrarySize())selected=0;
  notice=removing?"REMOVED FROM FAVORITES":"ADDED TO FAVORITES";noticeTimer=2.0f;
 }
-void scanInstalledGames(){
+bool scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
  std::vector<Game> found; bool scanLimitReached=false; size_t scannedEntries=0; bool scanReadError=false;
  DIR* dir=opendir("/user/app");
- if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return;}
+ if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
  {
   dirent* ent;
   while(true){
@@ -188,6 +188,7 @@ void scanInstalledGames(){
  games.swap(found);selected=0;
  if(!games.empty())libraryStatus=scanLimitReached?"SCAN BOUNDED - 256 GAME CAPACITY":"INSTALLED GAMES FOUND";
  else libraryStatus="NO READABLE GAMES FOUND";
+ return true;
 }
 
 bool loadSettings(){
@@ -429,7 +430,7 @@ int main(int,char**){
   case SDL_CONTROLLER_BUTTON_B:if(detailsPage)detailsPage=false;else if(settingsPage)settingsPage=false;else hub=false;break;
   case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(!hub&&activeLibrarySize()>0)detailsPage=!detailsPage;break;
   case SDL_CONTROLLER_BUTTON_LEFTSTICK:if(!hub&&!detailsPage){favoritesOnly=!favoritesOnly;selected=0;focus=0.0f;bgMix=1.0f;notice=favoritesOnly?"SHOWING FAVORITES":"SHOWING ALL GAMES";noticeTimer=2.0f;}break;
-  case SDL_CONTROLLER_BUTTON_Y:if(!detailsPage&&!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
+  case SDL_CONTROLLER_BUTTON_Y:if(!detailsPage&&!hub){if(scanInstalledGames()){notice="LIBRARY RESCANNED";noticeTimer=2.5f;}else{notice="SCAN FAILED - PREVIOUS LIBRARY KEPT";noticeTimer=3.0f;}}break;
   case SDL_CONTROLLER_BUTTON_X:if(!hub)toggleSelectedFavorite();break;
   case SDL_CONTROLLER_BUTTON_A:
    if(settingsPage){bool oldParticles=particlesEnabled,oldTitleId=showTitleId,oldReduceMotion=reduceMotion;if(settingsCursor==0)particlesEnabled=!particlesEnabled;else if(settingsCursor==1)showTitleId=!showTitleId;else{reduceMotion=!reduceMotion;if(reduceMotion){focus=1.0f;bgMix=1.0f;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}}}if(!saveSettings()){particlesEnabled=oldParticles;showTitleId=oldTitleId;reduceMotion=oldReduceMotion;notice="SETTINGS SAVE FAILED - CHANGE REVERTED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
