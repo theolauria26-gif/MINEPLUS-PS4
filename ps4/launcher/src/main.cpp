@@ -152,7 +152,7 @@ void toggleSelectedFavorite(){
 }
 bool scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
- std::vector<Game> found; bool scanLimitReached=false; size_t scannedEntries=0; bool scanReadError=false;
+ std::vector<Game> found; bool entryLimitReached=false; bool gameLimitReached=false; size_t scannedEntries=0; bool scanReadError=false;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
  {
@@ -160,7 +160,7 @@ bool scanInstalledGames(){
   while(true){
    errno=0;ent=readdir(dir);if(!ent){if(errno!=0)scanReadError=true;break;}
    if(ent->d_name[0]=='.')continue;
-   if(++scannedEntries>1024){scanLimitReached=true;break;}
+   if(++scannedEntries>1024){entryLimitReached=true;break;}
    std::string root="/user/app/"+std::string(ent->d_name);
    struct stat st{};if(stat(root.c_str(),&st)!=0||!S_ISDIR(st.st_mode))continue;
    std::string path=root+"/sce_sys/param.sfo";
@@ -176,7 +176,7 @@ bool scanInstalledGames(){
    if(title.empty()||!validTitleId(id)||id=="LCHR00001")continue;
    if(std::any_of(found.begin(),found.end(),[&](const Game& game){return game.titleId==id;}))continue;
    if(found.size()<256)found.push_back({title,{72,94,112,255},id,root+"/sce_sys/icon0.png",nullptr,false});
-   else scanLimitReached=true;
+   else gameLimitReached=true;
   }
   closedir(dir);
  }
@@ -186,7 +186,7 @@ bool scanInstalledGames(){
  for(auto& game:found)game.favorite=isFavoriteId(game.titleId);
  sortGames(found);
  games.swap(found);selected=0;
- if(!games.empty())libraryStatus=scanLimitReached?"SCAN BOUNDED - 256 GAME CAPACITY":"INSTALLED GAMES FOUND";
+ if(!games.empty()){if(entryLimitReached)libraryStatus="SCAN STOPPED - 1024 ENTRY LIMIT";else if(gameLimitReached)libraryStatus="LIBRARY LIMITED - 256 GAMES";else libraryStatus="INSTALLED GAMES FOUND";}
  else libraryStatus="NO READABLE GAMES FOUND";
  return true;
 }
