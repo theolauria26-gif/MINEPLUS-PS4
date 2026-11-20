@@ -541,7 +541,6 @@ void draw(){
  const int selectedSlot=1;
  for(int slot=0;slot<visible;++slot){
   int idx=(selected-selectedSlot+slot+(int)activeCount)%(int)activeCount;
-  int idx=(selected-visible/2+slot+(int)activeCount)%(int)activeCount;
   Game& game=games[idx];bool chosen=(idx==selected);
   float active=chosen?focus:0.0f;
   int w=cardW+int(active*42),h=cardH+int(active*42);
