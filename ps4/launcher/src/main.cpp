@@ -254,6 +254,20 @@ void toggleSelectedFavorite(){
  notice=removing?"REMOVED FROM FAVORITES":"ADDED TO FAVORITES";noticeTimer=2.0f;
 }
 bool scanInstalledGames(){
+ // /user/app is outside the normal homebrew sandbox on retail firmware.
+ // Elevate only for the metadata scan and always restore credentials on every return path.
+ jailbreak_backup scanBackup{};
+ const int scanJailbreakResult=sys_sdk_jailbreak(&scanBackup);
+ if(scanJailbreakResult!=0){
+  libraryStatus="GOLDHEN ACCESS FAILED - LIBRARY NOT SCANNED";
+  notice="GOLDHEN ACCESS FAILED - CHECK PLUGIN";
+  noticeTimer=4.0f;
+  return false;
+ }
+ struct ScanPrivilegeGuard {
+  jailbreak_backup* backup;
+  ~ScanPrivilegeGuard(){if(backup)sys_sdk_unjailbreak(backup);}
+ } scanPrivilegeGuard{&scanBackup};
  libraryStatus="SCANNING LIBRARY";
  const std::string previouslySelectedId=(selected>=0&&size_t(selected)<games.size())?games[selected].titleId:std::string();
  std::vector<Game> found; bool entryLimitReached=false; bool gameLimitReached=false; size_t scannedEntries=0; size_t appDirectories=0; size_t validGameRecords=0; bool scanReadError=false;
