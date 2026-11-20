@@ -19,6 +19,10 @@
 #include <string>
 #include <sys/stat.h>
 #include <vector>
+#include <deque>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
 
 // Guard the PS4/OpenOrbis LNC parameter ABI against accidental layout changes.
 static_assert(sizeof(LncAppParam) == 32, "Unexpected LncAppParam size");
@@ -35,6 +39,37 @@ enum Ps4PadButton : Uint8 {
  PadL1=4,PadR1=5,PadOptions=9,PadL3=11,PadR3=12,
  PadUp=13,PadDown=14,PadLeft=15,PadRight=16,PadTouchpad=17
 };
+struct ImageJob { std::string titleId; bool background=false; std::vector<std::string> paths; };
+struct ImageResult { std::string titleId; bool background=false; SDL_Surface* surface=nullptr; };
+std::mutex imageMutex;
+std::condition_variable imageCv;
+std::deque<ImageJob> imageJobs;
+std::deque<ImageResult> imageResults;
+std::vector<std::string> imageRequests;
+std::thread imageWorker;
+bool imageWorkerStop=false;
+void imageWorkerLoop(){
+ for(;;){
+  ImageJob job;
+  {std::unique_lock<std::mutex> lock(imageMutex);imageCv.wait(lock,[]{return imageWorkerStop||!imageJobs.empty();});if(imageWorkerStop&&imageJobs.empty())return;job=std::move(imageJobs.front());imageJobs.pop_front();}
+  SDL_Surface* surface=nullptr;for(const auto& path:job.paths){surface=IMG_Load(path.c_str());if(surface)break;}
+  {std::lock_guard<std::mutex> lock(imageMutex);imageResults.push_back({job.titleId,job.background,surface});}
+ }
+}
+void startImageWorker(){imageWorkerStop=false;imageWorker=std::thread(imageWorkerLoop);}
+void stopImageWorker(){
+ {std::lock_guard<std::mutex> lock(imageMutex);imageWorkerStop=true;}imageCv.notify_all();if(imageWorker.joinable())imageWorker.join();
+ std::lock_guard<std::mutex> lock(imageMutex);for(auto& result:imageResults)if(result.surface)SDL_FreeSurface(result.surface);imageResults.clear();imageJobs.clear();imageRequests.clear();
+}
+void requestGameImage(const std::string& id,bool background,const std::vector<std::string>& paths){
+ if(paths.empty())return;const std::string key=id+(background?":background":":icon");std::lock_guard<std::mutex> lock(imageMutex);
+ if(std::find(imageRequests.begin(),imageRequests.end(),key)!=imageRequests.end())return;
+ imageRequests.push_back(key);imageJobs.push_back({id,background,paths});imageCv.notify_one();
+}
+void applyImageResults(){
+ std::deque<ImageResult> ready;{std::lock_guard<std::mutex> lock(imageMutex);ready.swap(imageResults);for(const auto& result:ready){const std::string key=result.titleId+(result.background?":background":":icon");auto it=std::find(imageRequests.begin(),imageRequests.end(),key);if(it!=imageRequests.end())imageRequests.erase(it);}}
+ for(auto& result:ready){auto game=std::find_if(games.begin(),games.end(),[&](const Game& item){return item.titleId==result.titleId;});if(game!=games.end()){if(result.background){game->backgroundAttempted=true;if(result.surface)game->background=SDL_CreateTextureFromSurface(renderer,result.surface);}else{game->iconAttempted=true;if(result.surface)game->icon=SDL_CreateTextureFromSurface(renderer,result.surface);}}if(result.surface)SDL_FreeSurface(result.surface);}
+}
 std::vector<Game> games;
 std::vector<std::string> favoriteIds;
 SDL_Texture* previousHeroBackground=nullptr;
@@ -467,21 +502,13 @@ void draw(){
  if(activeCount>0){
   Game& hero=games[selected];
   if(!hero.backgroundAttempted){
-   hero.backgroundAttempted=true;
-   // Full-size preview artwork lives with the installed app; appmeta may only
-   // contain icon0.png. Try internal, both USB mounts, then appmeta fallbacks.
    const std::string id=hero.titleId;
-   const std::string candidates[]={
-    "/user/app/"+id+"/sce_sys/pic0.png",
-    "/user/app/"+id+"/sce_sys/pic1.png",
-    "/mnt/ext0/user/app/"+id+"/sce_sys/pic0.png",
-    "/mnt/ext0/user/app/"+id+"/sce_sys/pic1.png",
-    "/mnt/ext1/user/app/"+id+"/sce_sys/pic0.png",
-    "/mnt/ext1/user/app/"+id+"/sce_sys/pic1.png",
-    "/user/appmeta/"+id+"/pic0.png",
-    "/user/appmeta/external/"+id+"/pic0.png"
-   };
-   for(const auto& artPath:candidates){hero.background=IMG_LoadTexture(renderer,artPath.c_str());if(hero.background)break;}
+   requestGameImage(id,true,{
+    "/user/app/"+id+"/sce_sys/pic0.png","/user/app/"+id+"/sce_sys/pic1.png",
+    "/mnt/ext0/user/app/"+id+"/sce_sys/pic0.png","/mnt/ext0/user/app/"+id+"/sce_sys/pic1.png",
+    "/mnt/ext1/user/app/"+id+"/sce_sys/pic0.png","/mnt/ext1/user/app/"+id+"/sce_sys/pic1.png",
+    "/user/appmeta/"+id+"/pic0.png","/user/appmeta/external/"+id+"/pic0.png"
+   });
   }
   auto drawBackdrop=[&](SDL_Texture* texture,Uint8 alpha){
    if(!texture||alpha==0)return;int iw=0,ih=0;SDL_QueryTexture(texture,nullptr,nullptr,&iw,&ih);if(iw<=0||ih<=0)return;
@@ -517,7 +544,7 @@ void draw(){
   SDL_Color shade{Uint8(accent.r/3),Uint8(accent.g/3),Uint8(accent.b/3),255};
   fill(x-5,y-5,w+10,h+10,chosen?SDL_Color{220,229,239,255}:SDL_Color{48,61,78,255});
   fill(x,y,w,h,shade);
-  if(!game.iconAttempted){game.iconAttempted=true;game.icon=IMG_LoadTexture(renderer,game.iconPath.c_str());}
+  if(!game.iconAttempted)requestGameImage(game.titleId,false,{game.iconPath});
   if(game.icon){
    int iw=0,ih=0;SDL_QueryTexture(game.icon,nullptr,nullptr,&iw,&ih);
    if(iw>0&&ih>0){float target=float(w)/float(h),source=float(iw)/float(ih);SDL_Rect src{0,0,iw,ih};
@@ -673,7 +700,7 @@ int main(int,char**){
  const int imageInit=IMG_Init(IMG_INIT_PNG);
  if((imageInit&IMG_INIT_PNG)==0){notice="PNG SUPPORT UNAVAILABLE - USING FALLBACK ART";noticeTimer=5.0f;}
  SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);
- initParticles();loadSettings();loadFavorites();scanInstalledGames();loadLastSelectedGame();initializeLaunchServices();Uint64 prev=SDL_GetPerformanceCounter();
+ initParticles();loadSettings();loadFavorites();scanInstalledGames();loadLastSelectedGame();initializeLaunchServices();startImageWorker();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
   if(e.type==SDL_JOYDEVICEADDED&&!pad&&SDL_NumJoysticks()>0)pad=SDL_JoystickOpen(e.jdevice.which);
@@ -708,9 +735,10 @@ int main(int,char**){
    Sint16 vertical=SDL_JoystickGetAxis(pad,1);
    if(settingsPage&&(vertical>16000||vertical< -16000)){verticalAxisRepeat-=dt;if(verticalAxisRepeat<=0.0f){settingsCursor=(settingsCursor+(vertical>0?1:2))%3;verticalAxisRepeat=0.24f;}}else verticalAxisRepeat=0.0f;
   }
-  update(dt);draw();
+  applyImageResults();update(dt);draw();
  }
  saveLastSelectedGame();
+ stopImageWorker();
  for(auto& game:games){if(game.icon)SDL_DestroyTexture(game.icon);if(game.background)SDL_DestroyTexture(game.background);}
  if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}
  if(pad)SDL_JoystickClose(pad);IMG_Quit();SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;
