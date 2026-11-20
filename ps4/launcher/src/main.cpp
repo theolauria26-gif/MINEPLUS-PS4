@@ -25,7 +25,7 @@ std::vector<std::string> favoriteIds;
 SDL_Texture* previousHeroBackground=nullptr;
 std::string libraryStatus="SCANNING LIBRARY";
 std::vector<Particle> particles;
-int selected=0,hubSelected=0,settingsCursor=0; bool hub=false,settingsPage=false,running=true; bool particlesEnabled=true,showTitleId=true;
+int selected=0,hubSelected=0,settingsCursor=0; bool hub=false,settingsPage=false,detailsPage=false,running=true; bool particlesEnabled=true,showTitleId=true;
 std::string notice; float noticeTimer=0.0f;
 bool launchServicesReady=false; int32_t launchUserId=-1; std::string launchServiceStatus="LAUNCH SERVICE NOT INITIALIZED";
 float focus=0.0f, bgMix=1.0f;
@@ -340,6 +340,34 @@ void draw(){
    }
   }
  }
+ if(detailsPage&&!games.empty()){
+  Game& detail=games[selected];
+  fill(0,0,W,H,{3,6,11,238});
+  fill(170,145,1580,790,{19,29,43,255});
+  fill(170,145,1580,4,{104,210,190,255});
+  textBlock("GAME DETAILS",220,190,3,{226,235,243,255});
+  textBlockFit(detail.title,220,270,5,1480,{245,248,251,255});
+  fill(220,355,1480,2,{65,83,103,220});
+  if(detail.background){
+   int iw=0,ih=0;SDL_QueryTexture(detail.background,nullptr,nullptr,&iw,&ih);
+   if(iw>0&&ih>0){SDL_Rect src{0,0,iw,ih};float target=680.0f/300.0f,source=float(iw)/float(ih);if(source>target){src.w=int(float(ih)*target);src.x=(iw-src.w)/2;}else{src.h=int(float(iw)/target);src.y=(ih-src.h)/2;}SDL_Rect dst{220,405,680,300};SDL_RenderCopy(renderer,detail.background,&src,&dst);}
+  }else{
+   fill(220,405,680,300,{27,42,60,255});
+   fill(220,405,5,300,{104,210,190,255});
+   textBlock("ARTWORK NOT AVAILABLE",260,535,2,{166,184,202,255});
+  }
+  textBlock("TITLE ID",960,420,2,{117,184,180,255});
+  textBlock(detail.titleId.c_str(),960,465,3,{235,241,247,255});
+  textBlock("STATUS",960,535,2,{117,184,180,255});
+  textBlock(detail.favorite?"FAVORITE":"INSTALLED",960,580,3,{235,241,247,255});
+  textBlock("INSTALL DIRECTORY",960,650,2,{117,184,180,255});
+  std::string installPath=detail.iconPath;
+  const std::string suffix="/sce_sys/icon0.png";
+  if(installPath.size()>=suffix.size()&&installPath.compare(installPath.size()-suffix.size(),suffix.size(),suffix)==0)installPath.resize(installPath.size()-suffix.size());
+  textBlockFit(installPath,960,695,1,480,{190,204,218,255});
+  textBlock("CROSS: LAUNCH    SQUARE: FAVORITE    CIRCLE: CLOSE",220,850,2,{226,235,243,255});
+  textBlock("R3: CLOSE",220,900,1,{145,165,187,255});
+ }
  SDL_RenderPresent(renderer);
 }
 void move(int d){if(games.empty())return;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}previousHeroBackground=games[selected].background;games[selected].background=nullptr;games[selected].backgroundAttempted=false;selected=(selected+d+(int)games.size())%(int)games.size();focus=0.0f;bgMix=0.0f;}
@@ -361,14 +389,15 @@ int main(int,char**){
   if(e.type==SDL_CONTROLLERDEVICEADDED&&!pad&&SDL_IsGameController(e.cdevice.which))pad=SDL_GameControllerOpen(e.cdevice.which);
   if(e.type==SDL_CONTROLLERDEVICEREMOVED&&pad&&SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad))==e.cdevice.which){SDL_GameControllerClose(pad);pad=nullptr;}
   if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){
-  case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(hub&&!settingsPage)hubSelected=(hubSelected+3)%4;else if(!hub)move(-1);break;
-  case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
-  case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(settingsPage)settingsCursor=(settingsCursor+1)%2;else hub=true;break;
-  case SDL_CONTROLLER_BUTTON_DPAD_UP:if(settingsPage)settingsCursor=(settingsCursor+1)%2;else hub=false;break;
-  case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(!hub&&!games.empty())move(-5);break;
-  case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(!hub&&!games.empty())move(5);break;
-  case SDL_CONTROLLER_BUTTON_B:if(settingsPage)settingsPage=false;else hub=false;break;
-  case SDL_CONTROLLER_BUTTON_Y:if(!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
+  case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+3)%4;else if(!hub)move(-1);break;
+  case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
+  case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+1)%2;else hub=true;break;
+  case SDL_CONTROLLER_BUTTON_DPAD_UP:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+1)%2;else hub=false;break;
+  case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(!detailsPage&&!hub&&!games.empty())move(-5);break;
+  case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(!detailsPage&&!hub&&!games.empty())move(5);break;
+  case SDL_CONTROLLER_BUTTON_B:if(detailsPage)detailsPage=false;else if(settingsPage)settingsPage=false;else hub=false;break;
+  case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(!hub&&!games.empty())detailsPage=!detailsPage;break;
+  case SDL_CONTROLLER_BUTTON_Y:if(!detailsPage&&!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
   case SDL_CONTROLLER_BUTTON_X:if(!hub)toggleSelectedFavorite();break;
   case SDL_CONTROLLER_BUTTON_A:
    if(settingsPage){if(settingsCursor==0)particlesEnabled=!particlesEnabled;else showTitleId=!showTitleId;if(!saveSettings()){notice="SETTINGS SAVE FAILED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
