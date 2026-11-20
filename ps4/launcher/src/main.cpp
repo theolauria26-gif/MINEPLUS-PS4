@@ -431,6 +431,7 @@ int main(int,char**){
   case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(-5);break;
   case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(5);break;
   case SDL_CONTROLLER_BUTTON_B:if(detailsPage)detailsPage=false;else if(settingsPage)settingsPage=false;else hub=false;break;
+  case SDL_CONTROLLER_BUTTON_GUIDE:if(detailsPage)detailsPage=false;hub=!hub;settingsPage=false;notice.clear();noticeTimer=0.0f;break;
   case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(!hub&&activeLibrarySize()>0)detailsPage=!detailsPage;break;
   case SDL_CONTROLLER_BUTTON_LEFTSTICK:if(!hub&&!detailsPage){favoritesOnly=!favoritesOnly;selected=0;focus=0.0f;bgMix=1.0f;notice=favoritesOnly?"SHOWING FAVORITES":"SHOWING ALL GAMES";noticeTimer=2.0f;}break;
   case SDL_CONTROLLER_BUTTON_Y:if(!detailsPage&&!hub){if(scanInstalledGames()){notice="LIBRARY RESCANNED";noticeTimer=2.5f;}else{notice="SCAN FAILED - PREVIOUS LIBRARY KEPT";noticeTimer=3.0f;}}break;
