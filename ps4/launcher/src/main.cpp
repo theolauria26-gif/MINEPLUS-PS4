@@ -316,6 +316,7 @@ void draw(){
  textBlock("D-PAD / STICK TO BROWSE",110,730,2,{166,184,202,255});
  textBlock("L1 / R1: SKIP 5 GAMES",110,760,1,{145,165,187,255});
  textBlock("TRIANGLE TO RESCAN",W-430,730,2,{117,184,180,255});
+ textBlock("R3: GAME DETAILS",W-430,760,1,{145,165,187,255});
  if(!notice.empty()&&!hub){
   fill(105,830,760,64,{20,34,48,235});
   fill(105,830,4,64,{104,210,190,255});
