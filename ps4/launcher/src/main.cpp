@@ -182,7 +182,7 @@ void toggleSelectedFavorite(){
   return;
  }
  for(auto& game:games)game.favorite=isFavoriteId(game.titleId);sortGames(games);
- auto selectedIt=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==id;});if(selectedIt!=games.end())selected=int(selectedIt-games.begin());if(favoritesOnly&&size_t(selected)>=activeLibrarySize())selected=0;
+ auto selectedIt=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==id;});if(selectedIt!=games.end())selected=int(selectedIt-games.begin());if(favoritesOnly&&removing){detailsPage=false;if(size_t(selected)>=activeLibrarySize())selected=0;}
  notice=removing?"REMOVED FROM FAVORITES":"ADDED TO FAVORITES";noticeTimer=2.0f;
 }
 bool scanInstalledGames(){
