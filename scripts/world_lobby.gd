@@ -179,7 +179,7 @@ func _build_slot_card(slot: int) -> PanelContainer:
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	summary.add_theme_color_override("font_color", MUTED)
 	summary.add_theme_font_size_override("font_size", 11)
-	summary.text = _slot_summary(state, payload, String(info["path"]))
+	summary.text = _slot_summary(state, payload, String(info["path"]), slot)
 	details.add_child(summary)
 
 	var action := Button.new()
@@ -191,7 +191,7 @@ func _build_slot_card(slot: int) -> PanelContainer:
 	row.add_child(action)
 	return card
 
-func _slot_summary(state: String, payload: Dictionary, path: String) -> String:
+func _slot_summary(state: String, payload: Dictionary, path: String, slot: int) -> String:
 	if state == "invalid":
 		return "O arquivo existe, mas o save e o backup não passaram pela validação. Ele foi preservado; este slot não pode ser sobrescrito."
 	if state == "empty":
