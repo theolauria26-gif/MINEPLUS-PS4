@@ -94,6 +94,11 @@ void textBlockFit(const std::string& value,int x,int y,int scale,int maxWidth,SD
 void initParticles(){particles.clear();for(int i=0;i<110;++i){float f=float(i);particles.push_back({float((i*173)%W),float((i*97)%H),float(std::sin(f*1.7f)*7.0),-8.0f-float(i%9),1.0f+float(i%3),0.15f+float(i%5)*0.06f});}}
 uint32_t le32(const std::vector<uint8_t>& b,size_t p){return uint32_t(b[p])|(uint32_t(b[p+1])<<8)|(uint32_t(b[p+2])<<16)|(uint32_t(b[p+3])<<24);}
 uint16_t le16(const std::vector<uint8_t>& b,size_t p){return uint16_t(b[p])|(uint16_t(b[p+1])<<8);}
+bool validSfoStructure(const std::vector<uint8_t>& b){
+ if(b.size()<20||std::memcmp(b.data(),"\\0PSF",4)!=0)return false;
+ const uint32_t keys=le32(b,8),data=le32(b,12),count=le32(b,16);
+ return keys>=20&&data>=keys&&data<=b.size()&&count<=512&&count<=(keys-20)/16;
+}
 std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
  if(b.size()<20||std::memcmp(b.data(),"\0PSF",4)!=0)return {};
  uint32_t keys=le32(b,8),data=le32(b,12),count=le32(b,16);
@@ -183,7 +188,7 @@ void toggleSelectedFavorite(){
 bool scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
  const std::string previouslySelectedId=(selected>=0&&size_t(selected)<games.size())?games[selected].titleId:std::string();
- std::vector<Game> found; bool entryLimitReached=false; bool gameLimitReached=false; size_t scannedEntries=0; size_t appDirectories=0; size_t readableMetadataFiles=0; bool scanReadError=false;
+ std::vector<Game> found; bool entryLimitReached=false; bool gameLimitReached=false; size_t scannedEntries=0; size_t appDirectories=0; size_t validMetadataFiles=0; bool scanReadError=false;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
  {
@@ -203,7 +208,8 @@ bool scanInstalledGames(){
    std::vector<uint8_t> bytes(static_cast<size_t>(fileSize));
    size_t readBytes=std::fread(bytes.data(),1,bytes.size(),file);std::fclose(file);
    if(readBytes!=bytes.size())continue;
-   ++readableMetadataFiles;
+   if(!validSfoStructure(bytes))continue;
+   ++validMetadataFiles;
    std::string title=sanitizeTitle(sfoString(bytes,"TITLE"));
    std::string id=sfoString(bytes,"TITLE_ID");
    if(title.empty()||!validTitleId(id)||id=="LCHR00001")continue;
@@ -214,7 +220,7 @@ bool scanInstalledGames(){
   closedir(dir);
  }
  if(scanReadError){libraryStatus="LIBRARY SCAN ERROR - PREVIOUS LIST KEPT";notice="SCAN INTERRUPTED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
- if(found.empty()&&!games.empty()&&appDirectories>0&&readableMetadataFiles==0){libraryStatus="METADATA ACCESS FAILED - PREVIOUS LIST KEPT";notice="APP METADATA UNREADABLE - LIBRARY PRESERVED";noticeTimer=4.0f;return false;}
+ if(found.empty()&&!games.empty()&&appDirectories>0&&validMetadataFiles==0){libraryStatus="METADATA ACCESS FAILED - PREVIOUS LIST KEPT";notice="APP METADATA UNREADABLE - LIBRARY PRESERVED";noticeTimer=4.0f;return false;}
  for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);if(old.background)SDL_DestroyTexture(old.background);old.icon=nullptr;old.background=nullptr;}
  if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}bgMix=1.0f;
  for(auto& game:found)game.favorite=isFavoriteId(game.titleId);
