@@ -152,6 +152,7 @@ void toggleSelectedFavorite(){
 }
 bool scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
+ const std::string previouslySelectedId=(selected>=0&&size_t(selected)<games.size())?games[selected].titleId:std::string();
  std::vector<Game> found; bool entryLimitReached=false; bool gameLimitReached=false; size_t scannedEntries=0; bool scanReadError=false;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
@@ -186,6 +187,8 @@ bool scanInstalledGames(){
  for(auto& game:found)game.favorite=isFavoriteId(game.titleId);
  sortGames(found);
  games.swap(found);selected=0;
+ if(!previouslySelectedId.empty()){auto keep=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==previouslySelectedId;});if(keep!=games.end())selected=int(keep-games.begin());}
+ if(favoritesOnly&&size_t(selected)>=activeLibrarySize())selected=0;
  if(!games.empty()){if(entryLimitReached)libraryStatus="SCAN STOPPED - 1024 ENTRY LIMIT";else if(gameLimitReached)libraryStatus="LIBRARY LIMITED - 256 GAMES";else libraryStatus="INSTALLED GAMES FOUND";}
  else libraryStatus="NO READABLE GAMES FOUND";
  return true;
