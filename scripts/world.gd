@@ -104,6 +104,7 @@ func _generate_world() -> void:
 	# Mundo base infinito em chunks; construções do jogador ficam no save separado.
 	# A seed é salva por mundo e todas as amostras usam coordenadas globais.
 	chunk_streamer = MineplusChunkStreamer.new()
+	chunk_streamer.generator = MineplusWorldGen.new(MineplusWorldLobby.default_world_seed(world_slot))
 	chunk_streamer.name = "ChunkStreamer"
 	add_child(chunk_streamer)
 
