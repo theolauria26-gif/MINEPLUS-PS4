@@ -367,9 +367,28 @@ void launchSelectedGame(){
  if(available==0||selected<0||size_t(selected)>=available){notice="NO GAME SELECTED";noticeTimer=3.0f;return;}
  if(!launchServicesReady){notice=launchServiceStatus;noticeTimer=4.0f;return;}
  const bool selectionSaved=saveLastSelectedGame();
- LncAppParam param{};param.size=sizeof(LncAppParam);param.user_id=static_cast<uint32_t>(launchUserId);
- param.app_opt=0;param.crash_report=0;param.LaunchAppCheck_flag=LaunchApp_None;
- uint32_t result=static_cast<uint32_t>(sceLncUtilLaunchApp(games[selected].titleId.c_str(),nullptr,&param));
+ // Current PS4 SceLncService IPC implementations may expect the packed 24-byte
+ // hardware layout. Keep the OpenOrbis 32-byte ABI as a compatibility fallback.
+ struct __attribute__((packed)) LncParam24 {
+  uint32_t size;
+  int32_t user_id;
+  uint32_t app_opt;
+  uint64_t crash_report;
+  uint32_t check_flag;
+ };
+ LncParam24 compactParam{};
+ compactParam.size=sizeof(LncParam24);
+ compactParam.user_id=launchUserId;
+ LncAppParam openOrbisParam{};
+ openOrbisParam.size=sizeof(LncAppParam);
+ openOrbisParam.user_id=static_cast<uint32_t>(launchUserId);
+ openOrbisParam.app_opt=0;
+ openOrbisParam.crash_report=0;
+ openOrbisParam.LaunchAppCheck_flag=LaunchApp_None;
+ const char* titleId=games[selected].titleId.c_str();
+ uint32_t result=static_cast<uint32_t>(sceLncUtilLaunchApp(titleId,nullptr,&compactParam));
+ if((result&0x80000000u)!=0)
+  result=static_cast<uint32_t>(sceLncUtilLaunchApp(titleId,nullptr,&openOrbisParam));
  if((result&0x80000000u)==0){notice=selectionSaved?"LAUNCH REQUEST ACCEPTED":"LAUNCH ACCEPTED - LAST GAME NOT SAVED";noticeTimer=4.0f;}
  else{char message[48];std::snprintf(message,sizeof(message),"LAUNCH ERROR 0x%08X",result);notice=message;noticeTimer=5.0f;}
 }
