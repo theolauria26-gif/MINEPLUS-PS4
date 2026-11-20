@@ -8,6 +8,7 @@ extern "C" int32_t sceLncUtilInitialize(void);
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -17,6 +18,11 @@ extern "C" int32_t sceLncUtilInitialize(void);
 #include <string>
 #include <sys/stat.h>
 #include <vector>
+
+// Guard the PS4/OpenOrbis LNC parameter ABI against accidental layout changes.
+static_assert(sizeof(LncAppParam) == 32, "Unexpected LncAppParam size");
+static_assert(offsetof(LncAppParam, crash_report) == 16, "Unexpected LncAppParam crash_report offset");
+static_assert(offsetof(LncAppParam, LaunchAppCheck_flag) == 24, "Unexpected LncAppParam flag offset");
 
 namespace {
 constexpr int W=1920,H=1080;
