@@ -8,11 +8,11 @@ on:
       - ".github/workflows/launcher-ps4.yml"
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang lld llvm make python3 curl tar
+        run: sudo apt-get update && sudo apt-get install -y clang-18 lld-18 llvm-18 make python3 curl tar
       - name: Install .NET
         uses: actions/setup-dotnet@v4
         with:
