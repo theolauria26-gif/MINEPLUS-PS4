@@ -22,6 +22,12 @@ namespace {
 constexpr int W=1920,H=1080;
 struct Game { std::string title; SDL_Color color; std::string titleId; std::string iconPath; SDL_Texture* icon=nullptr; bool iconAttempted=false; SDL_Texture* background=nullptr; bool backgroundAttempted=false; bool favorite=false; };
 struct Particle { float x,y,vx,vy,r,a; };
+// Button indices follow the OpenOrbis PS4 SDL2 joystick sample.
+enum Ps4PadButton : Uint8 {
+ PadCross=0,PadCircle=1,PadSquare=2,PadTriangle=3,
+ PadL1=4,PadR1=5,PadOptions=9,PadL3=11,PadR3=12,
+ PadUp=13,PadDown=14,PadLeft=15,PadRight=16,PadTouchpad=17
+};
 std::vector<Game> games;
 std::vector<std::string> favoriteIds;
 SDL_Texture* previousHeroBackground=nullptr;
@@ -558,19 +564,19 @@ int main(int,char**){
   if(e.type==SDL_JOYDEVICEADDED&&!pad&&SDL_NumJoysticks()>0)pad=SDL_JoystickOpen(e.jdevice.which);
   if(e.type==SDL_JOYDEVICEREMOVED&&pad&&SDL_JoystickInstanceID(pad)==e.jdevice.which){SDL_JoystickClose(pad);pad=nullptr;if(SDL_NumJoysticks()>0)pad=SDL_JoystickOpen(0);}
   if(e.type==SDL_JOYBUTTONDOWN&&pad&&e.jbutton.which==SDL_JoystickInstanceID(pad)){switch(e.jbutton.button){
-  case 15:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+3)%4;else if(!hub)move(-1);break;
-  case 16:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
-  case 14:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+1)%3;else hub=true;break;
-  case 13:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+2)%3;else hub=false;break;
-  case 4:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(-5);break;
-  case 5:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(5);break;
-  case 1:if(detailsPage)detailsPage=false;else if(settingsPage)settingsPage=false;else hub=false;break;
-  case 9:if(detailsPage)detailsPage=false;hub=!hub;settingsPage=false;notice.clear();noticeTimer=0.0f;break;
-  case 12:if(!hub&&activeLibrarySize()>0)detailsPage=!detailsPage;break;
-  case 11:if(!hub&&!detailsPage){favoritesOnly=!favoritesOnly;selected=0;focus=0.0f;bgMix=1.0f;notice=favoritesOnly?"SHOWING FAVORITES":"SHOWING ALL GAMES";noticeTimer=2.0f;}break;
-  case 3:if(!detailsPage&&!hub){if(scanInstalledGames()){notice="LIBRARY RESCANNED";noticeTimer=2.5f;}else{notice="SCAN FAILED - PREVIOUS LIBRARY KEPT";noticeTimer=3.0f;}}break;
-  case 2:if(!hub)toggleSelectedFavorite();break;
-  case 0:
+  case PadLeft:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+3)%4;else if(!hub)move(-1);break;
+  case PadRight:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
+  case PadDown:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+1)%3;else hub=true;break;
+  case PadUp:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+2)%3;else hub=false;break;
+  case PadL1:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(-5);break;
+  case PadR1:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(5);break;
+  case PadCircle:if(detailsPage)detailsPage=false;else if(settingsPage)settingsPage=false;else hub=false;break;
+  case PadOptions:if(detailsPage)detailsPage=false;hub=!hub;settingsPage=false;notice.clear();noticeTimer=0.0f;break;
+  case PadR3:if(!hub&&activeLibrarySize()>0)detailsPage=!detailsPage;break;
+  case PadL3:if(!hub&&!detailsPage){favoritesOnly=!favoritesOnly;selected=0;focus=0.0f;bgMix=1.0f;notice=favoritesOnly?"SHOWING FAVORITES":"SHOWING ALL GAMES";noticeTimer=2.0f;}break;
+  case PadTriangle:if(!detailsPage&&!hub){if(scanInstalledGames()){notice="LIBRARY RESCANNED";noticeTimer=2.5f;}else{notice="SCAN FAILED - PREVIOUS LIBRARY KEPT";noticeTimer=3.0f;}}break;
+  case PadSquare:if(!hub)toggleSelectedFavorite();break;
+  case PadCross:
    if(settingsPage){bool oldParticles=particlesEnabled,oldTitleId=showTitleId,oldReduceMotion=reduceMotion;if(settingsCursor==0)particlesEnabled=!particlesEnabled;else if(settingsCursor==1)showTitleId=!showTitleId;else{reduceMotion=!reduceMotion;if(reduceMotion){focus=1.0f;bgMix=1.0f;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}}}if(!saveSettings()){particlesEnabled=oldParticles;showTitleId=oldTitleId;reduceMotion=oldReduceMotion;notice="SETTINGS SAVE FAILED - CHANGE REVERTED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
    else if(hub){
     if(hubSelected==0){hub=false;notice.clear();noticeTimer=0.0f;}
