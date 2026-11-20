@@ -47,7 +47,9 @@ jobs:
         run: make -C ps4/launcher clean all
       - name: Package
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          set -x
+          trap 'rc=$?; echo "FAILED at line $LINENO: $BASH_COMMAND (exit $rc)"; if [ -f pkg.gp4 ]; then echo "=== GP4 on failure ==="; cat pkg.gp4; fi; echo "=== files ==="; find . -maxdepth 4 -type f -printf "%p %s bytes\\n" | sort; exit $rc' ERR
           mkdir -p ps4/launcher/staging/sce_sys ps4/launcher/staging/sce_module ps4/launcher/out
           cp ps4/launcher/eboot.bin ps4/launcher/staging/eboot.bin
           MODULE_DIR="$OO_PS4_TOOLCHAIN/bin/data/modules"
