@@ -696,6 +696,6 @@ int main(int,char**){
  }
  saveLastSelectedGame();
  for(auto& game:games){if(game.icon)SDL_DestroyTexture(game.icon);if(game.background)SDL_DestroyTexture(game.background);}
- if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=null;}
+ if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}
  if(pad)SDL_JoystickClose(pad);IMG_Quit();SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;
 }
