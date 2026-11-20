@@ -142,7 +142,19 @@ bool validTitleId(const std::string& id){
 bool isFavoriteId(const std::string& id){return std::find(favoriteIds.begin(),favoriteIds.end(),id)!=favoriteIds.end();}
 void loadFavorites(){
  favoriteIds.clear();FILE* file=std::fopen("/data/launcher_favorites.cfg","rb");if(!file)return;
- char line[32];while(std::fgets(line,sizeof(line),file)){std::string id(line);while(!id.empty()&&(id.back()=='\n'||id.back()=='\r'))id.pop_back();if(validTitleId(id)&&!isFavoriteId(id)&&favoriteIds.size()<256)favoriteIds.push_back(id);}
+ char line[16];
+ while(std::fgets(line,sizeof(line),file)){
+  bool complete=std::strchr(line,'\\n')!=nullptr;
+  if(!complete&&!std::feof(file)){
+   int next=std::fgetc(file);
+   if(next!='\\n'&&next!=EOF){while(next!='\\n'&&next!=EOF)next=std::fgetc(file);continue;}
+   if(next==EOF&&std::ferror(file))break;
+  }
+  std::string id(line);
+  while(!id.empty()&&(id.back()=='\\n'||id.back()=='\\r'))id.pop_back();
+  if(validTitleId(id)&&!isFavoriteId(id)&&favoriteIds.size()<256)favoriteIds.push_back(id);
+  if(std::ferror(file))break;
+ }
  std::fclose(file);
 }
 bool loadLastSelectedGame(){
