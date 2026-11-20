@@ -95,7 +95,7 @@ void initParticles(){particles.clear();for(int i=0;i<110;++i){float f=float(i);p
 uint32_t le32(const std::vector<uint8_t>& b,size_t p){return uint32_t(b[p])|(uint32_t(b[p+1])<<8)|(uint32_t(b[p+2])<<16)|(uint32_t(b[p+3])<<24);}
 uint16_t le16(const std::vector<uint8_t>& b,size_t p){return uint16_t(b[p])|(uint16_t(b[p+1])<<8);}
 bool validSfoStructure(const std::vector<uint8_t>& b){
- if(b.size()<20||std::memcmp(b.data(),"\\0PSF",4)!=0)return false;
+ if(b.size()<20||std::memcmp(b.data(),"\0PSF",4)!=0)return false;
  const uint32_t keys=le32(b,8),data=le32(b,12),count=le32(b,16);
  return keys>=20&&data>=keys&&data<=b.size()&&count<=512&&count<=(keys-20)/16;
 }
