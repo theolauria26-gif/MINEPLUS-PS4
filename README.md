@@ -26,6 +26,14 @@ A geração dos chunks Godot agora pré-amostra uma grade de 18×18 (chunk 16×1
 Os controles virtuais de movimento, pulo, mineração e colocação agora aparecem apenas em dispositivos com a feature mobile e dimensionam botões/espaçamento pelo menor eixo da tela; teclado e mouse não recebem mais a sobreposição touch.
 No mobile, o gesto de olhar usa somente o dedo que começou na zona superior direita da tela; o dedo precisa começar nessa área para mover a câmera, e os botões inferiores de quebrar/colocar/pular mantêm suas ações próprias. Tocar para olhar não dispara mineração acidentalmente. O roteamento da zona touch tem testes de limites e viewport no workflow Godot.
 
+
+### Lobby e slots de mundo (Godot)
+
+O botão **JOGAR** agora abre um lobby próprio antes de carregar a partida. Ele apresenta três slots locais com estado **Novo mundo**, **Aventura salva** ou **Arquivo não validado**. Para saves válidos, mostra seed, blocos construídos, alterações do terreno, total de itens e horário do último arquivo gravado. O slot 1 mantém o caminho legado `user://mineplus_world.json`; os slots 2 e 3 usam arquivos separados.
+
+Mundos novos recebem seeds determinísticas distintas por slot (o slot 1 mantém a seed-base 4839201). A escolha do slot é gravada nas configurações antes da troca de cena. Se um arquivo e seu backup existirem, mas nenhum puder ser validado, o botão de entrada fica bloqueado: o lobby não trata o arquivo corrompido como slot vazio e não oferece sobrescrevê-lo. Quando há backup válido, o codec existente tenta recuperá-lo antes de apresentar o slot.
+
+
 ## Build PS4
 
 O workflow [Build MINEPLUS PS4 PKG](.github/workflows/ps4-native.yml) baixa OpenOrbis v0.5.4, compila os testes portáveis, gera o EBOOT, cria o PKG e executa validações estruturais. O artefato `MINEPLUS-PS4-PKG` só é publicado se todas as etapas passarem.
