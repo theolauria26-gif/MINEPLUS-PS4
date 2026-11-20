@@ -257,10 +257,11 @@ void launchSelectedGame(){
  const size_t available=activeLibrarySize();
  if(available==0||selected<0||size_t(selected)>=available){notice="NO GAME SELECTED";noticeTimer=3.0f;return;}
  if(!launchServicesReady){notice=launchServiceStatus;noticeTimer=4.0f;return;}
+ const bool selectionSaved=saveLastSelectedGame();
  LncAppParam param{};param.size=sizeof(LncAppParam);param.user_id=static_cast<uint32_t>(launchUserId);
  param.app_opt=0;param.crash_report=0;param.LaunchAppCheck_flag=LaunchApp_None;
  uint32_t result=static_cast<uint32_t>(sceLncUtilLaunchApp(games[selected].titleId.c_str(),nullptr,&param));
- if((result&0x80000000u)==0){notice="LAUNCH REQUEST ACCEPTED";noticeTimer=4.0f;}
+ if((result&0x80000000u)==0){notice=selectionSaved?"LAUNCH REQUEST ACCEPTED":"LAUNCH ACCEPTED - LAST GAME NOT SAVED";noticeTimer=4.0f;}
  else{char message[48];std::snprintf(message,sizeof(message),"LAUNCH ERROR 0x%08X",result);notice=message;noticeTimer=5.0f;}
 }
 void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}if(reduceMotion){focus=1.0f;bgMix=1.0f;}else{focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);}if(previousHeroBackground&&bgMix>0.995f){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
@@ -466,7 +467,7 @@ int main(int,char**){
      static const char* hubMessages[4]={"GAME LIBRARY","MEDIA CENTER NOT AVAILABLE","SETTINGS NOT AVAILABLE","PROFILE NOT AVAILABLE"};
      notice=hubMessages[hubSelected];noticeTimer=3.0f;hub=false;
     }
-   }else if(activeLibrarySize()>0){saveLastSelectedGame();launchSelectedGame();}
+   }else if(activeLibrarySize()>0){launchSelectedGame();}
    break;default:break;}}}
   if(pad){
    Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);
