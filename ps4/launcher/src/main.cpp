@@ -254,8 +254,9 @@ void toggleSelectedFavorite(){
  notice=removing?"REMOVED FROM FAVORITES":"ADDED TO FAVORITES";noticeTimer=2.0f;
 }
 bool scanInstalledGames(){
- // /user/app is outside the normal homebrew sandbox on retail firmware.
- // Elevate only for the metadata scan and always restore credentials on every return path.
+ // Installed-title metadata and artwork are stored in separate PS4 trees.
+ // Itemzflow's installed-library implementation uses private appmeta for SFOs
+ // and public appmeta for icons; /user/app is retained as a compatibility fallback.
  jailbreak_backup scanBackup{};
  const int scanJailbreakResult=sys_sdk_jailbreak(&scanBackup);
  if(scanJailbreakResult!=0){
@@ -264,64 +265,75 @@ bool scanInstalledGames(){
   noticeTimer=4.0f;
   return false;
  }
- struct ScanPrivilegeGuard {
-  jailbreak_backup* backup;
-  ~ScanPrivilegeGuard(){if(backup)sys_sdk_unjailbreak(backup);}
- } scanPrivilegeGuard{&scanBackup};
+ struct ScanPrivilegeGuard { jailbreak_backup* backup; ~ScanPrivilegeGuard(){if(backup)sys_sdk_unjailbreak(backup);} } scanPrivilegeGuard{&scanBackup};
  libraryStatus="SCANNING LIBRARY";
  const std::string previouslySelectedId=(selected>=0&&size_t(selected)<games.size())?games[selected].titleId:std::string();
- std::vector<Game> found; bool entryLimitReached=false; bool gameLimitReached=false; size_t scannedEntries=0; size_t appDirectories=0; size_t sfoFiles=0; size_t readableSfos=0; size_t structurallyValidSfos=0; size_t validGameRecords=0; bool scanReadError=false;
- DIR* dir=opendir("/user/app");
- if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
- {
+ std::vector<Game> found;
+ bool entryLimitReached=false,gameLimitReached=false,scanReadError=false;
+ size_t scannedEntries=0,appDirectories=0,sfoFiles=0,readableSfos=0,structurallyValidSfos=0,validGameRecords=0;
+ auto scanRoot=[&](const std::string& root,bool legacyLayout,const std::string& iconRoot){
+  DIR* dir=opendir(root.c_str());
+  if(!dir)return;
   dirent* ent;
   while(true){
-   errno=0;ent=readdir(dir);if(!ent){if(errno!=0)scanReadError=true;break;}
+   errno=0;ent=readdir(dir);
+   if(!ent){if(errno!=0)scanReadError=true;break;}
    if(ent->d_name[0]=='.')continue;
-   if(++scannedEntries>1024){entryLimitReached=true;break;}
-   std::string root="/user/app/"+std::string(ent->d_name);
-   struct stat st{};if(stat(root.c_str(),&st)!=0||!S_ISDIR(st.st_mode))continue;
+   if(++scannedEntries>2048){entryLimitReached=true;break;}
+   const std::string id=ent->d_name;
+   if(!validTitleId(id)||id=="LCHR00001")continue;
+   const std::string folder=root+"/"+id;
+   struct stat st{};if(stat(folder.c_str(),&st)!=0||!S_ISDIR(st.st_mode))continue;
    ++appDirectories;
-   std::string path=root+"/sce_sys/param.sfo";
+   const std::string sfoPath=legacyLayout?folder+"/sce_sys/param.sfo":folder+"/param.sfo";
    ++sfoFiles;
-   FILE* file=std::fopen(path.c_str(),"rb");if(!file)continue;
+   FILE* file=std::fopen(sfoPath.c_str(),"rb");if(!file)continue;
    if(std::fseek(file,0,SEEK_END)!=0){std::fclose(file);continue;}
    long fileSize=std::ftell(file);
    if(fileSize<20||fileSize>1024*1024||std::fseek(file,0,SEEK_SET)!=0){std::fclose(file);continue;}
    std::vector<uint8_t> bytes(static_cast<size_t>(fileSize));
-   size_t readBytes=std::fread(bytes.data(),1,bytes.size(),file);bool closeOk=std::fclose(file)==0;
+   size_t readBytes=std::fread(bytes.data(),1,bytes.size(),file);
+   bool closeOk=std::fclose(file)==0;
    if(readBytes!=bytes.size()||!closeOk)continue;
    ++readableSfos;
    if(!validSfoStructure(bytes))continue;
    ++structurallyValidSfos;
    std::string title=sanitizeTitle(sfoString(bytes,"TITLE"));
-   std::string id=sfoString(bytes,"TITLE_ID");
-   if(title.empty()||!validTitleId(id)||id=="LCHR00001")continue;
+   std::string sfoId=sfoString(bytes,"TITLE_ID");
+   if(title.empty()||!validTitleId(sfoId)||sfoId!=id)continue;
    ++validGameRecords;
    if(std::any_of(found.begin(),found.end(),[&](const Game& game){return game.titleId==id;}))continue;
-   if(found.size()<256)found.push_back({title,{72,94,112,255},id,root+"/sce_sys/icon0.png",nullptr,false});
+   std::string iconPath=iconRoot.empty()?std::string():iconRoot+"/"+id+"/icon0.png";
+   struct stat iconStat{};
+   if(iconPath.empty()||stat(iconPath.c_str(),&iconStat)!=0||!S_ISREG(iconStat.st_mode)){
+    if(legacyLayout)iconPath=folder+"/sce_sys/icon0.png";
+    else iconPath="/user/app/"+id+"/sce_sys/icon0.png";
+   }
+   if(found.size()<256)found.push_back({title,{72,94,112,255},id,iconPath,nullptr,false});
    else gameLimitReached=true;
   }
   closedir(dir);
- }
+ };
+ // Internal and USB metadata roots; public artwork roots are intentionally separate.
+ scanRoot("/system_data/priv/appmeta",false,"/user/appmeta");
+ scanRoot("/system_data/priv/appmeta/external",false,"/user/appmeta/external");
+ // Compatibility scan for homebrew/older layouts with metadata beside the app.
+ scanRoot("/user/app",true,"");
  if(scanReadError){libraryStatus="LIBRARY SCAN ERROR - PREVIOUS LIST KEPT";notice="SCAN INTERRUPTED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
  if(found.empty()&&!games.empty()&&appDirectories>0&&validGameRecords==0){libraryStatus="METADATA ACCESS FAILED - PREVIOUS LIST KEPT";notice="APP METADATA UNREADABLE - LIBRARY PRESERVED";noticeTimer=4.0f;return false;}
  for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);if(old.background)SDL_DestroyTexture(old.background);old.icon=nullptr;old.background=nullptr;}
  if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}bgMix=1.0f;
  for(auto& game:found)game.favorite=isFavoriteId(game.titleId);
- sortGames(found);
- games.swap(found);selected=0;
+ sortGames(found);games.swap(found);selected=0;
  if(!previouslySelectedId.empty()){auto keep=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==previouslySelectedId;});if(keep!=games.end())selected=int(keep-games.begin());}
  if(favoritesOnly&&size_t(selected)>=activeLibrarySize())selected=0;
- if(!games.empty()){if(entryLimitReached)libraryStatus="SCAN STOPPED - 1024 ENTRY LIMIT";else if(gameLimitReached)libraryStatus="LIBRARY LIMITED - 256 GAMES";else libraryStatus="INSTALLED GAMES FOUND";}
- else {
-  char diagnostic[128];
-  std::snprintf(diagnostic,sizeof(diagnostic),"NO GAMES - DIRS %zu SFO %zu READ %zu VALID %zu IDS %zu",appDirectories,sfoFiles,readableSfos,structurallyValidSfos,validGameRecords);
-  libraryStatus=diagnostic;
- }
  if(!games.empty()){
   char diagnostic[128];
-  std::snprintf(diagnostic,sizeof(diagnostic),"GAMES %zu / DIRS %zu / SFO %zu / VALID %zu",games.size(),appDirectories,sfoFiles,structurallyValidSfos);
+  std::snprintf(diagnostic,sizeof(diagnostic),"GAMES %zu / META %zu / SFO %zu / VALID %zu",games.size(),appDirectories,sfoFiles,validGameRecords);
+  libraryStatus=entryLimitReached?"SCAN STOPPED - 2048 ENTRY LIMIT":(gameLimitReached?"LIBRARY LIMITED - 256 GAMES":diagnostic);
+ }else{
+  char diagnostic[128];
+  std::snprintf(diagnostic,sizeof(diagnostic),"NO GAMES - META %zu SFO %zu READ %zu VALID %zu",appDirectories,sfoFiles,readableSfos,structurallyValidSfos);
   libraryStatus=diagnostic;
  }
  return true;
