@@ -116,12 +116,12 @@ bool validTitleId(const std::string& id){
 bool isFavoriteId(const std::string& id){return std::find(favoriteIds.begin(),favoriteIds.end(),id)!=favoriteIds.end();}
 void loadFavorites(){
  favoriteIds.clear();FILE* file=std::fopen("/data/launcher_favorites.cfg","rb");if(!file)return;
- char line[32];while(std::fgets(line,sizeof(line),file)){std::string id(line);while(!id.empty()&&(id.back()=='\\n'||id.back()=='\\r'))id.pop_back();if(validTitleId(id)&&!isFavoriteId(id)&&favoriteIds.size()<256)favoriteIds.push_back(id);}
+ char line[32];while(std::fgets(line,sizeof(line),file)){std::string id(line);while(!id.empty()&&(id.back()=='\n'||id.back()=='\r'))id.pop_back();if(validTitleId(id)&&!isFavoriteId(id)&&favoriteIds.size()<256)favoriteIds.push_back(id);}
  std::fclose(file);
 }
 bool saveFavorites(){
  FILE* file=std::fopen("/data/launcher_favorites.cfg","wb");if(!file)return false;bool ok=true;
- for(const auto& id:favoriteIds)if(std::fprintf(file,"%s\\n",id.c_str())<0){ok=false;break;}
+ for(const auto& id:favoriteIds)if(std::fprintf(file,"%s\n",id.c_str())<0){ok=false;break;}
  if(std::fflush(file)!=0)ok=false;if(std::fclose(file)!=0)ok=false;return ok;
 }
 void sortGames(std::vector<Game>& list){std::sort(list.begin(),list.end(),[](const Game& a,const Game& b){if(a.favorite!=b.favorite)return a.favorite>b.favorite;return std::lexicographical_compare(a.title.begin(),a.title.end(),b.title.begin(),b.title.end(),[](unsigned char x,unsigned char y){return std::tolower(x)<std::tolower(y);});});}
