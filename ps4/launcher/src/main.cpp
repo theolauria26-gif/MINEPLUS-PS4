@@ -431,7 +431,7 @@ void launchSelectedGame(){
   if(result<0)result=lncLaunch(titleId,nullptr,&openOrbisParam);
  }
  if(result<0){
-  LncLaunchFn launchViaSystem=systemLaunch?systemLaunch:reinterpret_cast<LncLaunchFn>(reinterpret_cast<uintptr_t>(&sceSystemServiceLaunchApp));
+  LncLaunchFn launchViaSystem=systemLaunch?systemLaunch:reinterpret_cast<LncLaunchFn>(&sceSystemServiceLaunchApp);
   result=launchViaSystem(titleId,nullptr,nullptr);
   if(result<0)result=launchViaSystem(titleId,nullptr,&compactParam);
  }
