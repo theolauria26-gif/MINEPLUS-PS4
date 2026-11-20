@@ -439,7 +439,21 @@ void draw(){
  }
  SDL_RenderPresent(renderer);
 }
-void move(int d){size_t activeCount=activeLibrarySize();if(activeCount==0)return;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}previousHeroBackground=games[selected].background;games[selected].background=nullptr;games[selected].backgroundAttempted=false;selected=(selected+d+(int)activeCount)%(int)activeCount;focus=0.0f;bgMix=0.0f;}
+void move(int d){
+ const size_t activeCount=activeLibrarySize();
+ if(activeCount==0)return;
+ const int count=static_cast<int>(activeCount);
+ if(selected<0||selected>=count)selected=0;
+ if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}
+ previousHeroBackground=games[selected].background;
+ games[selected].background=nullptr;
+ games[selected].backgroundAttempted=false;
+ int next=(selected+d)%count;
+ if(next<0)next+=count;
+ selected=next;
+ focus=0.0f;
+ bgMix=0.0f;
+}
 }
 int main(int,char**){
  if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER)!=0)return 1;
