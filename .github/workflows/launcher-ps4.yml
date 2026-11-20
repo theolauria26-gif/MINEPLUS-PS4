@@ -56,6 +56,13 @@ jobs:
           test -n "$RIGHT_SPRX" && test -s "$RIGHT_SPRX"
           mkdir -p ps4/launcher/staging/sce_sys/about
           cp "$RIGHT_SPRX" ps4/launcher/staging/sce_sys/about/right.sprx
+          PIGLET_MODULE_DIR="$(dirname "$RIGHT_SPRX")/../../sce_module"
+          test -d "$PIGLET_MODULE_DIR"
+          shopt -s nullglob
+          MODULES=("$PIGLET_MODULE_DIR"/*.prx)
+          test "${#MODULES[@]}" -gt 0
+          cp "${MODULES[@]}" ps4/launcher/staging/sce_module/
+          shopt -u nullglob
           python3 - <<'PY'
           import struct,zlib
           S=512
@@ -89,7 +96,9 @@ jobs:
           "$PKG" sfo_setentry sce_sys/param.sfo TITLE --type Utf8 --maxsize 128 --value 'PS5 Style Launcher'
           "$PKG" sfo_setentry sce_sys/param.sfo TITLE_ID --type Utf8 --maxsize 12 --value LCHR00001
           "$PKG" sfo_setentry sce_sys/param.sfo VERSION --type Utf8 --maxsize 8 --value 0.1.0
-          "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4" -out pkg.gp4 --content-id=IV0000-LCHR00001_00-PS5LAUNCHER00001 --files 'eboot.bin sce_sys/about/right.sprx sce_sys/param.sfo sce_sys/icon0.png'
+          PKG_FILES="eboot.bin sce_sys/about/right.sprx sce_sys/param.sfo sce_sys/icon0.png"
+          while IFS= read -r module; do PKG_FILES="$PKG_FILES $module"; done < <(find sce_module -maxdepth 1 -type f -name '*.prx' -printf '%p\\n' | sort)
+          "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4" -out pkg.gp4 --content-id=IV0000-LCHR00001_00-PS5LAUNCHER00001 --files "$PKG_FILES"
           echo "=== GP4 generated ==="
           test -s pkg.gp4
           cat pkg.gp4
