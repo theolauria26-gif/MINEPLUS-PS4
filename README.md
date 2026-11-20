@@ -31,7 +31,7 @@ No mobile, o gesto de olhar usa somente o dedo que começou na zona superior dir
 
 O botão **JOGAR** agora abre um lobby próprio antes de carregar a partida. Ele apresenta três slots locais com estado **Novo mundo**, **Aventura salva** ou **Arquivo não validado**. Para saves válidos, mostra seed, blocos construídos, alterações do terreno, total de itens e horário do último arquivo gravado. O slot 1 mantém o caminho legado `user://mineplus_world.json`; os slots 2 e 3 usam arquivos separados.
 
-Mundos novos recebem seeds determinísticas distintas por slot (o slot 1 mantém a seed-base 4839201). A escolha do slot é gravada nas configurações antes da troca de cena. Se um arquivo e seu backup existirem, mas nenhum puder ser validado, o botão de entrada fica bloqueado: o lobby não trata o arquivo corrompido como slot vazio e não oferece sobrescrevê-lo. Quando há backup válido, o codec existente tenta recuperá-lo antes de apresentar o slot.
+Mundos novos recebem seeds determinísticas distintas por slot (o slot 1 mantém a seed-base 4839201). A escolha do slot é gravada nas configurações antes da troca de cena; a tela de configurações não duplica essa escolha, que fica centralizada no lobby. Se um arquivo e seu backup existirem, mas nenhum puder ser validado, o botão de entrada fica bloqueado: o lobby não trata o arquivo corrompido como slot vazio e não oferece sobrescrevê-lo. Quando há backup válido, o codec existente tenta recuperá-lo antes de apresentar o slot.
 
 
 ## Build PS4
