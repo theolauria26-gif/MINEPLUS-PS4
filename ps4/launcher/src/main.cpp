@@ -130,6 +130,25 @@ void loadFavorites(){
  char line[32];while(std::fgets(line,sizeof(line),file)){std::string id(line);while(!id.empty()&&(id.back()=='\n'||id.back()=='\r'))id.pop_back();if(validTitleId(id)&&!isFavoriteId(id)&&favoriteIds.size()<256)favoriteIds.push_back(id);}
  std::fclose(file);
 }
+bool loadLastSelectedGame(){
+ FILE* file=std::fopen("/data/launcher_last_game.cfg","rb");if(!file)return false;
+ char id[16]{};bool ok=std::fgets(id,sizeof(id),file)!=nullptr;std::fclose(file);
+ if(!ok)return false;std::string wanted(id);while(!wanted.empty()&&(wanted.back()=='\\n'||wanted.back()=='\\r'))wanted.pop_back();
+ if(!validTitleId(wanted))return false;
+ auto it=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==wanted;});
+ if(it==games.end())return false;
+ selected=int(it-games.begin());return true;
+}
+bool saveLastSelectedGame(){
+ if(selected<0||size_t(selected)>=games.size())return false;
+ const char* tempPath="/data/launcher_last_game.cfg.tmp";
+ FILE* file=std::fopen(tempPath,"wb");if(!file)return false;
+ bool ok=std::fprintf(file,"%s\\n",games[selected].titleId.c_str())>0;
+ if(std::fflush(file)!=0)ok=false;if(std::fclose(file)!=0)ok=false;
+ if(!ok){std::remove(tempPath);return false;}
+ if(std::rename(tempPath,"/data/launcher_last_game.cfg")!=0){std::remove(tempPath);return false;}
+ return true;
+}
 bool saveFavorites(){
  const char* tempPath="/data/launcher_favorites.cfg.tmp";
  FILE* file=std::fopen(tempPath,"wb");if(!file)return false;bool ok=true;
@@ -418,7 +437,7 @@ int main(int,char**){
  float axisRepeat=0.0f,verticalAxisRepeat=0.0f;
  IMG_Init(IMG_INIT_PNG);
  SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);
- initParticles();loadSettings();loadFavorites();scanInstalledGames();initializeLaunchServices();Uint64 prev=SDL_GetPerformanceCounter();
+ initParticles();loadSettings();loadFavorites();scanInstalledGames();loadLastSelectedGame();initializeLaunchServices();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
   if(e.type==SDL_CONTROLLERDEVICEADDED&&!pad&&SDL_IsGameController(e.cdevice.which))pad=SDL_GameControllerOpen(e.cdevice.which);
@@ -445,7 +464,7 @@ int main(int,char**){
      static const char* hubMessages[4]={"GAME LIBRARY","MEDIA CENTER NOT AVAILABLE","SETTINGS NOT AVAILABLE","PROFILE NOT AVAILABLE"};
      notice=hubMessages[hubSelected];noticeTimer=3.0f;hub=false;
     }
-   }else if(activeLibrarySize()>0){launchSelectedGame();}
+   }else if(activeLibrarySize()>0){saveLastSelectedGame();launchSelectedGame();}
    break;default:break;}}}
   if(pad){
    Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);
@@ -455,6 +474,7 @@ int main(int,char**){
   }
   update(dt);draw();
  }
+ saveLastSelectedGame();
  for(auto& game:games){if(game.icon)SDL_DestroyTexture(game.icon);if(game.background)SDL_DestroyTexture(game.background);}
  if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=null;}
  if(pad)SDL_GameControllerClose(pad);IMG_Quit();SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;
