@@ -58,7 +58,7 @@ O script interrompe o processo se faltar uma dependência, se o EBOOT não for c
 
 ### Bloqueio verificado no ambiente atual
 
-Em 19/11/2026, o container local desta execução continua sem `OO_PS4_TOOLCHAIN`, `PkgTool.Core`, `create-fself`, `create-gp4` e .NET; há `clang++`, `ld.lld` e Make, mas sem SDK/header SDL2 eles não geram EBOOT/PKG. O workflow do GitHub provisiona OpenOrbis v0.5.4 e já produziu pacotes nativos estruturalmente validados (último artefato: `MINEPLUS-PS4-PKG`, 5.978.572 bytes, run [44549940509](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44549940509), artefato 14542986299). Isso não comprova instalação ou execução em console físico. Para Android, não existem `ANDROID_HOME`/`ANDROID_SDK_ROOT`, `adb`, `sdkmanager`, Gradle ou `export_presets.cfg` neste ambiente/repositório; o projeto ainda não tem preset de exportação Android e nenhum APK foi gerado. A validação final do PKG ainda exige instalação e execução em um PS4 compatível.
+Em 20/11/2026, o container local desta execução foi verificado e continua sem `OO_PS4_TOOLCHAIN`, `PkgTool.Core`, `create-fself`, `create-gp4` e .NET; há `clang++`, `ld.lld` e Make, mas sem SDK/header SDL2 eles não geram EBOOT/PKG. O workflow do GitHub provisiona OpenOrbis v0.5.4 e já produziu pacotes nativos estruturalmente validados (último artefato: `MINEPLUS-PS4-PKG`, 5.978.572 bytes, run [44549940509](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44549940509), artefato 14542986299). Isso não comprova instalação ou execução em console físico. A verificação local também não encontrou Godot/Godot 4, `dotnet`, `create-fself` ou `create-gp4`; o Godot 4.3 foi instalado e executado no workflow, não no container local. Para Android, não existem `ANDROID_HOME`/`ANDROID_SDK_ROOT`, `adb`, `sdkmanager`, Gradle ou `export_presets.cfg` neste ambiente/repositório; o projeto ainda não tem preset de exportação Android e nenhum APK foi gerado. A validação final do PKG ainda exige instalação e execução em um PS4 compatível.
 
 Para concluir a etapa local, é necessário disponibilizar OpenOrbis v0.5.4, as ferramentas de empacotamento e dependências listadas acima. A validação final ainda exige instalar e executar o pacote em um PS4 compatível.
 
@@ -70,7 +70,7 @@ O workflow executa testes C++ portáveis para:
 - runtime, edição de voxels, exportação/importação e checksum de saves;
 - adaptadores de mundo fixo e streamed.
 
-O workflow Godot também verifica a instanciação do mundo streamed, os testes de recuperação do codec de save versão 7 e as regras de entrada touch em modo headless. Os testes não substituem teste de desempenho, controles e instalação no hardware PS4.
+O workflow Godot também verifica a instanciação do mundo streamed, os testes de recuperação do codec de save versão 7, as regras de entrada touch em modo headless e a tela de lobby/seleção dos três slots, incluindo seeds distintas e proteção contra sobrescrita de saves inválidos. Os testes não substituem teste de desempenho, controles e instalação no hardware PS4.
 
 ## Estrutura principal
 
@@ -104,6 +104,7 @@ Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e 
 
 - Atualização nativa mais recente: o workflow [44379732777](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44379732777), no commit `f9b85d84`, concluiu com sucesso testes portáveis, compilação do EBOOT/PKG, validação estrutural e publicação do artefato `MINEPLUS-PS4-PKG` (5.978.581 bytes; artefato [14463836288](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44379732777)). A validação não inclui instalação ou execução em console físico.
 - A validação Godot mais recente, [44384221699](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44384221699), no commit `93f1f8e5`, instalou Godot 4.3 headless e passou pela importação/parsing do projeto, instanciação de `scenes/world.tscn` e testes de migração/recuperação do save versão 6. Ela inclui a nova madeira, durabilidade do machado e a interface de inventário com rolagem para telas estreitas.
+- Em 20/11/2026, o workflow [44803441060](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44803441060), no commit `643aab1a`, instalou Godot 4.3 headless e passou pela importação do projeto, recuperação de saves, novos testes do lobby de três slots e testes visuais determinísticos. O lobby é parte do protótipo Godot e ainda não está integrado ao cliente C++/PKG de PS4.
 
 ## Direção visual: materiais pixel-art
 
