@@ -218,7 +218,8 @@ void initializeLaunchServices(){
  launchServiceStatus=userInit<0?"LAUNCH READY - USER INIT WARNING":"LAUNCH SERVICE READY";
 }
 void launchSelectedGame(){
- if(games.empty()){notice="NO GAME SELECTED";noticeTimer=3.0f;return;}
+ const size_t available=activeLibrarySize();
+ if(available==0||selected<0||size_t(selected)>=available){notice="NO GAME SELECTED";noticeTimer=3.0f;return;}
  if(!launchServicesReady){notice=launchServiceStatus;noticeTimer=4.0f;return;}
  LncAppParam param{};param.size=sizeof(LncAppParam);param.user_id=static_cast<uint32_t>(launchUserId);
  param.app_opt=0;param.crash_report=0;param.LaunchAppCheck_flag=LaunchApp_None;
