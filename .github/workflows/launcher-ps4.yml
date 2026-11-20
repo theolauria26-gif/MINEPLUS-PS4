@@ -47,8 +47,8 @@ jobs:
           import struct,zlib
           S=512
           def ch(t,d): return struct.pack('>I',len(d))+t+d+struct.pack('>I',zlib.crc32(t+d)&0xffffffff)
-          rows=b''.join(b'\\0'+bytes((12,18,28))*S for _ in range(S))
-          png=b'\\x89PNG\\r\\n\\x1a\\n'+ch(b'IHDR',struct.pack('>2I5B',S,S,8,2,0,0,0))+ch(b'IDAT',zlib.compress(rows,9))+ch(b'IEND',b'')
+          rows=b''.join(b'\0'+bytes((12,18,28))*S for _ in range(S))
+          png=b'\x89PNG\r\n\x1a\n'+ch(b'IHDR',struct.pack('>2I5B',S,S,8,2,0,0,0))+ch(b'IDAT',zlib.compress(rows,9))+ch(b'IEND',b'')
           open('ps4/launcher/staging/sce_sys/icon0.png','wb').write(png)
           PY
           cd ps4/launcher/staging
