@@ -16,14 +16,14 @@ Independent PS4 homebrew application. This project is isolated from the MINEPLUS
 - Right-stick click opens a game-details overlay with the selected title, Title ID, favorite state, install directory, and available hero artwork; Circle closes it. The library screen displays this shortcut alongside the rescan hint.
 - Square toggles a selected game's favorite status; favorites are stored by Title ID in `/data/launcher_favorites.cfg` and sorted before the remaining titles. The list is capped at 256 entries. The library also displays the current favorite count. L3 switches between the full library and a favorites-only view.
 - Settings page offers ambient particles, title-ID visibility, and reduced-motion toggles, with correct up/down selection using the D-pad or left analog stick. Reduced motion disables focus and hero crossfade animation. The app attempts to persist these values in `/data/launcher_settings.cfg`; older two-option settings files remain readable and default reduced motion to off. Actual path permissions and persistence must be verified on-console.
-- Launch action calls `sceLncUtilLaunchApp` after attempting System Service/User Service initialization and foreground-user lookup.
+- Launch action calls `sceLncUtilLaunchApp` after attempting System Service/User Service initialization and foreground-user lookup. A successful service initialization does not guarantee launch authorization: LNC launch behavior can depend on caller context and firmware, so a normal homebrew process may still be denied.
 - Clear status and error feedback; no fake installed games are presented.
 
 ## Not implemented / not verified
 - Access to installed retail application directories is not guaranteed from a normal homebrew sandbox. The scan may report access denied or no readable games.
 - The Media and Profile sections are navigation placeholders, not functional applications.
-- The launch request is wired but has not been tested on a physical PS4. Successful compilation does not establish that the LNC imports, service initialization, user lookup, or app launch work on firmware 14.02 / GoldHEN 2.4b18.14.
-- Settings and favorites persistence are implemented in source but their writable paths and behavior are not confirmed on hardware.
+- The launch request is wired but has not been tested on a physical PS4. Successful compilation does not establish that the LNC imports, service initialization, user lookup, caller authorization, or app launch work on firmware 14.02 / GoldHEN 2.4b18.14.
+- Settings and favorites persistence are implemented with temporary-file replacement, but `/data` write permissions and behavior are not confirmed on hardware.
 - The interface has not been runtime-tested on a PS4, and controller mapping/display scaling still require device validation.
 
 ## Safety and platform limits
