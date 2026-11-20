@@ -4,8 +4,8 @@ TITLE_ID := LCHR00001
 CONTENT_ID := IV0000-LCHR00001_00-PS5LAUNCHER00001
 TOOLCHAIN := $(OO_PS4_TOOLCHAIN)
 INTDIR := build
-CXX := clang++
-LD := ld.lld
+CXX := clang++-18
+LD := ld.lld-18
 CXXFLAGS := --target=x86_64-pc-freebsd12-elf -std=c++17 -D_POSIX_C_SOURCE=200809L -O2 -fPIC -funwind-tables -c -isysroot $(TOOLCHAIN) -isystem $(TOOLCHAIN)/include
 LIBS := -lc -lm -lkernel -lc++ -lSceUserService -lSceLncUtil -lSceSystemService -lSceVideoOut -lSceAudioOut -lScePad -lSceSysmodule -lSDL2 -lSDL2_image
 LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr -L$(TOOLCHAIN)/lib $(LIBS) $(TOOLCHAIN)/lib/crt1.o
