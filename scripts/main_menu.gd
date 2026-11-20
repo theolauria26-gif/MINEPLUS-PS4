@@ -196,16 +196,11 @@ func _on_settings_pressed() -> void:
 	skin.select(clampi(int(config.get_value("appearance", "skin", 0)), 0, 3))
 	skin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(skin)
-	var world_label := Label.new()
-	world_label.text = "Slot de mundo"
-	stack.add_child(world_label)
-	var world_choice := OptionButton.new()
-	world_choice.add_item("Mundo 1")
-	world_choice.add_item("Mundo 2")
-	world_choice.add_item("Mundo 3")
-	world_choice.select(clampi(int(config.get_value("world", "slot", 1)) - 1, 0, 2))
-	world_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stack.add_child(world_choice)
+	var world_hint := Label.new()
+	world_hint.text = "Os mundos são selecionados no menu JOGAR."
+	world_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	world_hint.add_theme_color_override("font_color", MUTED)
+	stack.add_child(world_hint)
 	var quality_label := Label.new()
 	quality_label.text = "Qualidade gráfica"
 	stack.add_child(quality_label)
@@ -225,7 +220,6 @@ func _on_settings_pressed() -> void:
 		saved.set_value("graphics", "quality", quality.selected)
 		saved.set_value("controls", "sensitivity", sensitivity.value)
 		saved.set_value("appearance", "skin", skin.selected)
-		saved.set_value("world", "slot", world_choice.selected + 1)
 		var result := saved.save("user://mineplus_settings.cfg")
 		dialog.hide()
 		if result == OK:
