@@ -162,9 +162,20 @@ void sortGames(std::vector<Game>& list){std::sort(list.begin(),list.end(),[](con
 size_t activeLibrarySize(){if(!favoritesOnly)return games.size();return size_t(std::count_if(games.begin(),games.end(),[](const Game& game){return game.favorite;}));}
 void toggleSelectedFavorite(){
  const size_t available=activeLibrarySize();
- if(available==0||selected<0||size_t(selected)>=available)return;const std::string id=games[selected].titleId;auto it=std::find(favoriteIds.begin(),favoriteIds.end(),id);bool removing=it!=favoriteIds.end();
- if(removing)favoriteIds.erase(it);else if(favoriteIds.size()<256)favoriteIds.push_back(id);else{notice="FAVORITE LIMIT REACHED";noticeTimer=2.5f;return;}
- if(!saveFavorites()){if(removing)favoriteIds.push_back(id);else favoriteIds.erase(std::remove(favoriteIds.begin(),favoriteIds.end(),id),favoriteIds.end());notice="FAVORITES SAVE FAILED";noticeTimer=3.0f;return;}
+ if(available==0||selected<0||size_t(selected)>=available)return;
+ const std::string id=games[selected].titleId;
+ const std::vector<std::string> previousFavoriteIds=favoriteIds;
+ auto it=std::find(favoriteIds.begin(),favoriteIds.end(),id);
+ const bool removing=it!=favoriteIds.end();
+ if(removing)favoriteIds.erase(it);
+ else if(favoriteIds.size()<256)favoriteIds.push_back(id);
+ else{notice="FAVORITE LIMIT REACHED";noticeTimer=2.5f;return;}
+ if(!saveFavorites()){
+  favoriteIds=previousFavoriteIds;
+  notice="FAVORITES SAVE FAILED";
+  noticeTimer=3.0f;
+  return;
+ }
  for(auto& game:games)game.favorite=isFavoriteId(game.titleId);sortGames(games);
  auto selectedIt=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==id;});if(selectedIt!=games.end())selected=int(selectedIt-games.begin());if(favoritesOnly&&size_t(selected)>=activeLibrarySize())selected=0;
  notice=removing?"REMOVED FROM FAVORITES":"ADDED TO FAVORITES";noticeTimer=2.0f;
