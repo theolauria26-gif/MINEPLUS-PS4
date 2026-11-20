@@ -58,7 +58,7 @@ void imageWorkerLoop(){
 }
 void startImageWorker(){imageWorkerStop=false;imageWorker=std::thread(imageWorkerLoop);}
 void stopImageWorker(){
- {std::lock_guard<std::mutex> lock(imageMutex);imageWorkerStop=true;}imageCv.notify_all();if(imageWorker.joinable())imageWorker.join();
+ {std::lock_guard<std::mutex> lock(imageMutex);imageWorkerStop=true;imageJobs.clear();}imageCv.notify_all();if(imageWorker.joinable())imageWorker.join();
  std::lock_guard<std::mutex> lock(imageMutex);for(auto& result:imageResults)if(result.surface)SDL_FreeSurface(result.surface);imageResults.clear();imageJobs.clear();imageRequests.clear();
 }
 void requestGameImage(const std::string& id,bool background,const std::vector<std::string>& paths){
@@ -526,14 +526,19 @@ void draw(){
  textBlock("GAMES",86,48,3,{242,245,249,255});
  textBlock("MEDIA",260,52,2,{139,151,169,255});
  fill(86,91,92,3,{103,220,190,255});
- textBlock("SEARCH",1320,54,1,{178,190,205,255});
- textBlock("SETTINGS",1470,54,1,{178,190,205,255});
- textBlock("PROFILE",1650,54,1,{178,190,205,255});
- // Five-slot horizontal game shelf; the focused tile grows like a console home screen.
- const int baseY=132,cardW=112,cardH=112,gap=15;
+ // Search, settings, profile and live system clock.
+ SDL_SetRenderDrawColor(renderer,210,220,232,255);SDL_Rect searchRing{1368,40,19,19};SDL_RenderDrawRect(renderer,&searchRing);line(1383,56,1393,66,{210,220,232,255});
+ fill(1480,39,24,5,{210,220,232,255});fill(1489,30,6,23,{210,220,232,255});fill(1478,47,27,6,{210,220,232,255});fill(1487,37,10,10,{20,27,39,255});
+ fill(1578,31,28,28,{91,111,133,255});fill(1585,35,14,14,{178,195,211,255});fill(1582,54,20,12,{35,53,71,255});fill(1603,59,7,7,{36,226,157,255});
+ std::time_t clockNow=std::time(nullptr);std::tm* clockLocal=std::localtime(&clockNow);char clockText[20]="--:--";if(clockLocal)std::snprintf(clockText,sizeof(clockText),"%d:%02d %s",clockLocal->tm_hour%12?clockLocal->tm_hour%12:12,clockLocal->tm_min,clockLocal->tm_hour>=12?"PM":"AM");
+ textBlock(clockText,1695,48,2,{218,226,236,255});
+ // Left-anchored game shelf, with the selected tile near the first third.
+ const int baseY=128,cardW=112,cardH=112,gap=15;
  const int visible=(int)std::min<size_t>(11,activeCount);
- const int start=(W-(visible*cardW+(visible-1)*gap))/2;
+ const int start=54;
+ const int selectedSlot=1;
  for(int slot=0;slot<visible;++slot){
+  int idx=(selected-selectedSlot+slot+(int)activeCount)%(int)activeCount;
   int idx=(selected-visible/2+slot+(int)activeCount)%(int)activeCount;
   Game& game=games[idx];bool chosen=(idx==selected);
   float active=chosen?focus:0.0f;
@@ -583,19 +588,24 @@ void draw(){
  }
  // Three translucent dashboard widgets, positioned along the bottom edge.
  const int panelY=875,panelH=145,panelW=520;
- for(int i=0;i<3;++i){int px=86+i*584;fill(px,panelY,panelW,panelH,{13,18,29,232});fill(px,panelY,panelW,2,{76,91,111,220});}
- textBlock("TROPHIES",112,900,2,{235,240,247,255});
- textBlock("CONSOLE STORAGE",696,900,2,{235,240,247,255});
- textBlock("CONTROLLER",1280,900,2,{235,240,247,255});
- char trophySummary[48];std::snprintf(trophySummary,sizeof(trophySummary),"GAME LIBRARY: %zu",games.size());
- textBlock(trophySummary,112,950,2,{170,190,211,255});
- textBlockFit(libraryStatus,112,990,1,470,{117,210,190,255});
- textBlock("STORAGE DETAILS UNAVAILABLE",696,950,1,{170,190,211,255});
- textBlock("CHECK PS4 SYSTEM STORAGE",696,980,1,{170,190,211,255});
- textBlock("DUALSHOCK 4 / WIRELESS",1280,950,1,{235,240,247,255});
- textBlock("CROSS LAUNCH  SQUARE FAVORITE",1280,985,1,{170,190,211,255});
- textBlock("D-PAD BROWSE  TRIANGLE RESCAN",1280,1015,1,{170,190,211,255});
- textBlock(launchServiceStatus.c_str(),86,990,1,{117,184,180,255});
+ for(int i=0;i<3;++i){int px=86+i*584;fill(px,panelY,panelW,panelH,{10,14,23,238});fill(px,panelY,panelW,2,{54,65,82,225});}
+ // Trophy widget.
+ fill(112,900,20,15,{222,228,236,255});fill(116,915,12,5,{222,228,236,255});fill(109,904,5,9,{222,228,236,255});fill(130,904,5,9,{222,228,236,255});
+ textBlock("TROPHIES",145,900,2,{235,240,247,255});
+ textBlock("PS4 PROFILE DATA",145,944,1,{174,190,208,255});
+ textBlock("NOT AVAILABLE IN THIS BUILD",145,977,1,{135,154,176,255});
+ // Storage widget.
+ fill(696,900,18,15,{214,224,236,255});fill(700,895,10,5,{214,224,236,255});
+ textBlock("CONSOLE STORAGE",728,900,2,{235,240,247,255});
+ textBlock("SYSTEM STORAGE",696,944,1,{174,190,208,255});
+ fill(696,974,460,13,{49,58,73,255});fill(696,974,285,13,{78,159,231,255});fill(981,974,54,13,{126,93,204,255});fill(1035,974,23,13,{213,148,62,255});
+ textBlock("LIVE CAPACITY DATA NOT CONNECTED",696,1005,1,{135,154,176,255});
+ // Controller widget.
+ fill(1280,895,66,46,{19,28,41,255});fill(1291,902,42,30,{215,224,235,255});fill(1307,909,10,16,{19,28,41,255});fill(1299,912,26,7,{19,28,41,255});
+ textBlock("CONTROLLER",1362,900,2,{235,240,247,255});
+ textBlock("DUALSHOCK 4 / WIRELESS",1362,944,1,{174,190,208,255});
+ textBlock("CROSS LAUNCH  SQUARE FAVORITE",1362,977,1,{135,154,176,255});
+ textBlockFit(launchServiceStatus,1362,1005,1,430,{135,154,176,255});
  if(!notice.empty()&&!hub){
   fill(105,830,760,64,{20,34,48,235});
   fill(105,830,4,64,{104,210,190,255});
