@@ -302,7 +302,7 @@ void draw(){
    }
   }
   auto drawHeroTexture=[&](SDL_Texture* texture,Uint8 alpha){if(!texture||alpha==0)return;int iw=0,ih=0;SDL_QueryTexture(texture,nullptr,nullptr,&iw,&ih);if(iw<=0||ih<=0)return;const int dx=112,dy=478,dw=1696,dh=220;float target=float(dw)/float(dh),source=float(iw)/float(ih);SDL_Rect src{0,0,iw,ih};if(source>target){src.w=int(float(ih)*target);src.x=(iw-src.w)/2;}else{src.h=int(float(iw)/target);src.y=(ih-src.h)/2;}SDL_Rect dst{dx,dy,dw,dh};SDL_SetTextureBlendMode(texture,SDL_BLENDMODE_BLEND);if(SDL_SetTextureAlphaMod(texture,alpha)==0){SDL_RenderCopy(renderer,texture,&src,&dst);SDL_SetTextureAlphaMod(texture,255);}else if(alpha>=128)SDL_RenderCopy(renderer,texture,&src,&dst);};
-  if(previousHeroBackground)drawHeroTexture(previousHeroBackground,Uint8(255.0f*(1.0f-bgMix)));
+  if(activeCount>0&&previousHeroBackground)drawHeroTexture(previousHeroBackground,Uint8(255.0f*(1.0f-bgMix)));
   if(g.background)drawHeroTexture(g.background,Uint8(255.0f*bgMix));
   if(g.background||previousHeroBackground)fill(112,478,1696,220,{5,10,18,190});
   fill(112,478,5,220,{104,210,190,255});
@@ -418,7 +418,7 @@ int main(int,char**){
   case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(!hub&&activeLibrarySize()>0)detailsPage=!detailsPage;break;
   case SDL_CONTROLLER_BUTTON_LEFTSTICK:if(!hub&&!detailsPage){favoritesOnly=!favoritesOnly;selected=0;focus=0.0f;bgMix=1.0f;notice=favoritesOnly?"SHOWING FAVORITES":"SHOWING ALL GAMES";noticeTimer=2.0f;}break;
   case SDL_CONTROLLER_BUTTON_Y:if(!detailsPage&&!hub){scanInstalledGames();notice="LIBRARY RESCANNED";noticeTimer=2.5f;}break;
-  case SDL_CONTROLLER_BUTTON_X:if(!hub&&!detailsPage)toggleSelectedFavorite();break;
+  case SDL_CONTROLLER_BUTTON_X:if(!hub)toggleSelectedFavorite();break;
   case SDL_CONTROLLER_BUTTON_A:
    if(settingsPage){if(settingsCursor==0)particlesEnabled=!particlesEnabled;else if(settingsCursor==1)showTitleId=!showTitleId;else{reduceMotion=!reduceMotion;if(reduceMotion){focus=1.0f;bgMix=1.0f;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}}}if(!saveSettings()){notice="SETTINGS SAVE FAILED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
    else if(hub){
