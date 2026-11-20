@@ -249,7 +249,7 @@ void toggleSelectedFavorite(){
 bool scanInstalledGames(){
  libraryStatus="SCANNING LIBRARY";
  const std::string previouslySelectedId=(selected>=0&&size_t(selected)<games.size())?games[selected].titleId:std::string();
- std::vector<Game> found; bool entryLimitReached=false; bool gameLimitReached=false; size_t scannedEntries=0; size_t appDirectories=0; size_t validMetadataFiles=0; bool scanReadError=false;
+ std::vector<Game> found; bool entryLimitReached=false; bool gameLimitReached=false; size_t scannedEntries=0; size_t appDirectories=0; size_t validGameRecords=0; bool scanReadError=false;
  DIR* dir=opendir("/user/app");
  if(!dir){libraryStatus="LIBRARY ACCESS DENIED - PREVIOUS LIST KEPT";notice="SCAN FAILED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
  {
@@ -267,13 +267,13 @@ bool scanInstalledGames(){
    long fileSize=std::ftell(file);
    if(fileSize<20||fileSize>1024*1024||std::fseek(file,0,SEEK_SET)!=0){std::fclose(file);continue;}
    std::vector<uint8_t> bytes(static_cast<size_t>(fileSize));
-   size_t readBytes=std::fread(bytes.data(),1,bytes.size(),file);std::fclose(file);
-   if(readBytes!=bytes.size())continue;
+   size_t readBytes=std::fread(bytes.data(),1,bytes.size(),file);bool closeOk=std::fclose(file)==0;
+   if(readBytes!=bytes.size()||!closeOk)continue;
    if(!validSfoStructure(bytes))continue;
-   ++validMetadataFiles;
    std::string title=sanitizeTitle(sfoString(bytes,"TITLE"));
    std::string id=sfoString(bytes,"TITLE_ID");
    if(title.empty()||!validTitleId(id)||id=="LCHR00001")continue;
+   ++validGameRecords;
    if(std::any_of(found.begin(),found.end(),[&](const Game& game){return game.titleId==id;}))continue;
    if(found.size()<256)found.push_back({title,{72,94,112,255},id,root+"/sce_sys/icon0.png",nullptr,false});
    else gameLimitReached=true;
@@ -281,7 +281,7 @@ bool scanInstalledGames(){
   closedir(dir);
  }
  if(scanReadError){libraryStatus="LIBRARY SCAN ERROR - PREVIOUS LIST KEPT";notice="SCAN INTERRUPTED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
- if(found.empty()&&!games.empty()&&appDirectories>0&&validMetadataFiles==0){libraryStatus="METADATA ACCESS FAILED - PREVIOUS LIST KEPT";notice="APP METADATA UNREADABLE - LIBRARY PRESERVED";noticeTimer=4.0f;return false;}
+ if(found.empty()&&!games.empty()&&appDirectories>0&&validGameRecords==0){libraryStatus="METADATA ACCESS FAILED - PREVIOUS LIST KEPT";notice="APP METADATA UNREADABLE - LIBRARY PRESERVED";noticeTimer=4.0f;return false;}
  for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);if(old.background)SDL_DestroyTexture(old.background);old.icon=nullptr;old.background=nullptr;}
  if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}bgMix=1.0f;
  for(auto& game:found)game.favorite=isFavoriteId(game.titleId);
