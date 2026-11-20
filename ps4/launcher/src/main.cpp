@@ -1,10 +1,11 @@
 #include <time.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <orbis/libkernel.h>
+#include <GoldHEN.h>
 #include <orbis/SystemService.h>
 #include <orbis/UserService.h>
 #include <orbis/Sysmodule.h>
-extern "C" int32_t sceLncUtilInitialize(void);
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -355,20 +356,57 @@ void initializeLaunchServices(){
  int32_t userInit=sceUserServiceInitialize(&params);
  int32_t userResult=sceUserServiceGetForegroundUser(&launchUserId);
  if(userResult<0||launchUserId<0){launchServiceStatus="FOREGROUND USER UNAVAILABLE";return;}
- int32_t lncResult=sceLncUtilInitialize();
- if(lncResult<0&&static_cast<uint32_t>(lncResult)!=0x80940018u){
-  launchServiceStatus="LNC SERVICE INIT FAILED";return;
- }
  launchServicesReady=true;
- launchServiceStatus=userInit<0?"LAUNCH READY - USER INIT WARNING":"LAUNCH SERVICE READY";
+ launchServiceStatus=userInit<0?"USER SERVICE WARNING - GOLDHEN LNC REQUIRED":"GOLDHEN LNC READY";
 }
 void launchSelectedGame(){
  const size_t available=activeLibrarySize();
  if(available==0||selected<0||size_t(selected)>=available){notice="NO GAME SELECTED";noticeTimer=3.0f;return;}
  if(!launchServicesReady){notice=launchServiceStatus;noticeTimer=4.0f;return;}
  const bool selectionSaved=saveLastSelectedGame();
- // Current PS4 SceLncService IPC implementations may expect the packed 24-byte
- // hardware layout. Keep the OpenOrbis 32-byte ABI as a compatibility fallback.
+
+ // GoldHEN privilege escalation must happen before SceLncService IPC.
+ jailbreak_backup jailbreakBackup{};
+ const int jailbreakResult=sys_sdk_jailbreak(&jailbreakBackup);
+ if(jailbreakResult!=0){
+  char message[64];std::snprintf(message,sizeof(message),"GOLDHEN JAILBREAK FAILED: %d",jailbreakResult);
+  notice=message;noticeTimer=5.0f;return;
+ }
+
+ const int systemModuleResult=sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE);
+ const int systemServiceHandle=sceKernelLoadStartModule("/system/common/lib/libSceSystemService.sprx",0,nullptr,0,nullptr,nullptr);
+ using LncInitFn=int (*)(void);
+ using LncLaunchFn=int (*)(const char*,const char**,void*);
+ LncInitFn lncInitialize=nullptr;
+ LncLaunchFn lncLaunch=nullptr;
+ LncLaunchFn systemLaunch=nullptr;
+
+ if(systemServiceHandle>=0){
+  sceKernelDlsym(systemServiceHandle,"sceLncUtilInitialize",reinterpret_cast<void**>(&lncInitialize));
+  sceKernelDlsym(systemServiceHandle,"sceLncUtilLaunchApp",reinterpret_cast<void**>(&lncLaunch));
+  sceKernelDlsym(systemServiceHandle,"sceSystemServiceLaunchApp",reinterpret_cast<void**>(&systemLaunch));
+ }
+
+ // Some firmware builds do not export the two LNC helpers. If the public
+ // SystemService launch export is present, inspect its nearby call target
+ // rather than relying on a fixed absolute address.
+ if(systemLaunch&&(!lncLaunch||!lncInitialize)){
+  const uint8_t* code=reinterpret_cast<const uint8_t*>(reinterpret_cast<uintptr_t>(systemLaunch));
+  for(int offset=0x28;offset<=0x58;++offset){
+   if(code[offset]!=0xE8)continue;
+   int32_t relative=0;std::memcpy(&relative,code+offset+1,sizeof(relative));
+   if(relative<=0x800||relative>=0x3000)continue;
+   const uint8_t* candidate=code+offset+5+relative;
+   if(candidate[0]!=0x48||candidate[1]!=0x89||candidate[2]!=0xD1)continue;
+   if(!lncLaunch)lncLaunch=reinterpret_cast<LncLaunchFn>(const_cast<uint8_t*>(candidate));
+   const uint8_t* initCandidate=candidate-0x20;
+   if(!lncInitialize&&initCandidate[0]==0x48&&initCandidate[1]==0x8D&&initCandidate[2]==0x3D)
+    lncInitialize=reinterpret_cast<LncInitFn>(const_cast<uint8_t*>(initCandidate));
+   break;
+  }
+ }
+
+ const int initializeResult=lncInitialize?lncInitialize():-1;
  struct __attribute__((packed)) LncParam24 {
   uint32_t size;
   int32_t user_id;
@@ -377,20 +415,36 @@ void launchSelectedGame(){
   uint32_t check_flag;
  };
  LncParam24 compactParam{};
- compactParam.size=sizeof(LncParam24);
+ compactParam.size=sizeof(compactParam);
  compactParam.user_id=launchUserId;
  LncAppParam openOrbisParam{};
- openOrbisParam.size=sizeof(LncAppParam);
+ openOrbisParam.size=sizeof(openOrbisParam);
  openOrbisParam.user_id=static_cast<uint32_t>(launchUserId);
  openOrbisParam.app_opt=0;
  openOrbisParam.crash_report=0;
  openOrbisParam.LaunchAppCheck_flag=LaunchApp_None;
+
  const char* titleId=games[selected].titleId.c_str();
- uint32_t result=static_cast<uint32_t>(sceLncUtilLaunchApp(titleId,nullptr,&compactParam));
- if((result&0x80000000u)!=0)
-  result=static_cast<uint32_t>(sceLncUtilLaunchApp(titleId,nullptr,&openOrbisParam));
- if((result&0x80000000u)==0){notice=selectionSaved?"LAUNCH REQUEST ACCEPTED":"LAUNCH ACCEPTED - LAST GAME NOT SAVED";noticeTimer=4.0f;}
- else{char message[48];std::snprintf(message,sizeof(message),"LAUNCH ERROR 0x%08X",result);notice=message;noticeTimer=5.0f;}
+ int result=-1;
+ if(lncLaunch){
+  result=lncLaunch(titleId,nullptr,&compactParam);
+  if(result<0)result=lncLaunch(titleId,nullptr,&openOrbisParam);
+ }
+ if(result<0){
+  LncLaunchFn launchViaSystem=systemLaunch?systemLaunch:reinterpret_cast<LncLaunchFn>(reinterpret_cast<uintptr_t>(&sceSystemServiceLaunchApp));
+  result=launchViaSystem(titleId,nullptr,nullptr);
+  if(result<0)result=launchViaSystem(titleId,nullptr,&compactParam);
+ }
+
+ if(result>=0){
+  notice=selectionSaved?"LAUNCH REQUEST ACCEPTED":"LAUNCH ACCEPTED - LAST GAME NOT SAVED";
+  noticeTimer=4.0f;
+ }else{
+  sys_sdk_unjailbreak(&jailbreakBackup);
+  char message[112];
+  std::snprintf(message,sizeof(message),"LNC ERROR 0x%08X (init %d / sys %d / mod %d)",static_cast<uint32_t>(result),initializeResult,systemModuleResult,systemServiceHandle);
+  notice=message;noticeTimer=6.0f;
+ }
 }
 void update(float dt){if(noticeTimer>0.0f){noticeTimer-=dt;if(noticeTimer<=0.0f)notice.clear();}if(reduceMotion){focus=1.0f;bgMix=1.0f;}else{focus+=(1.0f-focus)*std::min(1.0f,dt*8.0f);bgMix+=(1.0f-bgMix)*std::min(1.0f,dt*2.5f);}if(previousHeroBackground&&bgMix>0.995f){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}for(auto& p:particles){p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y<0){p.y=H;p.x=float((int(p.x)+W/3)%W);}if(p.x<0)p.x+=W;if(p.x>=W)p.x-=W;}}
 void draw(){
