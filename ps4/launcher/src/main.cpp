@@ -276,8 +276,8 @@ void draw(){
   if(chosen)fill(x,y+h+7,w,3,{104,210,190,235});
  }
  // Retain at most five high-resolution icon textures while browsing the carousel.
- for(size_t i=0;i<games.size();++i){bool visibleNow=false;for(int slot=0;slot<visible;++slot){int idx=(selected-visible/2+slot+(int)games.size())%(int)games.size();if((size_t)idx==i){visibleNow=true;break;}}if(!visibleNow&&games[i].icon){SDL_DestroyTexture(games[i].icon);games[i].icon=nullptr;games[i].iconAttempted=false;}}
- if(!games.empty()){
+ for(size_t i=0;i<games.size();++i){bool visibleNow=false;if(activeCount>0)for(int slot=0;slot<visible;++slot){int idx=(selected-visible/2+slot+(int)activeCount)%(int)activeCount;if((size_t)idx==i){visibleNow=true;break;}}if(!visibleNow&&games[i].icon){SDL_DestroyTexture(games[i].icon);games[i].icon=nullptr;games[i].iconAttempted=false;}}
+ if(activeCount>0){
   char counter[24];std::snprintf(counter,sizeof(counter),"%02d / %02d",selected+1,(int)activeCount);
   textBlock(counter,W-250,395,2,{158,178,199,255});
  }
@@ -288,7 +288,7 @@ void draw(){
  textBlock(favoriteSummary,112,395,1,{117,184,180,255});
  // Selected-game hero artwork follows EmuFive's pic0/pic1 idea, but is loaded only on demand.
  fill(112,478,1696,220,{10,16,26,235});
- if(!games.empty()){
+ if(activeCount>0){
   Game& g=games[selected];
   if(!g.backgroundAttempted){
    g.backgroundAttempted=true;
@@ -311,8 +311,8 @@ void draw(){
   if(showTitleId)textBlock(g.titleId.c_str(),140,630,2,{166,184,202,255});
  }else{
   fill(112,478,5,130,{104,210,190,255});
-  textBlock("NO GAMES FOUND",140,530,4,{226,234,242,255});
-  textBlock("LIBRARY SCAN RESULT",140,590,2,{117,184,180,255});
+  textBlock(favoritesOnly?"NO FAVORITES YET":"NO GAMES FOUND",140,530,4,{226,234,242,255});
+  textBlock(favoritesOnly?"PRESS L3 FOR ALL GAMES":"LIBRARY SCAN RESULT",140,590,2,{117,184,180,255});
  }
  textBlock(libraryStatus.c_str(),110,790,2,{166,184,202,255});
  textBlock(launchServiceStatus.c_str(),110,820,1,{117,184,180,255});
@@ -359,7 +359,7 @@ void draw(){
    }
   }
  }
- if(detailsPage&&!games.empty()){
+ if(detailsPage&&activeCount>0){
   Game& detail=games[selected];
   fill(0,0,W,H,{3,6,11,238});
   fill(170,145,1580,790,{19,29,43,255});
@@ -412,8 +412,8 @@ int main(int,char**){
   case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
   case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+1)%3;else hub=true;break;
   case SDL_CONTROLLER_BUTTON_DPAD_UP:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+2)%3;else hub=false;break;
-  case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(!detailsPage&&!hub&&!games.empty())move(-5);break;
-  case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(!detailsPage&&!hub&&!games.empty())move(5);break;
+  case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(-5);break;
+  case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(5);break;
   case SDL_CONTROLLER_BUTTON_B:if(detailsPage)detailsPage=false;else if(settingsPage)settingsPage=false;else hub=false;break;
   case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(!hub&&activeLibrarySize()>0)detailsPage=!detailsPage;break;
   case SDL_CONTROLLER_BUTTON_LEFTSTICK:if(!hub&&!detailsPage){favoritesOnly=!favoritesOnly;selected=0;focus=0.0f;bgMix=1.0f;notice=favoritesOnly?"SHOWING FAVORITES":"SHOWING ALL GAMES";noticeTimer=2.0f;}break;
@@ -428,7 +428,7 @@ int main(int,char**){
      static const char* hubMessages[4]={"GAME LIBRARY","MEDIA CENTER NOT AVAILABLE","SETTINGS NOT AVAILABLE","PROFILE NOT AVAILABLE"};
      notice=hubMessages[hubSelected];noticeTimer=3.0f;hub=false;
     }
-   }else{launchSelectedGame();}
+   }else if(activeLibrarySize()>0){launchSelectedGame();}
    break;default:break;}}}
   if(pad){
    Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);
