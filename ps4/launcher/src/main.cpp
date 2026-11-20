@@ -173,7 +173,15 @@ bool saveFavorites(){
  if(std::rename(tempPath,"/data/launcher_favorites.cfg")!=0){std::remove(tempPath);return false;}
  return true;
 }
-void sortGames(std::vector<Game>& list){std::sort(list.begin(),list.end(),[](const Game& a,const Game& b){if(a.favorite!=b.favorite)return a.favorite>b.favorite;return std::lexicographical_compare(a.title.begin(),a.title.end(),b.title.begin(),b.title.end(),[](unsigned char x,unsigned char y){return std::tolower(x)<std::tolower(y);});});}
+void sortGames(std::vector<Game>& list){
+ std::sort(list.begin(),list.end(),[](const Game& a,const Game& b){
+  if(a.favorite!=b.favorite)return a.favorite>b.favorite;
+  const auto lessChar=[](unsigned char x,unsigned char y){return std::tolower(x)<std::tolower(y);};
+  if(std::lexicographical_compare(a.title.begin(),a.title.end(),b.title.begin(),b.title.end(),lessChar))return true;
+  if(std::lexicographical_compare(b.title.begin(),b.title.end(),a.title.begin(),a.title.end(),lessChar))return false;
+  return a.titleId<b.titleId;
+ });
+}
 size_t activeLibrarySize(){if(!favoritesOnly)return games.size();return size_t(std::count_if(games.begin(),games.end(),[](const Game& game){return game.favorite;}));}
 void toggleSelectedFavorite(){
  const size_t available=activeLibrarySize();
