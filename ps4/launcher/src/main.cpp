@@ -541,13 +541,13 @@ void move(int d){
 }
 }
 int main(int,char**){
- if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER)!=0)return 1;
+ if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_JOYSTICK)!=0)return 1;
  window=SDL_CreateWindow("PS5-style Homebrew Launcher",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,W,H,SDL_WINDOW_SHOWN);
  if(!window){SDL_Quit();return 2;}
  renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
  if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
  if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}
- SDL_GameController* pad=nullptr;for(int i=0;i<SDL_NumJoysticks();++i){if(SDL_IsGameController(i)){pad=SDL_GameControllerOpen(i);if(pad)break;}}
+ SDL_JoystickEventState(SDL_ENABLE);SDL_Joystick* pad=SDL_NumJoysticks()>0?SDL_JoystickOpen(0):nullptr;
  float axisRepeat=0.0f,verticalAxisRepeat=0.0f;
  const int imageInit=IMG_Init(IMG_INIT_PNG);
  if((imageInit&IMG_INIT_PNG)==0){notice="PNG SUPPORT UNAVAILABLE - USING FALLBACK ART";noticeTimer=5.0f;}
@@ -555,22 +555,22 @@ int main(int,char**){
  initParticles();loadSettings();loadFavorites();scanInstalledGames();loadLastSelectedGame();initializeLaunchServices();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
-  if(e.type==SDL_CONTROLLERDEVICEADDED&&!pad&&SDL_IsGameController(e.cdevice.which))pad=SDL_GameControllerOpen(e.cdevice.which);
-  if(e.type==SDL_CONTROLLERDEVICEREMOVED&&pad&&SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad))==e.cdevice.which){SDL_GameControllerClose(pad);pad=nullptr;}
-  if(e.type==SDL_CONTROLLERBUTTONDOWN){switch(e.cbutton.button){
-  case SDL_CONTROLLER_BUTTON_DPAD_LEFT:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+3)%4;else if(!hub)move(-1);break;
-  case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
-  case SDL_CONTROLLER_BUTTON_DPAD_DOWN:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+1)%3;else hub=true;break;
-  case SDL_CONTROLLER_BUTTON_DPAD_UP:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+2)%3;else hub=false;break;
-  case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(-5);break;
-  case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(5);break;
-  case SDL_CONTROLLER_BUTTON_B:if(detailsPage)detailsPage=false;else if(settingsPage)settingsPage=false;else hub=false;break;
-  case SDL_CONTROLLER_BUTTON_GUIDE:if(detailsPage)detailsPage=false;hub=!hub;settingsPage=false;notice.clear();noticeTimer=0.0f;break;
-  case SDL_CONTROLLER_BUTTON_RIGHTSTICK:if(!hub&&activeLibrarySize()>0)detailsPage=!detailsPage;break;
-  case SDL_CONTROLLER_BUTTON_LEFTSTICK:if(!hub&&!detailsPage){favoritesOnly=!favoritesOnly;selected=0;focus=0.0f;bgMix=1.0f;notice=favoritesOnly?"SHOWING FAVORITES":"SHOWING ALL GAMES";noticeTimer=2.0f;}break;
-  case SDL_CONTROLLER_BUTTON_Y:if(!detailsPage&&!hub){if(scanInstalledGames()){notice="LIBRARY RESCANNED";noticeTimer=2.5f;}else{notice="SCAN FAILED - PREVIOUS LIBRARY KEPT";noticeTimer=3.0f;}}break;
-  case SDL_CONTROLLER_BUTTON_X:if(!hub)toggleSelectedFavorite();break;
-  case SDL_CONTROLLER_BUTTON_A:
+  if(e.type==SDL_JOYDEVICEADDED&&!pad&&SDL_NumJoysticks()>0)pad=SDL_JoystickOpen(e.jdevice.which);
+  if(e.type==SDL_JOYDEVICEREMOVED&&pad&&SDL_JoystickInstanceID(pad)==e.jdevice.which){SDL_JoystickClose(pad);pad=nullptr;if(SDL_NumJoysticks()>0)pad=SDL_JoystickOpen(0);}
+  if(e.type==SDL_JOYBUTTONDOWN&&pad&&e.jbutton.which==SDL_JoystickInstanceID(pad)){switch(e.jbutton.button){
+  case 15:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+3)%4;else if(!hub)move(-1);break;
+  case 16:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
+  case 14:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+1)%3;else hub=true;break;
+  case 13:if(detailsPage)break;else if(settingsPage)settingsCursor=(settingsCursor+2)%3;else hub=false;break;
+  case 4:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(-5);break;
+  case 5:if(!detailsPage&&!hub&&activeLibrarySize()>0)move(5);break;
+  case 1:if(detailsPage)detailsPage=false;else if(settingsPage)settingsPage=false;else hub=false;break;
+  case 9:if(detailsPage)detailsPage=false;hub=!hub;settingsPage=false;notice.clear();noticeTimer=0.0f;break;
+  case 12:if(!hub&&activeLibrarySize()>0)detailsPage=!detailsPage;break;
+  case 11:if(!hub&&!detailsPage){favoritesOnly=!favoritesOnly;selected=0;focus=0.0f;bgMix=1.0f;notice=favoritesOnly?"SHOWING FAVORITES":"SHOWING ALL GAMES";noticeTimer=2.0f;}break;
+  case 3:if(!detailsPage&&!hub){if(scanInstalledGames()){notice="LIBRARY RESCANNED";noticeTimer=2.5f;}else{notice="SCAN FAILED - PREVIOUS LIBRARY KEPT";noticeTimer=3.0f;}}break;
+  case 2:if(!hub)toggleSelectedFavorite();break;
+  case 0:
    if(settingsPage){bool oldParticles=particlesEnabled,oldTitleId=showTitleId,oldReduceMotion=reduceMotion;if(settingsCursor==0)particlesEnabled=!particlesEnabled;else if(settingsCursor==1)showTitleId=!showTitleId;else{reduceMotion=!reduceMotion;if(reduceMotion){focus=1.0f;bgMix=1.0f;if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=nullptr;}}}if(!saveSettings()){particlesEnabled=oldParticles;showTitleId=oldTitleId;reduceMotion=oldReduceMotion;notice="SETTINGS SAVE FAILED - CHANGE REVERTED";noticeTimer=3.0f;}else{notice="SETTINGS SAVED";noticeTimer=1.5f;}}
    else if(hub){
     if(hubSelected==0){hub=false;notice.clear();noticeTimer=0.0f;}
@@ -582,9 +582,9 @@ int main(int,char**){
    }else if(activeLibrarySize()>0){launchSelectedGame();}
    break;default:break;}}}
   if(pad){
-   Sint16 axis=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTX);
+   Sint16 axis=SDL_JoystickGetAxis(pad,0);
    if(axis>16000||axis< -16000){axisRepeat-=dt;if(axisRepeat<=0.0f){if(!detailsPage&&!settingsPage){if(hub)hubSelected=(hubSelected+(axis>0?1:3))%4;else move(axis>0?1:-1);}axisRepeat=0.24f;}}else axisRepeat=0.0f;
-   Sint16 vertical=SDL_GameControllerGetAxis(pad,SDL_CONTROLLER_AXIS_LEFTY);
+   Sint16 vertical=SDL_JoystickGetAxis(pad,1);
    if(settingsPage&&(vertical>16000||vertical< -16000)){verticalAxisRepeat-=dt;if(verticalAxisRepeat<=0.0f){settingsCursor=(settingsCursor+(vertical>0?1:2))%3;verticalAxisRepeat=0.24f;}}else verticalAxisRepeat=0.0f;
   }
   update(dt);draw();
@@ -592,5 +592,5 @@ int main(int,char**){
  saveLastSelectedGame();
  for(auto& game:games){if(game.icon)SDL_DestroyTexture(game.icon);if(game.background)SDL_DestroyTexture(game.background);}
  if(previousHeroBackground){SDL_DestroyTexture(previousHeroBackground);previousHeroBackground=null;}
- if(pad)SDL_GameControllerClose(pad);IMG_Quit();SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;
+ if(pad)SDL_JoystickClose(pad);IMG_Quit();SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);SDL_Quit();return 0;
 }
