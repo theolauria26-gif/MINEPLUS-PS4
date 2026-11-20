@@ -23,7 +23,7 @@ Independent PS4 homebrew application. This project is isolated from the MINEPLUS
 ## Not implemented / not verified
 - Access to installed retail application directories is not guaranteed from a normal homebrew sandbox. The scan may report access denied or no readable games.
 - The Media and Profile sections are navigation placeholders, not functional applications.
-- The launch request is wired but has not been tested on a physical PS4. Successful compilation does not establish that the LNC imports, service initialization, user lookup, caller authorization, or app launch work on firmware 14.02 / GoldHEN 2.4b18.14.
+- The GoldHEN-assisted launch path has not been tested on a physical PS4. Successful compilation does not establish that syscall 500, the runtime-resolved LNC functions, firmware-specific IPC, or actual game launch work on firmware 14.02 / GoldHEN 2.4b18.14.
 - Settings and favorites persistence are implemented with temporary-file replacement, but `/data` write permissions and behavior are not confirmed on hardware.
 - The interface has not been runtime-tested on a PS4, and controller mapping/display scaling still require device validation.
 
