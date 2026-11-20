@@ -52,14 +52,9 @@ jobs:
           trap 'rc=$?; echo "FAILED at line $LINENO: $BASH_COMMAND (exit $rc)"; if [ -f pkg.gp4 ]; then echo "=== GP4 on failure ==="; cat pkg.gp4; fi; echo "=== files ==="; find . -maxdepth 4 -type f -printf "%p %s bytes\\n" | sort; exit $rc' ERR
           mkdir -p ps4/launcher/staging/sce_sys ps4/launcher/staging/sce_module ps4/launcher/out
           cp ps4/launcher/eboot.bin ps4/launcher/staging/eboot.bin
-          MODULE_DIR="$OO_PS4_TOOLCHAIN/bin/data/modules"
-          test -s "$MODULE_DIR/libc.prx"
-          test -s "$MODULE_DIR/libSceFios2.prx"
-          RIGHT_SPRX="$OO_PS4_TOOLCHAIN/samples/piglet/sce_sys/about/right.sprx"
-          test -s "$RIGHT_SPRX"
+          RIGHT_SPRX="$(find "$RUNNER_TEMP/openorbis" -path "*/samples/piglet/sce_sys/about/right.sprx" -print -quit)"
+          test -n "$RIGHT_SPRX" && test -s "$RIGHT_SPRX"
           mkdir -p ps4/launcher/staging/sce_sys/about
-          cp "$MODULE_DIR/libc.prx" ps4/launcher/staging/sce_module/libc.prx
-          cp "$MODULE_DIR/libSceFios2.prx" ps4/launcher/staging/sce_module/libSceFios2.prx
           cp "$RIGHT_SPRX" ps4/launcher/staging/sce_sys/about/right.sprx
           python3 - <<'PY'
           import struct,zlib
@@ -94,7 +89,7 @@ jobs:
           "$PKG" sfo_setentry sce_sys/param.sfo TITLE --type Utf8 --maxsize 128 --value 'PS5 Style Launcher'
           "$PKG" sfo_setentry sce_sys/param.sfo TITLE_ID --type Utf8 --maxsize 12 --value LCHR00001
           "$PKG" sfo_setentry sce_sys/param.sfo VERSION --type Utf8 --maxsize 8 --value 0.1.0
-          "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4" -out pkg.gp4 --content-id=IV0000-LCHR00001_00-PS5LAUNCHER00001 --files 'eboot.bin sce_sys/about/right.sprx sce_sys/param.sfo sce_sys/icon0.png sce_module/libc.prx sce_module/libSceFios2.prx'
+          "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4" -out pkg.gp4 --content-id=IV0000-LCHR00001_00-PS5LAUNCHER00001 --files 'eboot.bin sce_sys/about/right.sprx sce_sys/param.sfo sce_sys/icon0.png'
           echo "=== GP4 generated ==="
           test -s pkg.gp4
           cat pkg.gp4
