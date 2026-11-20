@@ -36,7 +36,7 @@ jobs:
           echo "GOLDHEN_SDK=$RUNNER_TEMP/GoldHEN_Plugins_SDK" >> "$GITHUB_ENV"
       - name: Prepare package tools
         run: |
-          curl -L --fail --retry 5 "https://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb" -o "$RUNNER_TEMP/libssl1.1.deb"
+          curl -L --fail --retry 5 "https://github.archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb" -o "$RUNNER_TEMP/libssl1.1.deb"
           sudo dpkg -i "$RUNNER_TEMP/libssl1.1.deb"
           sudo ldconfig
           test -e /usr/lib/x86_64-linux-gnu/libssl.so.1.1
