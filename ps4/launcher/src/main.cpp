@@ -235,7 +235,7 @@ void draw(){
  if(particlesEnabled)for(const auto& p:particles){SDL_SetRenderDrawColor(renderer,145,177,205,Uint8(p.a*180));SDL_Rect q{int(p.x),int(p.y),int(p.r),int(p.r)};SDL_RenderFillRect(renderer,&q);}
  textBlock("LIBRARY",110,55,2,{146,168,190,255});
  textBlock("CONSOLE HUB",W-430,48,3,{220,229,239,255});
- // Five-slot carousel keeps the selected installed title centered, even with 40 entries.
+ // Five-slot carousel keeps the selected installed title centered across the full bounded library.
  const int baseY=184,cardW=292,cardH=178,gap=26;
  const int visible=(int)std::min<size_t>(5,games.size());
  const int start=(W-(visible*cardW+(visible-1)*gap))/2;
@@ -279,6 +279,11 @@ void draw(){
   char counter[24];std::snprintf(counter,sizeof(counter),"%02d / %02d",selected+1,(int)games.size());
   textBlock(counter,W-250,395,2,{158,178,199,255});
  }
+ int favoriteCount=0;
+ for(const auto& game:games)if(game.favorite)++favoriteCount;
+ char favoriteSummary[32];
+ std::snprintf(favoriteSummary,sizeof(favoriteSummary),"FAVORITES: %d",favoriteCount);
+ textBlock(favoriteSummary,112,395,1,{117,184,180,255});
  // Selected-game hero artwork follows EmuFive's pic0/pic1 idea, but is loaded only on demand.
  fill(112,478,1696,220,{10,16,26,235});
  if(!games.empty()){
