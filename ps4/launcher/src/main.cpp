@@ -97,7 +97,16 @@ uint16_t le16(const std::vector<uint8_t>& b,size_t p){return uint16_t(b[p])|(uin
 bool validSfoStructure(const std::vector<uint8_t>& b){
  if(b.size()<20||std::memcmp(b.data(),"\0PSF",4)!=0)return false;
  const uint32_t keys=le32(b,8),data=le32(b,12),count=le32(b,16);
- return keys>=20&&data>=keys&&data<=b.size()&&count<=512&&count<=(keys-20)/16;
+ if(keys<20||data<keys||data>b.size()||count>512||count>(keys-20)/16)return false;
+ for(uint32_t i=0;i<count;++i){
+  const size_t entry=20+size_t(i)*16;
+  const uint16_t keyOffset=le16(b,entry);
+  const uint32_t length=le32(b,entry+4),maxLength=le32(b,entry+8),dataOffset=le32(b,entry+12);
+  const size_t keyPosition=size_t(keys)+keyOffset,valuePosition=size_t(data)+dataOffset;
+  if(keyPosition>=data||valuePosition>b.size()||length>maxLength||maxLength>b.size()-valuePosition)return false;
+  if(!std::memchr(b.data()+keyPosition,0,size_t(data)-keyPosition))return false;
+ }
+ return true;
 }
 std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
  if(b.size()<20||std::memcmp(b.data(),"\0PSF",4)!=0)return {};
