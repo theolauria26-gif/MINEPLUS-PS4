@@ -159,8 +159,16 @@ void loadFavorites(){
 }
 bool loadLastSelectedGame(){
  FILE* file=std::fopen("/data/launcher_last_game.cfg","rb");if(!file)return false;
- char id[16]{};bool ok=std::fgets(id,sizeof(id),file)!=nullptr;std::fclose(file);
- if(!ok)return false;std::string wanted(id);while(!wanted.empty()&&(wanted.back()=='\n'||wanted.back()=='\r'))wanted.pop_back();
+ std::string wanted;bool valid=true;int ch;
+ while((ch=std::fgetc(file))!=EOF){
+  if(wanted.size()>=11){valid=false;break;}
+  wanted.push_back(char(ch));
+ }
+ if(std::ferror(file))valid=false;
+ std::fclose(file);
+ if(!valid)return false;
+ if(!wanted.empty()&&wanted.back()=='\n')wanted.pop_back();
+ if(!wanted.empty()&&wanted.back()=='\r')wanted.pop_back();
  if(!validTitleId(wanted))return false;
  auto it=std::find_if(games.begin(),games.end(),[&](const Game& game){return game.titleId==wanted;});
  if(it==games.end())return false;
