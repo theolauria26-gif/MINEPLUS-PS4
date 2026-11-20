@@ -187,10 +187,9 @@ bool saveLastSelectedGame(){
 bool saveFavorites(){
  const char* tempPath="/data/launcher_favorites.cfg.tmp";
  if(favoriteIds.size()>256)return false;
- for(size_t i=0;i<favoriteIds.size();++i){
-  if(!validTitleId(favoriteIds[i]))return false;
-  auto previousEnd=favoriteIds.begin()+static_cast<std::ptrdiff_t>(i);
-  if(std::find(favoriteIds.begin(),previousEnd,favoriteIds[i])!=previousEnd)return false;
+ for(auto it=favoriteIds.begin();it!=favoriteIds.end();++it){
+  if(!validTitleId(*it))return false;
+  if(std::find(favoriteIds.begin(),it,*it)!=it)return false;
  }
  FILE* file=std::fopen(tempPath,"wb");if(!file)return false;bool ok=true;
  for(const auto& id:favoriteIds){
