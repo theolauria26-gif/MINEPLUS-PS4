@@ -107,6 +107,16 @@ std::string sfoString(const std::vector<uint8_t>& b,const char* wanted){
  }
  return {};
 }
+std::string sanitizeTitle(const std::string& raw){
+ std::string clean;clean.reserve(std::min<size_t>(raw.size(),120));bool lastSpace=true;
+ for(unsigned char ch:raw){
+  if(ch>=32&&ch<=126){if(ch==' '){if(!lastSpace&&clean.size()<120){clean.push_back(' ');lastSpace=true;}}else if(clean.size()<120){clean.push_back(char(ch));lastSpace=false;}}
+  else if(ch>=128){if(!lastSpace&&clean.size()<120){clean.push_back(' ');lastSpace=true;}}
+  if(clean.size()>=120)break;
+ }
+ while(!clean.empty()&&clean.back()==' ')clean.pop_back();
+ return clean;
+}
 bool validTitleId(const std::string& id){
  if(id.size()!=9)return false;
  for(size_t i=0;i<4;++i)if(id[i]<'A'||id[i]>'Z')return false;
@@ -155,9 +165,10 @@ void scanInstalledGames(){
    std::vector<uint8_t> bytes(static_cast<size_t>(fileSize));
    size_t readBytes=std::fread(bytes.data(),1,bytes.size(),file);std::fclose(file);
    if(readBytes!=bytes.size())continue;
-   std::string title=sfoString(bytes,"TITLE");
+   std::string title=sanitizeTitle(sfoString(bytes,"TITLE"));
    std::string id=sfoString(bytes,"TITLE_ID");
    if(title.empty()||!validTitleId(id)||id=="LCHR00001")continue;
+   if(std::any_of(found.begin(),found.end(),[&](const Game& game){return game.titleId==id;}))continue;
    if(found.size()<256)found.push_back({title,{72,94,112,255},id,root+"/sce_sys/icon0.png",nullptr,false});
    else scanLimitReached=true;
   }
