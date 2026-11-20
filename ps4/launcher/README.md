@@ -8,7 +8,7 @@ Independent PS4 homebrew application. This project is isolated from the MINEPLUS
 - DualShock 4 D-pad and left-analog navigation, controller hot-plug handling, and PlayStation-style button prompts.
 - Five-slot game carousel with selected-tile focus animation and L1/R1 page skips.
 - Bounded read-only discovery attempt under `/user/app/*/sce_sys/param.sfo`, parsing `TITLE` and `TITLE_ID` with strict PS4 title-ID validation, self-entry filtering, display-safe title cleanup, and duplicate Title ID suppression.
-- Up to 40 discovered games shown, with favorites pinned ahead of the alphabetical list; traversal is limited to 1,024 directory entries and 256 readable games.
+- Up to 256 discovered games remain navigable in the library, with favorites pinned ahead of the alphabetical list; the five-slot carousel shows the current neighborhood while traversal is limited to 1,024 directory entries.
 - Loads real `sce_sys/icon0.png` artwork when accessible, with procedural fallback artwork.
 - Inspired by EmuFive's controller-first library presentation and per-game artwork approach; this native SDL2 launcher uses its own implementation and does not include EmuFive or KytyPS5 code.
 - Caches at most five visible icon textures to bound GPU memory use.
