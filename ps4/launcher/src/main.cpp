@@ -484,8 +484,29 @@ void draw(){
  // Layered atmospheric gradients and subtle horizon glow.
  for(int y=0;y<H;y+=8){float t=float(y)/H;fill(0,y,W,8,{Uint8(9+10*t),Uint8(14+13*t),Uint8(24+20*t),255});}
  drawAmbientGlow();
- for(int i=0;i<12;++i){int yy=590+i*18;line(0,yy,W,yy,{Uint8(25+i),Uint8(34+i),Uint8(51+i),90});}
- if(particlesEnabled)for(const auto& p:particles){SDL_SetRenderDrawColor(renderer,145,177,205,Uint8(p.a*180));SDL_Rect q{int(p.x),int(p.y),int(p.r),int(p.r)};SDL_RenderFillRect(renderer,&q);}
+ const size_t activeCount=activeLibrarySize();
+ if(activeCount>0){
+  Game& hero=games[selected];
+  if(!hero.backgroundAttempted){
+   hero.backgroundAttempted=true;
+   std::string artPath=hero.iconPath;
+   size_t iconPos=artPath.rfind("icon0.png");
+   if(iconPos!=std::string::npos)artPath.replace(iconPos,9,"pic0.png");
+   hero.background=IMG_LoadTexture(renderer,artPath.c_str());
+   if(!hero.background&&iconPos!=std::string::npos){artPath.replace(iconPos,8,"pic1.png");hero.background=IMG_LoadTexture(renderer,artPath.c_str());}
+  }
+  auto drawBackdrop=[&](SDL_Texture* texture,Uint8 alpha){
+   if(!texture||alpha==0)return;int iw=0,ih=0;SDL_QueryTexture(texture,nullptr,nullptr,&iw,&ih);if(iw<=0||ih<=0)return;
+   SDL_Rect src{0,0,iw,ih};float target=float(W)/float(H),source=float(iw)/float(ih);
+   if(source>target){src.w=int(float(ih)*target);src.x=(iw-src.w)/2;}else{src.h=int(float(iw)/target);src.y=(ih-src.h)/2;}
+   SDL_Rect dst{0,0,W,H};SDL_SetTextureBlendMode(texture,SDL_BLENDMODE_BLEND);
+   if(SDL_SetTextureAlphaMod(texture,alpha)==0){SDL_RenderCopy(renderer,texture,&src,&dst);SDL_SetTextureAlphaMod(texture,255);}else if(alpha>=128)SDL_RenderCopy(renderer,texture,&src,&dst);
+  };
+  if(previousHeroBackground)drawBackdrop(previousHeroBackground,Uint8(255.0f*(1.0f-bgMix)));
+  drawBackdrop(hero.background,Uint8(255.0f*bgMix));
+ }
+ fill(0,0,W,H,{3,6,12,155});
+ if(particlesEnabled)for(const auto& p:particles){SDL_SetRenderDrawColor(renderer,205,218,232,Uint8(p.a*95));SDL_Rect q{int(p.x),int(p.y),int(p.r),int(p.r)};SDL_RenderFillRect(renderer,&q);}
  // PS5-inspired top navigation: compact labels, restrained contrast and generous spacing.
  textBlock("GAMES",86,48,3,{242,245,249,255});
  textBlock("MEDIA",260,52,2,{139,151,169,255});
@@ -494,16 +515,15 @@ void draw(){
  textBlock("SETTINGS",1470,54,1,{178,190,205,255});
  textBlock("PROFILE",1650,54,1,{178,190,205,255});
  // Five-slot horizontal game shelf; the focused tile grows like a console home screen.
- const int baseY=150,cardW=210,cardH=126,gap=34;
- const size_t activeCount=activeLibrarySize();
- const int visible=(int)std::min<size_t>(5,activeCount);
+ const int baseY=132,cardW=112,cardH=112,gap=15;
+ const int visible=(int)std::min<size_t>(11,activeCount);
  const int start=(W-(visible*cardW+(visible-1)*gap))/2;
  for(int slot=0;slot<visible;++slot){
   int idx=(selected-visible/2+slot+(int)activeCount)%(int)activeCount;
   Game& game=games[idx];bool chosen=(idx==selected);
   float active=chosen?focus:0.0f;
-  int w=cardW+int(active*30),h=cardH+int(active*22);
-  int x=start+slot*(cardW+gap)-int(active*15),y=baseY-int(active*18);
+  int w=cardW+int(active*42),h=cardH+int(active*42);
+  int x=start+slot*(cardW+gap)-int(active*21),y=baseY-int(active*21);
   unsigned hash=2166136261u;for(unsigned char ch:game.titleId){hash^=ch;hash*=16777619u;}
   SDL_Color accent{Uint8(72+(hash&63)),Uint8(82+((hash>>7)&63)),Uint8(105+((hash>>14)&63)),255};
   SDL_Color shade{Uint8(accent.r/3),Uint8(accent.g/3),Uint8(accent.b/3),255};
@@ -527,8 +547,7 @@ void draw(){
    fill(x+34,y+60,w-68,2,{accent.r,accent.g,accent.b,95});
    fill(x+34,y+101,w-68,2,{accent.r,accent.g,accent.b,130});
   }
-  fill(x+18,y+h-35,w-36,3,{12,17,26,220});
-  textBlockFit(game.title,x+18,y+h-26,2,w-36,{235,240,247,255});
+  if(chosen)textBlockFit(game.title,x,y+h+12,2,w,{245,248,252,255});
   if(game.favorite)textBlock("FAV",x+w-48,y+10,1,{117,224,190,255});
   if(chosen)fill(x,y+h+7,w,3,{104,210,190,235});
  }
@@ -543,47 +562,26 @@ void draw(){
  char favoriteSummary[32];
  std::snprintf(favoriteSummary,sizeof(favoriteSummary),"FAVORITES: %d",favoriteCount);
  textBlock(favoriteSummary,112,320,1,{117,184,180,255});
- // Selected-game hero artwork follows EmuFive's pic0/pic1 idea, but is loaded only on demand.
- fill(86,390,1748,290,{12,18,28,245});
- if(activeCount>0){
-  Game& g=games[selected];
-  if(!g.backgroundAttempted){
-   g.backgroundAttempted=true;
-   std::string artPath=g.iconPath;
-   size_t iconPos=artPath.rfind("icon0.png");
-   if(iconPos!=std::string::npos)artPath.replace(iconPos,9,"pic0.png");
-   g.background=IMG_LoadTexture(renderer,artPath.c_str());
-   if(!g.background&&iconPos!=std::string::npos){
-    artPath.replace(iconPos,8,"pic1.png");
-    g.background=IMG_LoadTexture(renderer,artPath.c_str());
-   }
-  }
-  auto drawHeroTexture=[&](SDL_Texture* texture,Uint8 alpha){if(!texture||alpha==0)return;int iw=0,ih=0;SDL_QueryTexture(texture,nullptr,nullptr,&iw,&ih);if(iw<=0||ih<=0)return;const int dx=86,dy=390,dw=1748,dh=290;float target=float(dw)/float(dh),source=float(iw)/float(ih);SDL_Rect src{0,0,iw,ih};if(source>target){src.w=int(float(ih)*target);src.x=(iw-src.w)/2;}else{src.h=int(float(iw)/target);src.y=(ih-src.h)/2;}SDL_Rect dst{dx,dy,dw,dh};SDL_SetTextureBlendMode(texture,SDL_BLENDMODE_BLEND);if(SDL_SetTextureAlphaMod(texture,alpha)==0){SDL_RenderCopy(renderer,texture,&src,&dst);SDL_SetTextureAlphaMod(texture,255);}else if(alpha>=128)SDL_RenderCopy(renderer,texture,&src,&dst);};
-  if(activeCount>0&&previousHeroBackground)drawHeroTexture(previousHeroBackground,Uint8(255.0f*(1.0f-bgMix)));
-  if(g.background)drawHeroTexture(g.background,Uint8(255.0f*bgMix));
-  if(g.background||previousHeroBackground)fill(112,478,1696,220,{5,10,18,190});
-  fill(86,390,5,290,{104,210,190,255});
-  textBlockFit(g.title,126,465,5,1640,{242,245,249,255});
-  textBlock("INSTALLED GAME",126,535,2,{117,184,180,255});
-  if(showTitleId)textBlock(g.titleId.c_str(),126,575,2,{166,184,202,255});
- }else{
-  fill(86,390,5,180,{104,210,190,255});
-  textBlock(favoritesOnly?"NO FAVORITES YET":"NO GAMES FOUND",126,465,4,{242,245,249,255});
-  textBlock(favoritesOnly?"PRESS L3 FOR ALL GAMES":"LIBRARY SCAN RESULT",126,525,2,{117,184,180,255});
+ // Full-screen game artwork is the dashboard background; no boxed hero panel.
+ if(activeCount==0){
+  fill(90,390,5,180,{104,210,190,255});
+  textBlock(favoritesOnly?"NO FAVORITES YET":"NO GAMES FOUND",130,450,4,{242,245,249,255});
+  textBlock(favoritesOnly?"PRESS L3 FOR ALL GAMES":"PRESS TRIANGLE TO RESCAN",130,510,2,{177,194,211,255});
  }
- // Bottom information widgets inspired by the reference console dashboard.
- const int panelY=790,panelH=170,panelW=520;
- for(int i=0;i<3;++i){int px=86+i*584;fill(px,panelY,panelW,panelH,{20,27,39,245});fill(px,panelY,panelW,2,{54,70,91,220});}
- textBlock("TROPHIES",112,818,2,{221,229,238,255});
- textBlock("CONSOLE STORAGE",696,818,2,{221,229,238,255});
- textBlock("CONTROLLER",1280,818,2,{221,229,238,255});
- textBlock("GAME LIBRARY",112,875,2,{147,164,184,255});
- textBlockFit(libraryStatus,112,920,1,470,{117,210,190,255});
- textBlock("FREE SPACE",696,875,1,{147,164,184,255});
- fill(696,910,455,14,{55,67,83,255});fill(696,910,286,14,{92,157,220,255});
- textBlock("DUALSHOCK 4 / WIRELESS",1280,875,1,{147,164,184,255});
- textBlock("CROSS LAUNCH  SQUARE FAVORITE",1280,920,1,{221,229,238,255});
- textBlock("D-PAD BROWSE  TRIANGLE RESCAN",1280,945,1,{147,164,184,255});
+ // Three translucent dashboard widgets, positioned along the bottom edge.
+ const int panelY=875,panelH=145,panelW=520;
+ for(int i=0;i<3;++i){int px=86+i*584;fill(px,panelY,panelW,panelH,{13,18,29,232});fill(px,panelY,panelW,2,{76,91,111,220});}
+ textBlock("TROPHIES",112,900,2,{235,240,247,255});
+ textBlock("CONSOLE STORAGE",696,900,2,{235,240,247,255});
+ textBlock("CONTROLLER",1280,900,2,{235,240,247,255});
+ char trophySummary[48];std::snprintf(trophySummary,sizeof(trophySummary),"GAME LIBRARY: %zu",games.size());
+ textBlock(trophySummary,112,950,2,{170,190,211,255});
+ textBlockFit(libraryStatus,112,990,1,470,{117,210,190,255});
+ textBlock("STORAGE DETAILS UNAVAILABLE",696,950,1,{170,190,211,255});
+ textBlock("CHECK PS4 SYSTEM STORAGE",696,980,1,{170,190,211,255});
+ textBlock("DUALSHOCK 4 / WIRELESS",1280,950,1,{235,240,247,255});
+ textBlock("CROSS LAUNCH  SQUARE FAVORITE",1280,985,1,{170,190,211,255});
+ textBlock("D-PAD BROWSE  TRIANGLE RESCAN",1280,1015,1,{170,190,211,255});
  textBlock(launchServiceStatus.c_str(),86,990,1,{117,184,180,255});
  if(!notice.empty()&&!hub){
   fill(105,830,760,64,{20,34,48,235});
