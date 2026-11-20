@@ -8,11 +8,12 @@ Independent PS4 homebrew application. This project is isolated from the MINEPLUS
 - DualShock 4 D-pad and left-analog navigation, controller hot-plug handling, and PlayStation-style button prompts.
 - Five-slot game carousel with selected-tile focus animation and L1/R1 page skips.
 - Bounded read-only discovery attempt under `/user/app/*/sce_sys/param.sfo`, parsing `TITLE` and `TITLE_ID` with strict PS4 title-ID validation and self-entry filtering.
-- Up to 40 discovered games shown, sorted alphabetically while limiting traversal to 1,024 directory entries and retaining at most 256 readable games.
+- Up to 40 discovered games shown, with favorites pinned ahead of the alphabetical list; traversal is limited to 1,024 directory entries and 256 readable games.
 - Loads real `sce_sys/icon0.png` artwork when accessible, with procedural fallback artwork.
 - Inspired by EmuFive's controller-first library presentation and per-game artwork approach; this native SDL2 launcher uses its own implementation and does not include EmuFive or KytyPS5 code.
 - Caches at most five visible icon textures to bound GPU memory use.
 - Triangle rescans the installed-game library without restarting.
+- Square toggles a selected game's favorite status; favorites are stored by Title ID in `/data/launcher_favorites.cfg` and sorted before the remaining titles. The list is capped at 256 entries.
 - Settings page offers ambient particles and title-ID visibility toggles. The app attempts to persist these values in `/data/launcher_settings.cfg`; actual path permissions and persistence must be verified on-console.
 - Launch action calls `sceLncUtilLaunchApp` after attempting System Service/User Service initialization and foreground-user lookup.
 - Clear status and error feedback; no fake installed games are presented.
@@ -21,7 +22,7 @@ Independent PS4 homebrew application. This project is isolated from the MINEPLUS
 - Access to installed retail application directories is not guaranteed from a normal homebrew sandbox. The scan may report access denied or no readable games.
 - The Media and Profile sections are navigation placeholders, not functional applications.
 - The launch request is wired but has not been tested on a physical PS4. Successful compilation does not establish that the LNC imports, service initialization, user lookup, or app launch work on firmware 14.02 / GoldHEN 2.4b18.14.
-- Settings persistence is implemented in source but its writable path and behavior are not confirmed on hardware.
+- Settings and favorites persistence are implemented in source but their writable paths and behavior are not confirmed on hardware.
 - The interface has not been runtime-tested on a PS4, and controller mapping/display scaling still require device validation.
 
 ## Safety and platform limits
