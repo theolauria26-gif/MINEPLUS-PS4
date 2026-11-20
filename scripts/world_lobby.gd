@@ -26,6 +26,15 @@ static func slot_state(has_save_file: bool, payload: Dictionary) -> String:
 		return "empty"
 	return "saved" if not payload.is_empty() else "invalid"
 
+static func inspect_save_path(path: String) -> Dictionary:
+	var has_save_file := FileAccess.file_exists(path) or FileAccess.file_exists(path + ".bak")
+	var payload: Dictionary = MineplusWorldSave.load_world(path) if has_save_file else {}
+	return {
+		"state": slot_state(has_save_file, payload),
+		"path": path,
+		"payload": payload
+	}
+
 func _ready() -> void:
 	_build_ui()
 
@@ -105,6 +114,7 @@ func _build_ui() -> void:
 	stack.add_child(scroll)
 
 	var cards := VBoxContainer.new()
+	cards.name = "WorldSlotCards"
 	cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cards.add_theme_constant_override("separation", 10)
 	scroll.add_child(cards)
@@ -119,20 +129,14 @@ func _build_ui() -> void:
 	stack.add_child(footer)
 
 func _read_slot(slot: int) -> Dictionary:
-	var path := save_path_for_slot(slot)
-	var has_save_file := FileAccess.file_exists(path) or FileAccess.file_exists(path + ".bak")
-	var payload: Dictionary = MineplusWorldSave.load_world(path) if has_save_file else {}
-	return {
-		"state": slot_state(has_save_file, payload),
-		"path": path,
-		"payload": payload
-	}
+	return inspect_save_path(save_path_for_slot(slot))
 
 func _build_slot_card(slot: int) -> PanelContainer:
 	var info := _read_slot(slot)
 	var state: String = info["state"]
 	var payload: Dictionary = info["payload"]
 	var card := PanelContainer.new()
+	card.name = "WorldSlot%d" % slot
 	card.custom_minimum_size = Vector2(0, 126)
 	var card_style := StyleBoxFlat.new()
 	card_style.bg_color = CARD
