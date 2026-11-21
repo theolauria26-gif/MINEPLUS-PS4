@@ -53,7 +53,13 @@ void imageWorkerLoop(){
  for(;;){
   ImageJob job;
   {std::unique_lock<std::mutex> lock(imageMutex);imageCv.wait(lock,[]{return imageWorkerStop||!imageJobs.empty();});if(imageWorkerStop&&imageJobs.empty())return;job=std::move(imageJobs.front());imageJobs.pop_front();}
-  SDL_Surface* surface=nullptr;for(const auto& path:job.paths){surface=IMG_Load(path.c_str());if(surface)break;}
+  // Artwork lives in protected appmeta trees. Elevate only for this file-read
+  // window, then immediately restore the process credentials.
+  jailbreak_backup imageBackup{};
+  const bool imageAccess=sys_sdk_jailbreak(&imageBackup)==0;
+  SDL_Surface* surface=nullptr;
+  for(const auto& path:job.paths){surface=IMG_Load(path.c_str());if(surface)break;}
+  if(imageAccess)sys_sdk_unjailbreak(&imageBackup);
   {std::lock_guard<std::mutex> lock(imageMutex);imageResults.push_back({job.titleId,job.background,surface});}
  }
 }
