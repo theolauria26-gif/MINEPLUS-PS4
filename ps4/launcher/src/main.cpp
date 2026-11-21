@@ -326,8 +326,15 @@ bool scanInstalledGames(){
  // Internal and USB metadata roots; public artwork roots are intentionally separate.
  scanRoot("/system_data/priv/appmeta",false,"/user/appmeta");
  scanRoot("/system_data/priv/appmeta/external",false,"/user/appmeta/external");
+ // USB-installed titles can expose their app metadata on the mounted volume.
+ scanRoot("/mnt/ext0/system_data/priv/appmeta",false,"/mnt/ext0/user/appmeta");
+ scanRoot("/mnt/ext0/system_data/priv/appmeta/external",false,"/mnt/ext0/user/appmeta/external");
+ scanRoot("/mnt/ext1/system_data/priv/appmeta",false,"/mnt/ext1/user/appmeta");
+ scanRoot("/mnt/ext1/system_data/priv/appmeta/external",false,"/mnt/ext1/user/appmeta/external");
  // Compatibility scan for homebrew/older layouts with metadata beside the app.
  scanRoot("/user/app",true,"");
+ scanRoot("/mnt/ext0/user/app",true,"");
+ scanRoot("/mnt/ext1/user/app",true,"");
  if(scanReadError){libraryStatus="LIBRARY SCAN ERROR - PREVIOUS LIST KEPT";notice="SCAN INTERRUPTED - LIBRARY PRESERVED";noticeTimer=3.0f;return false;}
  if(found.empty()&&!games.empty()&&appDirectories>0&&validGameRecords==0){libraryStatus="METADATA ACCESS FAILED - PREVIOUS LIST KEPT";notice="APP METADATA UNREADABLE - LIBRARY PRESERVED";noticeTimer=4.0f;return false;}
  for(auto& old:games){if(old.icon)SDL_DestroyTexture(old.icon);if(old.background)SDL_DestroyTexture(old.background);old.icon=nullptr;old.background=nullptr;}
