@@ -593,10 +593,10 @@ func _add_craft_button(hud: Control) -> void:
 
 func _show_crafting() -> void:
 	var dialog := Window.new()
-	dialog.title = "BANCADA DE FABRICAÇÃO"
+	dialog.title = "FABRICAÇÃO"
 	var viewport_size := get_viewport().get_visible_rect().size
-	dialog.size = Vector2i(int(minf(420.0, viewport_size.x - 24.0)), int(minf(330.0, viewport_size.y - 40.0)))
-	dialog.close_requested.connect(dialog.hide)
+	dialog.size = Vector2i(int(minf(520.0, viewport_size.x - 24.0)), int(maxf(240.0, minf(440.0, viewport_size.y - 40.0))))
+	dialog.close_requested.connect(dialog.queue_free)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 18)
@@ -605,85 +605,70 @@ func _show_crafting() -> void:
 	margin.add_theme_constant_override("margin_bottom", 18)
 	dialog.add_child(margin)
 	var stack := VBoxContainer.new()
-	stack.add_theme_constant_override("separation", 12)
+	stack.add_theme_constant_override("separation", 10)
 	margin.add_child(stack)
 	var description := Label.new()
-	description.text = "Escolha uma receita. Os materiais são descontados do inventário."
+	description.text = "Receitas transacionais: os ingredientes só são consumidos quando a fabricação pode ser concluída."
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stack.add_child(description)
-	var bricks_button := Button.new()
-	bricks_button.text = "2 Terra + 1 Pedra  →  2 Tijolos"
-	bricks_button.pressed.connect(func():
-		dialog.hide()
-		_craft_bricks()
-	)
-	stack.add_child(bricks_button)
-	var pickaxe_button := Button.new()
-	pickaxe_button.text = "3 Pedras + 2 Tijolos  →  Picareta (40 usos)"
-	pickaxe_button.pressed.connect(func():
-		dialog.hide()
-		_craft_pickaxe()
-	)
-	stack.add_child(pickaxe_button)
-	var axe_button := Button.new()
-	axe_button.text = "2 Pedras + 2 Terras  →  Machado de pedra (40 usos)"
-	axe_button.pressed.connect(func():
-		dialog.hide()
-		_craft_axe()
-	)
-	stack.add_child(axe_button)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	stack.add_child(scroll)
+	var recipe_list := VBoxContainer.new()
+	recipe_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	recipe_list.add_theme_constant_override("separation", 10)
+	scroll.add_child(recipe_list)
+	for recipe_id in MineplusCrafting.recipe_ids():
+		var recipe_card := PanelContainer.new()
+		var card_stack := VBoxContainer.new()
+		card_stack.add_theme_constant_override("separation", 5)
+		recipe_card.add_child(card_stack)
+		var recipe_title := Label.new()
+		recipe_title.text = MineplusCrafting.recipe_title(recipe_id)
+		recipe_title.add_theme_font_size_override("font_size", 15)
+		recipe_title.add_theme_color_override("font_color", Color("#8ee3b1"))
+		card_stack.add_child(recipe_title)
+		var requirements := Label.new()
+		requirements.text = MineplusCrafting.recipe_description(recipe_id)
+		requirements.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		card_stack.add_child(requirements)
+		var availability := MineplusCrafting.can_craft(recipe_id, block_counts, pickaxe_durability, axe_durability)
+		var craft_button := Button.new()
+		craft_button.custom_minimum_size.y = 40
+		craft_button.disabled = not bool(availability.get("ok", false))
+		craft_button.text = "FABRICAR" if craft_button.disabled == false else str(availability.get("reason", "Indisponível"))
+		craft_button.pressed.connect(_craft_recipe.bind(recipe_id, dialog))
+		card_stack.add_child(craft_button)
+		recipe_list.add_child(recipe_card)
 	var close_button := Button.new()
 	close_button.text = "FECHAR"
-	close_button.pressed.connect(dialog.hide)
+	close_button.pressed.connect(dialog.queue_free)
 	stack.add_child(close_button)
 	add_child(dialog)
 	dialog.popup_centered()
 
-func _craft_pickaxe() -> void:
-	if pickaxe_durability > 0:
-		status_label.text = "Você já possui uma picareta com %d de durabilidade." % pickaxe_durability
+func _craft_recipe(recipe_id: String, dialog: Window) -> void:
+	var result := MineplusCrafting.craft(recipe_id, block_counts, pickaxe_durability, axe_durability)
+	if not bool(result.get("ok", false)):
+		if status_label:
+			status_label.text = str(result.get("reason", "Não foi possível fabricar."))
 		return
-	if block_counts[2] < 3 or block_counts[5] < 2:
-		status_label.text = "Picareta: faltam 3 Pedras e 2 Tijolos."
-		return
-	block_counts[2] -= 3
-	block_counts[5] -= 2
-	pickaxe_durability = 40
+	var crafted_inventory: Array = result["inventory"]
+	for index in range(INVENTORY_NAMES.size()):
+		block_counts[index] = int(crafted_inventory[index])
+	pickaxe_durability = int(result["pickaxe_durability"])
+	axe_durability = int(result["axe_durability"])
 	if pickaxe_visual:
-		pickaxe_visual.visible = true
-	_update_hotbar()
-	_refresh_inventory()
-	_save_world(true)
-	status_label.text = "Picareta fabricada: 40 usos."
-
-func _craft_axe() -> void:
-	if axe_durability > 0:
-		status_label.text = "Você já possui um machado com %d de durabilidade." % axe_durability
-		return
-	if block_counts[2] < 2 or block_counts[1] < 2:
-		status_label.text = "Machado: faltam 2 Pedras e 2 Terras."
-		return
-	block_counts[2] -= 2
-	block_counts[1] -= 2
-	axe_durability = 40
+		pickaxe_visual.visible = pickaxe_durability > 0
 	if axe_visual:
-		axe_visual.visible = true
+		axe_visual.visible = axe_durability > 0
+	if dialog:
+		dialog.queue_free()
 	_update_hotbar()
-	_refresh_inventory()
 	_save_world(true)
-	status_label.text = "Machado de pedra fabricado: 40 usos."
-
-func _craft_bricks() -> void:
-	if block_counts[1] < 2 or block_counts[2] < 1 or block_counts[5] > MAX_STACK_SIZE - 2:
-		status_label.text = "Faltam materiais: 2 Terra e 1 Pedra."
-		return
-	block_counts[1] -= 2
-	block_counts[2] -= 1
-	block_counts[5] += 2
-	_update_hotbar()
-	_refresh_inventory()
-	_save_world(true)
-	status_label.text = "Fabricação concluída: +2 Tijolos."
+	if status_label:
+		status_label.text = "Fabricação concluída: %s." % MineplusCrafting.recipe_title(recipe_id)
 
 func _process(delta: float) -> void:
 	_update_environment(delta)
