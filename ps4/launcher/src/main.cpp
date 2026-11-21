@@ -18,6 +18,7 @@
 #include <dirent.h>
 #include <string>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <vector>
 #include <deque>
 #include <mutex>
@@ -80,6 +81,7 @@ std::vector<Particle> particles;
 int selected=0,hubSelected=0,settingsCursor=0; bool favoritesOnly=false; bool hub=false,settingsPage=false,detailsPage=false,running=true; bool particlesEnabled=false,showTitleId=true,reduceMotion=false;
 std::string notice; float noticeTimer=0.0f;
 bool launchServicesReady=false; int32_t launchUserId=-1; std::string launchServiceStatus="LAUNCH SERVICE NOT INITIALIZED";
+std::string controllerLabel="CONTROLLER NOT CONNECTED";
 float focus=0.0f, bgMix=1.0f;
 SDL_Window* window=nullptr; SDL_Renderer* renderer=nullptr;
 void fill(int x,int y,int w,int h,SDL_Color c){SDL_SetRenderDrawColor(renderer,c.r,c.g,c.b,c.a);SDL_Rect r{x,y,w,h};SDL_RenderFillRect(renderer,&r);}
@@ -509,7 +511,9 @@ void draw(){
     "/user/app/"+id+"/sce_sys/pic0.png","/user/app/"+id+"/sce_sys/pic1.png",
     "/mnt/ext0/user/app/"+id+"/sce_sys/pic0.png","/mnt/ext0/user/app/"+id+"/sce_sys/pic1.png",
     "/mnt/ext1/user/app/"+id+"/sce_sys/pic0.png","/mnt/ext1/user/app/"+id+"/sce_sys/pic1.png",
-    "/user/appmeta/"+id+"/pic0.png","/user/appmeta/external/"+id+"/pic0.png"
+    "/user/appmeta/"+id+"/pic0.png","/user/appmeta/external/"+id+"/pic0.png",
+    "/mnt/ext0/user/appmeta/"+id+"/pic0.png","/mnt/ext1/user/appmeta/"+id+"/pic0.png",
+    "/mnt/ext0/user/app/"+id+"/sce_sys/pic0.png","/mnt/ext1/user/app/"+id+"/sce_sys/pic0.png"
    });
   }
   auto drawBackdrop=[&](SDL_Texture* texture,Uint8 alpha){
@@ -527,7 +531,7 @@ void draw(){
  // PS5-inspired top navigation: compact labels, restrained contrast and generous spacing.
  textBlock("GAMES",86,48,3,{242,245,249,255});
  textBlock("MEDIA",260,52,2,{139,151,169,255});
- fill(86,91,92,3,{103,220,190,255});
+ fill(86,91,92,3,{235,239,245,255});
  // Search, settings, profile and live system clock.
  SDL_SetRenderDrawColor(renderer,210,220,232,255);SDL_Rect searchRing{1368,40,19,19};SDL_RenderDrawRect(renderer,&searchRing);line(1383,56,1393,66,{210,220,232,255});
  fill(1480,39,24,5,{210,220,232,255});fill(1489,30,6,23,{210,220,232,255});fill(1478,47,27,6,{210,220,232,255});fill(1487,37,10,10,{20,27,39,255});
@@ -535,7 +539,7 @@ void draw(){
  std::time_t clockNow=std::time(nullptr);std::tm* clockLocal=std::localtime(&clockNow);char clockText[20]="--:--";if(clockLocal)std::snprintf(clockText,sizeof(clockText),"%d:%02d %s",clockLocal->tm_hour%12?clockLocal->tm_hour%12:12,clockLocal->tm_min,clockLocal->tm_hour>=12?"PM":"AM");
  textBlock(clockText,1695,48,2,{218,226,236,255});
  // Left-anchored game shelf, with the selected tile near the first third.
- const int baseY=128,cardW=112,cardH=112,gap=15;
+ const int baseY=132,cardW=88,cardH=88,gap=18;
  const int visible=(int)std::min<size_t>(11,activeCount);
  const int start=54;
  const int selectedSlot=1;
@@ -543,14 +547,22 @@ void draw(){
   int idx=(selected-selectedSlot+slot+(int)activeCount)%(int)activeCount;
   Game& game=games[idx];bool chosen=(idx==selected);
   float active=chosen?focus:0.0f;
-  int w=cardW+int(active*42),h=cardH+int(active*42);
+  int w=cardW+int(active*48),h=cardH+int(active*48);
   int x=start+slot*(cardW+gap)-int(active*21),y=baseY-int(active*21);
   unsigned hash=2166136261u;for(unsigned char ch:game.titleId){hash^=ch;hash*=16777619u;}
-  SDL_Color accent{Uint8(72+(hash&63)),Uint8(82+((hash>>7)&63)),Uint8(105+((hash>>14)&63)),255};
-  SDL_Color shade{Uint8(accent.r/3),Uint8(accent.g/3),Uint8(accent.b/3),255};
-  fill(x-5,y-5,w+10,h+10,chosen?SDL_Color{220,229,239,255}:SDL_Color{48,61,78,255});
-  fill(x,y,w,h,shade);
-  if(!game.iconAttempted)requestGameImage(game.titleId,false,{game.iconPath});
+  SDL_Color accent{Uint8(105+(hash&35)),Uint8(120+((hash>>7)&35)),Uint8(145+((hash>>14)&35)),255};
+  fill(x-5,y-5,w+10,h+10,chosen?SDL_Color{232,237,244,255}:SDL_Color{36,44,56,235});
+  fill(x,y,w,h,{18,24,34,255});
+  if(!game.iconAttempted)requestGameImage(game.titleId,false,{
+   game.iconPath,
+   "/user/appmeta/"+game.titleId+"/icon0.png",
+   "/user/appmeta/external/"+game.titleId+"/icon0.png",
+   "/mnt/ext0/user/appmeta/"+game.titleId+"/icon0.png",
+   "/mnt/ext1/user/appmeta/"+game.titleId+"/icon0.png",
+   "/user/app/"+game.titleId+"/sce_sys/icon0.png",
+   "/mnt/ext0/user/app/"+game.titleId+"/sce_sys/icon0.png",
+   "/mnt/ext1/user/app/"+game.titleId+"/sce_sys/icon0.png"
+  });
   if(game.icon){
    int iw=0,ih=0;SDL_QueryTexture(game.icon,nullptr,nullptr,&iw,&ih);
    if(iw>0&&ih>0){float target=float(w)/float(h),source=float(iw)/float(ih);SDL_Rect src{0,0,iw,ih};
@@ -558,19 +570,15 @@ void draw(){
     else{src.h=int(float(iw)/target);src.y=(ih-src.h)/2;}
     SDL_Rect dst{x,y,w,h};SDL_RenderCopy(renderer,game.icon,&src,&dst);
    }
-   fill(x,y,w,h,{5,9,15,95});
+   fill(x,y,w,h,{5,8,13,34});
   }else{
-   fill(x,y,w,7,accent);
-   // Deterministic fallback artwork when a game's official icon is inaccessible.
-   fill(x+18,y+25,w-36,2,{accent.r,accent.g,accent.b,105});
-   fill(x+26,y+43,w-52,72,{Uint8(accent.r/2),Uint8(accent.g/2),Uint8(accent.b/2),255});
-   fill(x+34,y+51,w-68,3,{accent.r,accent.g,accent.b,180});
-   fill(x+34,y+60,w-68,2,{accent.r,accent.g,accent.b,95});
-   fill(x+34,y+101,w-68,2,{accent.r,accent.g,accent.b,130});
+   fill(x,y,w,5,{105,121,143,255});
+   // Neutral fallback tile until the official icon0 artwork loads.
+   textBlockFit(game.title,x+7,y+Math.max(20,h/2-10),1,w-14,{190,202,216,255});
   }
   if(chosen)textBlockFit(game.title,x,y+h+12,2,w,{245,248,252,255});
   if(game.favorite)textBlock("FAV",x+w-48,y+10,1,{117,224,190,255});
-  if(chosen)fill(x,y+h+7,w,3,{104,210,190,235});
+  if(chosen)fill(x,y+h+7,w,3,{232,237,244,235});
  }
  if(activeCount>0){
   char counter[24];std::snprintf(counter,sizeof(counter),"%02d / %02d",selected+1,(int)activeCount);
@@ -590,23 +598,29 @@ void draw(){
  // Three translucent dashboard widgets, positioned along the bottom edge.
  const int panelY=875,panelH=145,panelW=520;
  for(int i=0;i<3;++i){int px=86+i*584;fill(px,panelY,panelW,panelH,{10,14,23,238});fill(px,panelY,panelW,2,{54,65,82,225});}
- // Trophy widget.
+ // Trophy widget: never fabricate trophy counts.
  fill(112,900,20,15,{222,228,236,255});fill(116,915,12,5,{222,228,236,255});fill(109,904,5,9,{222,228,236,255});fill(130,904,5,9,{222,228,236,255});
  textBlock("TROPHIES",145,900,2,{235,240,247,255});
- textBlock("PS4 PROFILE DATA",145,944,1,{174,190,208,255});
- textBlock("NOT AVAILABLE IN THIS BUILD",145,977,1,{135,154,176,255});
- // Storage widget.
+ textBlock("PROFILE TROPHY DATA",145,944,1,{190,201,215,255});
+ textBlock("SYSTEM SERVICE NOT CONNECTED",145,977,1,{140,154,172,255});
+ // Real free/total bytes from the PS4 user filesystem.
  fill(696,900,18,15,{214,224,236,255});fill(700,895,10,5,{214,224,236,255});
  textBlock("CONSOLE STORAGE",728,900,2,{235,240,247,255});
- textBlock("SYSTEM STORAGE",696,944,1,{174,190,208,255});
- fill(696,974,460,13,{49,58,73,255});fill(696,974,285,13,{78,159,231,255});fill(981,974,54,13,{126,93,204,255});fill(1035,974,23,13,{213,148,62,255});
- textBlock("LIVE CAPACITY DATA NOT CONNECTED",696,1005,1,{135,154,176,255});
- // Controller widget.
+ struct statvfs storageInfo{};bool storageOk=statvfs("/user",&storageInfo)==0;
+ unsigned long long totalBytes=storageOk?static_cast<unsigned long long>(storageInfo.f_blocks)*storageInfo.f_frsize:0;
+ unsigned long long freeBytes=storageOk?static_cast<unsigned long long>(storageInfo.f_bavail)*storageInfo.f_frsize:0;
+ char storageLine[64]="STORAGE DATA UNAVAILABLE";
+ if(storageOk){double freeGb=double(freeBytes)/1000000000.0;std::snprintf(storageLine,sizeof(storageLine),"FREE SPACE  %.1f GB",freeGb);}
+ textBlock(storageLine,696,944,1,{190,201,215,255});
+ fill(696,974,460,13,{49,58,73,255});
+ if(storageOk&&totalBytes>0){int usedWidth=int(460.0*double(totalBytes-freeBytes)/double(totalBytes));usedWidth=std::max(0,std::min(460,usedWidth));fill(696,974,usedWidth,13,{83,157,220,255});}
+ textBlock(storageOk?"USER STORAGE PARTITION":"CONNECT TO SYSTEM STORAGE",696,1005,1,{140,154,172,255});
+ // Actual controller name from SDL joystick discovery.
  fill(1280,895,66,46,{19,28,41,255});fill(1291,902,42,30,{215,224,235,255});fill(1307,909,10,16,{19,28,41,255});fill(1299,912,26,7,{19,28,41,255});
  textBlock("CONTROLLER",1362,900,2,{235,240,247,255});
- textBlock("DUALSHOCK 4 / WIRELESS",1362,944,1,{174,190,208,255});
- textBlock("CROSS LAUNCH  SQUARE FAVORITE",1362,977,1,{135,154,176,255});
- textBlockFit(launchServiceStatus,1362,1005,1,430,{135,154,176,255});
+ textBlockFit(controllerLabel,1362,944,1,430,{190,201,215,255});
+ textBlock("CROSS LAUNCH  SQUARE FAVORITE",1362,977,1,{140,154,172,255});
+ textBlockFit(launchServiceStatus,1362,1005,1,430,{140,154,172,255});
  if(!notice.empty()&&!hub){
   fill(105,830,760,64,{20,34,48,235});
   fill(105,830,4,64,{104,210,190,255});
@@ -707,6 +721,7 @@ int main(int,char**){
  if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
  if(!renderer){SDL_DestroyWindow(window);SDL_Quit();return 3;}
  SDL_JoystickEventState(SDL_ENABLE);SDL_Joystick* pad=SDL_NumJoysticks()>0?SDL_JoystickOpen(0):nullptr;
+ if(pad&&SDL_JoystickName(pad))controllerLabel=SDL_JoystickName(pad);
  float axisRepeat=0.0f,verticalAxisRepeat=0.0f;
  const int imageInit=IMG_Init(IMG_INIT_PNG);
  if((imageInit&IMG_INIT_PNG)==0){notice="PNG SUPPORT UNAVAILABLE - USING FALLBACK ART";noticeTimer=5.0f;}
@@ -714,8 +729,8 @@ int main(int,char**){
  initParticles();loadSettings();loadFavorites();scanInstalledGames();loadLastSelectedGame();initializeLaunchServices();startImageWorker();Uint64 prev=SDL_GetPerformanceCounter();
  while(running){Uint64 now=SDL_GetPerformanceCounter();float dt=float(double(now-prev)/double(SDL_GetPerformanceFrequency()));prev=now;dt=std::min(dt,0.05f);SDL_Event e;
   while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT)running=false;
-  if(e.type==SDL_JOYDEVICEADDED&&!pad&&SDL_NumJoysticks()>0)pad=SDL_JoystickOpen(e.jdevice.which);
-  if(e.type==SDL_JOYDEVICEREMOVED&&pad&&SDL_JoystickInstanceID(pad)==e.jdevice.which){SDL_JoystickClose(pad);pad=nullptr;if(SDL_NumJoysticks()>0)pad=SDL_JoystickOpen(0);}
+  if(e.type==SDL_JOYDEVICEADDED&&!pad&&SDL_NumJoysticks()>0){pad=SDL_JoystickOpen(e.jdevice.which);if(pad&&SDL_JoystickName(pad))controllerLabel=SDL_JoystickName(pad);}
+  if(e.type==SDL_JOYDEVICEREMOVED&&pad&&SDL_JoystickInstanceID(pad)==e.jdevice.which){SDL_JoystickClose(pad);pad=nullptr;controllerLabel="CONTROLLER NOT CONNECTED";if(SDL_NumJoysticks()>0){pad=SDL_JoystickOpen(0);if(pad&&SDL_JoystickName(pad))controllerLabel=SDL_JoystickName(pad);}}
   if(e.type==SDL_JOYBUTTONDOWN&&pad&&e.jbutton.which==SDL_JoystickInstanceID(pad)){switch(e.jbutton.button){
   case PadLeft:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+3)%4;else if(!hub)move(-1);break;
   case PadRight:if(detailsPage)break;else if(hub&&!settingsPage)hubSelected=(hubSelected+1)%4;else if(!hub)move(1);break;
