@@ -33,6 +33,12 @@ O botão **JOGAR** agora abre um lobby próprio antes de carregar a partida. Ele
 
 Mundos novos recebem seeds determinísticas distintas por slot (o slot 1 mantém a seed-base 4839201). A escolha do slot é gravada nas configurações antes da troca de cena; a tela de configurações não duplica essa escolha, que fica centralizada no lobby. Se um arquivo e seu backup existirem, mas nenhum puder ser validado, o botão de entrada fica bloqueado: o lobby não trata o arquivo corrompido como slot vazio e não oferece sobrescrevê-lo. Quando há backup válido, o codec existente tenta recuperá-lo antes de apresentar o slot.
 
+### Fabricação transacional (Godot)
+
+As receitas do protótipo foram centralizadas em `scripts/crafting.gd`, separando as regras de fabricação da interface. A bancada apresenta os requisitos e desativa receitas sem materiais suficientes. Cada tentativa valida o inventário completo (sete pilhas limitadas a 999), a disponibilidade da ferramenta e o espaço da pilha de saída antes de consumir qualquer ingrediente. Tijolos, picareta e machado usam a mesma transação: em caso de falha, nenhuma pilha ou durabilidade muda; em caso de sucesso, o novo inventário e a durabilidade da ferramenta são aplicados juntos e salvos. A fabricação retorna uma cópia do inventário, sem alterar a lista de entrada, o que também permite testar as regras sem instanciar a cena 3D.
+
+O teste `scripts/tests/crafting_test.gd` cobre custos e resultados das três receitas, falta de materiais, pilha de saída cheia, ferramentas duplicadas, inventário inválido e ausência de mutação parcial. O workflow Godot executa esse teste com Godot 4.3 headless junto aos testes de persistência e lobby. Isso valida a lógica de crafting, mas não substitui teste de interface/toque em aparelho físico.
+
 
 ## Build PS4
 
@@ -70,6 +76,7 @@ O workflow executa testes C++ portáveis para:
 - runtime, edição de voxels, exportação/importação e checksum de saves;
 - adaptadores de mundo fixo e streamed.
 - seleção dos três slots Godot, seeds distintas, classificação de saves inválidos e recuperação de backup no lobby.
+- custos, saídas, limites de pilha, ferramentas duplicadas e rejeição segura de inventários inválidos nas receitas Godot.
 
 O workflow Godot também verifica o script e a cena do lobby (`scripts/world_lobby.gd` e `scenes/world_lobby.tscn`), a instanciação do mundo streamed, os testes de recuperação do codec de save versão 7, as regras de entrada touch em modo headless e a tela de lobby/seleção dos três slots, incluindo seeds distintas e proteção contra sobrescrita de saves inválidos. Os testes não substituem teste de desempenho, controles e instalação no hardware PS4.
 
@@ -86,6 +93,7 @@ O workflow Godot também verifica o script e a cena do lobby (`scripts/world_lob
 - `ps4/native/Makefile`: compilação do EBOOT.
 - `ps4/build-native.sh`: geração e validação do PKG.
 - `scripts/world_lobby.gd` e `scenes/world_lobby.tscn`: lobby local de seleção dos três mundos no protótipo Godot.
+- `scripts/crafting.gd`: catálogo e transações de receitas do protótipo Godot.
 
 Consulte [ps4/native/PCG.md](ps4/native/PCG.md) para a arquitetura procedural e as limitações atuais.
 
