@@ -80,6 +80,8 @@ O workflow executa testes C++ portáveis para:
 
 O workflow Godot também verifica o script e a cena do lobby (`scripts/world_lobby.gd` e `scenes/world_lobby.tscn`), a instanciação do mundo streamed, os testes de recuperação do codec de save versão 7, as regras de entrada touch em modo headless e a tela de lobby/seleção dos três slots, incluindo seeds distintas e proteção contra sobrescrita de saves inválidos. Os testes não substituem teste de desempenho, controles e instalação no hardware PS4.
 
+A validação mais recente deste conjunto, no commit `7250a8fa`, concluiu com sucesso em [Godot 4.3 headless — workflow 44940853195](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/44940853195). Ela inclui o novo teste transacional das receitas, além dos testes de save, lobby e decorações.
+
 ## Estrutura principal
 
 - `ps4/native/main.cpp`: loop SDL2 e gameplay atual.
