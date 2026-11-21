@@ -574,7 +574,7 @@ void draw(){
   }else{
    fill(x,y,w,5,{105,121,143,255});
    // Neutral fallback tile until the official icon0 artwork loads.
-   textBlockFit(game.title,x+7,y+Math.max(20,h/2-10),1,w-14,{190,202,216,255});
+   textBlockFit(game.title,x+7,y+std::max(20,h/2-10),1,w-14,{190,202,216,255});
   }
   if(chosen)textBlockFit(game.title,x,y+h+12,2,w,{245,248,252,255});
   if(game.favorite)textBlock("FAV",x+w-48,y+10,1,{117,224,190,255});
