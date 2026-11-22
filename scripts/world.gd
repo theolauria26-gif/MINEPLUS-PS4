@@ -4,16 +4,16 @@ const WORLD_RADIUS := 9
 const BLOCK_SIZE := 1.0
 const MAX_STACK_SIZE := 999
 const BLOCK_COLORS := [
-	Color("#79b85a"), Color("#8b6548"), Color("#858b96"), Color("#c6ad72"), Color("#4e9d83"), Color("#b86f62")
+	Color("#79b85a"), Color("#8b6548"), Color("#858b96"), Color("#c6ad72"), Color("#4e9d83"), Color("#b86f62"), Color("#9a704a")
 ]
-const BLOCK_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo", "Tijolo"]
-const INVENTORY_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo", "Tijolo", "Madeira"]
-const INVENTORY_COLORS := [Color("#79b85a"), Color("#8b6548"), Color("#858b96"), Color("#c6ad72"), Color("#4e9d83"), Color("#b86f62"), Color("#b88754")]
+const BLOCK_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo", "Tijolo", "Tábuas"]
+const INVENTORY_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo", "Tijolo", "Madeira", "Tábuas"]
+const INVENTORY_COLORS := [Color("#79b85a"), Color("#8b6548"), Color("#858b96"), Color("#c6ad72"), Color("#4e9d83"), Color("#b86f62"), Color("#b88754"), Color("#d0a16b")]
 
 var blocks: Dictionary = {}
 var chunk_streamer: MineplusChunkStreamer
 var selected_block := 0
-var block_counts: Array[int] = [64, 64, 32, 32, 16, 0, 0]
+var block_counts: Array[int] = [64, 64, 32, 32, 16, 0, 0, 0]
 var player: CharacterBody3D
 var camera: Camera3D
 var pickaxe_visual: Node3D
@@ -130,6 +130,11 @@ func _setup_block_textures() -> void:
 					pixel = Color("#367c68")
 				elif block_type == 5 and (x % 8 == 0 or y % 8 == 0):
 					pixel = Color("#8f514b")
+				elif block_type == 6:
+					if y % 8 == 0:
+						pixel = Color("#67482f")
+					elif (x + int(y / 8) * 3) % 13 == 0:
+						pixel = Color("#d0a16b")
 				image.set_pixel(x, y, pixel)
 		block_textures.append(ImageTexture.create_from_image(image))
 
@@ -363,16 +368,16 @@ func _add_hotbar_buttons(hud: Control) -> void:
 	var bar := HBoxContainer.new()
 	bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	var viewport_width := get_viewport().get_visible_rect().size.x
-	var bar_width := minf(440.0, viewport_width - 16.0)
+	var bar_width := minf(520.0, viewport_width - 16.0)
 	bar.position = Vector2(-bar_width * 0.5, -126)
 	bar.size = Vector2(bar_width, 42)
 	bar.alignment = BoxContainer.ALIGNMENT_CENTER
-	bar.add_theme_constant_override("separation", 5)
+	bar.add_theme_constant_override("separation", 4)
 	hud.add_child(bar)
 	for i in range(BLOCK_NAMES.size()):
 		var slot := Button.new()
 		slot.text = str(i + 1) + " " + BLOCK_NAMES[i].substr(0, 3).to_upper()
-		slot.custom_minimum_size = Vector2((bar_width - 25.0) / 6.0, 38)
+		slot.custom_minimum_size = Vector2((bar_width - 24.0) / float(BLOCK_NAMES.size()), 38)
 		slot.add_theme_font_size_override("font_size", 9)
 		slot.pressed.connect(_select_block.bind(i))
 		bar.add_child(slot)
@@ -761,7 +766,8 @@ func _add_hold_button(parent: HBoxContainer, caption: String, action: String, ui
 
 func _update_hotbar() -> void:
 	if hotbar_label:
-		hotbar_label.text = BLOCK_NAMES[selected_block].to_upper() + "  ×  " + str(block_counts[selected_block])
+		var inventory_index := MineplusCrafting.inventory_index_for_block(selected_block)
+		hotbar_label.text = BLOCK_NAMES[selected_block].to_upper() + "  ×  " + str(block_counts[inventory_index])
 	for i in range(hotbar_buttons.size()):
 		hotbar_buttons[i].modulate = Color("#8ee3b1") if i == selected_block else Color("#ffffff")
 	_refresh_inventory()
@@ -828,7 +834,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_pause()
 		elif event.keycode == KEY_E:
 			_toggle_inventory()
-		elif event.keycode >= KEY_1 and event.keycode <= KEY_6:
+		elif event.keycode >= KEY_1 and event.keycode <= KEY_7:
 			_select_block(event.keycode - KEY_1)
 		elif event.keycode == KEY_SPACE:
 			Input.action_press("jump")
@@ -887,7 +893,8 @@ func _interact(place: bool) -> void:
 	if place:
 		var normal: Vector3 = hit.normal
 		var target := cell + Vector3i(roundi(normal.x), roundi(normal.y), roundi(normal.z))
-		if target.y < 1 or blocks.has(target) or block_counts[selected_block] <= 0:
+		var place_inventory_index := MineplusCrafting.inventory_index_for_block(selected_block)
+		if place_inventory_index < 0 or target.y < 1 or blocks.has(target) or block_counts[place_inventory_index] <= 0:
 			return
 		var target_center := Vector3(target) * BLOCK_SIZE
 		var player_center := player.global_position + Vector3.UP * 0.9
@@ -896,7 +903,7 @@ func _interact(place: bool) -> void:
 				status_label.text = "Não é possível colocar um bloco dentro do jogador."
 			return
 		_add_block(target, selected_block)
-		block_counts[selected_block] -= 1
+		block_counts[place_inventory_index] -= 1
 		_update_hotbar()
 	else:
 		if terrain_hit:
@@ -936,7 +943,10 @@ func _interact(place: bool) -> void:
 			return
 		if cell.y >= 0:
 			var block_type := int(body.get_meta("block_type"))
-			if block_counts[block_type] >= MAX_STACK_SIZE:
+			var drop_index := MineplusCrafting.inventory_index_for_block(block_type)
+			if drop_index < 0:
+				return
+			if block_counts[drop_index] >= MAX_STACK_SIZE:
 				if status_label:
 					status_label.text = "Pilha cheia: máximo de %d por material." % MAX_STACK_SIZE
 				return
@@ -950,7 +960,7 @@ func _interact(place: bool) -> void:
 				_animate_pickaxe_swing()
 				if pickaxe_durability == 0 and pickaxe_visual:
 					pickaxe_visual.visible = false
-			block_counts[block_type] += 1
+			block_counts[drop_index] += 1
 			_remove_block(cell)
 			_update_hotbar()
 			_refresh_inventory()

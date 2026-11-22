@@ -2,15 +2,15 @@ extends RefCounted
 class_name MineplusWorldSave
 ## Versioned, bounded and recoverable world persistence for the Godot prototype.
 
-const CURRENT_VERSION := 7
+const CURRENT_VERSION := 8
 const MAX_SAVE_BYTES := 32 * 1024 * 1024
 const MAX_WORLD_BLOCKS := 100000
 const MAX_TERRAIN_EDITS := 250000
 const MAX_COORDINATE := 10000000
-const BLOCK_TYPE_COUNT := 6
-const INVENTORY_ITEM_COUNT := 7
+const BLOCK_TYPE_COUNT := 7
+const INVENTORY_ITEM_COUNT := 8
 const TERRAIN_TYPE_COUNT := 11
-const DEFAULT_INVENTORY := [64, 64, 32, 32, 16, 0, 0]
+const DEFAULT_INVENTORY := [64, 64, 32, 32, 16, 0, 0, 0]
 const DEFAULT_PLAYER_POSITION := [0.0, 13.0, 5.0]
 
 static func _is_number(value: Variant) -> bool:

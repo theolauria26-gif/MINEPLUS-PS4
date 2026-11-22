@@ -2,9 +2,9 @@ extends RefCounted
 class_name MineplusCrafting
 ## Pure, transactional recipe rules shared by the crafting UI and automated tests.
 
-const INVENTORY_ITEM_COUNT := 7
+const INVENTORY_ITEM_COUNT := 8
 const MAX_STACK_SIZE := 999
-const ITEM_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo", "Tijolo", "Madeira"]
+const ITEM_NAMES := ["Grama", "Terra", "Pedra", "Areia", "Musgo", "Tijolo", "Madeira", "Tábuas"]
 
 const RECIPES := {
 	"bricks": {
@@ -13,6 +13,14 @@ const RECIPES := {
 		"ingredients": [[1, 2], [2, 1]],
 		"output_item": 5,
 		"output_count": 2,
+		"tool": ""
+	},
+	"planks": {
+		"title": "Tábuas de madeira",
+		"description": "1 Madeira  →  4 Tábuas",
+		"ingredients": [[6, 1]],
+		"output_item": 7,
+		"output_count": 4,
 		"tool": ""
 	},
 	"pickaxe": {
@@ -34,7 +42,13 @@ const RECIPES := {
 }
 
 static func recipe_ids() -> Array[String]:
-	return ["bricks", "pickaxe", "axe"]
+	return ["bricks", "planks", "pickaxe", "axe"]
+
+static func inventory_index_for_block(block_type: int) -> int:
+	# Raw wood is material 6; the seventh placeable block is crafted planks at item 7.
+	if block_type < 0 or block_type >= 7:
+		return -1
+	return 7 if block_type == 6 else block_type
 
 static func recipe_title(recipe_id: String) -> String:
 	var recipe: Dictionary = RECIPES.get(recipe_id, {})
