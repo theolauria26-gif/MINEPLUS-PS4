@@ -28,6 +28,12 @@ func _run() -> void:
 	_expect(seed_one != seed_two and seed_two != seed_three and seed_one != seed_three, "new slots receive distinct deterministic seeds")
 	_expect(MineplusWorldLobby.default_world_seed(0) == seed_one, "seed selection clamps an invalid low slot")
 	_expect(MineplusWorldLobby.default_world_seed(99) == seed_three, "seed selection clamps an invalid high slot")
+	var lobby_model := MineplusWorldLobby.new()
+	var slot_two_summary := lobby_model._slot_summary("empty", {}, "user://mineplus_world_2.json", 2)
+	var slot_three_summary := lobby_model._slot_summary("empty", {}, "user://mineplus_world_3.json", 3)
+	_expect(slot_two_summary.contains(str(seed_two)), "empty slot two advertises its own deterministic seed")
+	_expect(slot_three_summary.contains(str(seed_three)), "empty slot three advertises its own deterministic seed")
+	lobby_model.free()
 
 	_expect(MineplusWorldLobby.slot_state(false, {}) == "empty", "missing save is offered as a new world")
 	_expect(MineplusWorldLobby.slot_state(true, { "world_seed": 123 }) == "saved", "validated payload is offered as continue")
