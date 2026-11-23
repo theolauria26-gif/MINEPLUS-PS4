@@ -199,7 +199,7 @@ func _slot_summary(state: String, payload: Dictionary, path: String, slot: int) 
 	if state == "invalid":
 		return "O arquivo existe, mas o save e o backup não passaram pela validação. Ele foi preservado; este slot não pode ser sobrescrito."
 	if state == "empty":
-		return "Ainda sem progresso. Seed inicial: %d. Criar aqui não altera os outros mundos." % default_world_seed(1)
+		return "Ainda sem progresso. Seed inicial: %d. Criar aqui não altera os outros mundos." % default_world_seed(slot)
 	var blocks: Array = payload.get("blocks", [])
 	var edits: Array = payload.get("terrain_edits", [])
 	var inventory: Array = payload.get("inventory", [])
