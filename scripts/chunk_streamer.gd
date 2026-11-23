@@ -7,8 +7,8 @@ const CHUNK_SIZE := 16
 const DEFAULT_LOAD_RADIUS := 3
 const BLOCK_SIZE := 1.0
 
-var load_radius := DEFAULT_load_radius
-var unload_radius := DEFAULT_load_radius + 1
+var load_radius := DEFAULT_LOAD_RADIUS
+var unload_radius := DEFAULT_LOAD_RADIUS + 1
 var generator := MineplusWorldGen.new()
 var player: Node3D
 var chunks: Dictionary = {}
