@@ -143,3 +143,20 @@ O inventário do protótipo agora tem oito pilhas: os seis materiais/blocos ante
 O save do protótipo avançou para a versão 8. Saves de versões 1–7 continuam legíveis; a migração de um save versão 7 preserva a madeira e cria a nova pilha de tábuas vazia. O codec também aceita o novo tipo de bloco colocado e preserva a seleção do sétimo espaço. Os testes de crafting e de round-trip/migração cobrem essas regras.
 
 - A validação Godot do novo inventário, [45060840743](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/45060840743), no commit `7c552a46`, instalou Godot 4.3 headless e passou pela importação do projeto, migração e round-trip do save versão 8, quatro receitas (incluindo tábuas), mapeamento entre bloco e pilha, lobby de três slots e decorações 3D determinísticas. O bloco de tábuas está no protótipo Godot e ainda não está integrado ao cliente C++/PKG de PS4.
+
+## Configurações persistentes e orçamento de chunks (23/11/2026)
+
+O protótipo Godot agora centraliza a persistência das opções em `scripts/settings.gd` (`MineplusSettings`). As gravações são feitas como patches sobre o arquivo existente, em vez de criar um `ConfigFile` vazio: alterar FOV, qualidade, sensibilidade ou aparência não apaga a seleção do mundo, a opacidade da HUD nem chaves de outras versões. Se o arquivo estiver malformado, a interface informa o problema e recusa sobrescrevê-lo automaticamente.
+
+A tela de configurações oferece limites de 30 FPS (economia), 60 FPS (equilibrado) e sem limite (PC). A opção sem limite é limitada a 60 FPS quando o jogo roda com a feature mobile. O perfil gráfico também controla a distância de streaming: baixa usa raio de 2 chunks; equilibrada, 3; alta, 4 no desktop. Em dispositivos mobile, os perfis equilibrado e alto ficam limitados a 3 chunks e o perfil baixo mantém 2. O raio de descarregamento conserva uma margem de um chunk para evitar descarte imediato na borda da área ativa.
+
+- `scripts/main_menu.gd`: carrega/aplica o limite de quadros, expõe a opção e salva somente as seções alteradas.
+- `scripts/world.gd`: aplica as opções ao iniciar a partida e configura o streaming conforme qualidade e plataforma.
+- `scripts/chunk_streamer.gd`: raio de carga/descarregamento configurável, mantendo o orçamento de no máximo um chunk novo por frame.
+- `scripts/tests/settings_test.gd`: verifica preservação de slot/HUD/chaves desconhecidas, proteção de arquivo malformado, limites de FPS e raios desktop/mobile.
+
+A validação final desta etapa instalou Godot 4.3 headless e concluiu importação/parsing, teste das configurações, migração de saves, receitas, lobby e decorações no [workflow 45254441199](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/45254441199), commit `1a08207f`. As tentativas intermediárias `45254377418` e `45254404777` falharam por diferenças de maiúsculas/minúsculas nos nomes das variáveis do raio; a referência foi corrigida antes da execução final aprovada. A aprovação é de CI headless e não substitui medição de FPS, temperatura, consumo ou teste touch em aparelhos reais.
+
+### Exportação verificada em 23/11/2026
+
+No container local continuam ausentes Godot, Android SDK (`ANDROID_HOME`/`ANDROID_SDK_ROOT`), `adb`, `sdkmanager`, Gradle, .NET, OpenOrbis (`OO_PS4_TOOLCHAIN`), `create-fself` e `create-gp4`. A rede do container também não conseguiu resolver `github.com`; por isso a validação Godot foi feita pelo runner do GitHub Actions, que baixou e executou a versão 4.3 headless. Nenhum APK foi gerado nesta etapa. O protótipo Godot ainda não está integrado ao cliente nativo C++/PS4; nenhum PKG novo foi gerado por estas mudanças. A validação de um PKG continua exigindo instalação e execução em hardware PS4 compatível.
