@@ -55,7 +55,7 @@ func _process(_delta: float) -> void:
 		pending_chunks.append(key)
 		queued_chunks[key] = true
 	for key in chunks.keys():
-		if not wanted.has(key) and maxi(abs(key.x - center.x), abs(key.y - center.y)) > UNload_radius:
+		if not wanted.has(key) and maxi(abs(key.x - center.x), abs(key.y - center.y)) > unload_radius:
 			var node: Node3D = chunks[key]
 			chunks.erase(key)
 			_recycle_chunk(node)
@@ -68,7 +68,7 @@ func _process(_delta: float) -> void:
 	# Descarta trabalho obsoleto quando o jogador atravessa o mapa rapidamente.
 	var keep_queue: Array[Vector2i] = []
 	for pending in pending_chunks:
-		if maxi(abs(pending.x - center.x), abs(pending.y - center.y)) <= UNload_radius:
+		if maxi(abs(pending.x - center.x), abs(pending.y - center.y)) <= unload_radius:
 			keep_queue.append(pending)
 		else:
 			queued_chunks.erase(pending)
