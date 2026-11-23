@@ -160,3 +160,20 @@ A validação final desta etapa instalou Godot 4.3 headless e concluiu importaç
 ### Exportação verificada em 23/11/2026
 
 No container local continuam ausentes Godot, Android SDK (`ANDROID_HOME`/`ANDROID_SDK_ROOT`), `adb`, `sdkmanager`, Gradle, .NET, OpenOrbis (`OO_PS4_TOOLCHAIN`), `create-fself` e `create-gp4`. A rede do container também não conseguiu resolver `github.com`; por isso a validação Godot foi feita pelo runner do GitHub Actions, que baixou e executou a versão 4.3 headless. Nenhum APK foi gerado nesta etapa. O protótipo Godot ainda não está integrado ao cliente nativo C++/PS4; nenhum PKG novo foi gerado por estas mudanças. A validação de um PKG continua exigindo instalação e execução em hardware PS4 compatível.
+
+## Animação de primeira pessoa e sementes por slot (23/11/2026)
+
+A apresentação do personagem recebeu uma primeira camada de animação procedural. Os dois braços visíveis em primeira pessoa agora acompanham o deslocamento horizontal com fases opostas, enquanto a intensidade é normalizada pela velocidade real do jogador. O movimento é deliberadamente contido: o deslocamento máximo calculado fica abaixo de 0,044 unidade e a rotação combinada abaixo de 5,4 graus. Em repouso, permanece apenas uma oscilação muito discreta. Isso não é um rig esquelético de corpo inteiro nem uma animação de terceira pessoa.
+
+As quatro opções de aparência também ganharam punhos de manga com paletas próprias (verde musgo, vinho, azul ardósia e violeta), além da cor de pele já aplicada aos braços. A opção continua sendo persistida em `mineplus_settings.cfg` e é aplicada quando o mundo é iniciado.
+
+Durante a revisão do lobby, foi corrigido um detalhe: os cartões de slots vazios 2 e 3 exibiam a seed do slot 1. Agora cada cartão informa a seed determinística do próprio slot. Os testes verificam separadamente as seeds dos três mundos, os limites do movimento dos braços, as fases opostas e a intensidade máxima.
+
+- `scripts/world.gd`: referências dos braços, punhos coloridos por aparência e oscilação de caminhada/repouso.
+- `scripts/tests/world_visual_test.gd`: limites e comportamento matemático da animação de primeira pessoa, junto dos testes touch e visuais existentes.
+- `scripts/world_lobby.gd` e `scripts/tests/world_lobby_test.gd`: seed correta por cartão de mundo vazio.
+- `.github/workflows/godot-check.yml`: passo visual identificado explicitamente para touch, animação e decorações.
+
+A validação final no [workflow Godot 4.3 headless 45255511940](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/45255511940), commit `dfc21233`, instalou Godot 4.3, importou/analisou o projeto e passou pelos testes de configurações, persistência/migração, crafting, lobby (incluindo seed por slot), touch, animação de braços e malhas de decoração 3D. A execução é automatizada em Linux headless; não substitui teste visual em PC/celular nem medição de desempenho em hardware real.
+
+Nenhum APK ou PKG foi produzido nesta etapa. O protótipo Godot continua separado do cliente nativo C++/PS4, e o ambiente local permanece sem Android SDK, templates de exportação, OpenOrbis e ferramentas PS4. A animação descrita existe apenas no protótipo Godot.
