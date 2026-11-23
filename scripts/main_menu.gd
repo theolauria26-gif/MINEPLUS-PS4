@@ -6,6 +6,7 @@ const ACCENT := Color("#8ee3b1")
 const MUTED := Color("#a7afbd")
 
 func _ready() -> void:
+	MineplusSettings.apply_runtime(MineplusSettings.load_config())
 	_build_ui()
 
 func _build_ui() -> void:
@@ -99,8 +100,10 @@ func _on_play_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/world_lobby.tscn")
 
 func _on_hud_pressed() -> void:
-	var config := ConfigFile.new()
-	config.load("user://mineplus_settings.cfg")
+	var config := MineplusSettings.load_config()
+	if config == null:
+		_show_notice("O arquivo de configurações está inválido. Ele foi preservado; corrija ou restaure o arquivo antes de salvar novas opções.")
+		return
 	var dialog := Window.new()
 	dialog.title = "PERSONALIZAR HUD"
 	dialog.size = Vector2i(380, 210)
@@ -135,8 +138,7 @@ func _on_hud_pressed() -> void:
 	var save_button := Button.new()
 	save_button.text = "SALVAR"
 	save_button.pressed.connect(func():
-		config.set_value("hud", "opacity", opacity.value)
-		var result := config.save("user://mineplus_settings.cfg")
+		var result := MineplusSettings.save_values({"hud": {"opacity": opacity.value}})
 		dialog.hide()
 		if result == OK:
 			_show_notice("Opacidade salva. Entre novamente no mundo para aplicar.")
@@ -148,12 +150,14 @@ func _on_hud_pressed() -> void:
 	dialog.popup_centered()
 
 func _on_settings_pressed() -> void:
-	var config := ConfigFile.new()
-	config.load("user://mineplus_settings.cfg")
+	var config := MineplusSettings.load_config()
+	if config == null:
+		_show_notice("O arquivo de configurações está inválido. Ele foi preservado; não vou sobrescrevê-lo.")
+		return
 	var viewport_size := get_viewport().get_visible_rect().size
 	var dialog := Window.new()
 	dialog.title = "CONFIGURAÇÕES"
-	dialog.size = Vector2i(int(minf(420.0, viewport_size.x - 24.0)), int(minf(540.0, viewport_size.y - 24.0)))
+	dialog.size = Vector2i(int(minf(420.0, viewport_size.x - 24.0)), int(minf(600.0, viewport_size.y - 24.0)))
 	dialog.close_requested.connect(dialog.hide)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -211,17 +215,32 @@ func _on_settings_pressed() -> void:
 	quality.select(clampi(int(config.get_value("graphics", "quality", 1)), 0, 2))
 	quality.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(quality)
+	var fps_label := Label.new()
+	fps_label.text = "Limite de quadros por segundo"
+	stack.add_child(fps_label)
+	var fps_limit := OptionButton.new()
+	fps_limit.add_item("30 FPS  •  economia", 30)
+	fps_limit.add_item("60 FPS  •  equilibrado", 60)
+	fps_limit.add_item("Sem limite  •  PC", 0)
+	fps_limit.select(MineplusSettings.fps_option_index(int(config.get_value("graphics", "fps_limit", 60))))
+	fps_limit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stack.add_child(fps_limit)
 	var save_button := Button.new()
 	save_button.text = "SALVAR CONFIGURAÇÕES"
 	save_button.custom_minimum_size.y = 44
 	save_button.pressed.connect(func():
-		var saved := ConfigFile.new()
-		saved.set_value("graphics", "fov", fov.value)
-		saved.set_value("graphics", "quality", quality.selected)
-		saved.set_value("controls", "sensitivity", sensitivity.value)
-		saved.set_value("appearance", "skin", skin.selected)
-		var result := saved.save("user://mineplus_settings.cfg")
+		var result := MineplusSettings.save_values({
+			"graphics": {
+				"fov": fov.value,
+				"quality": quality.selected,
+				"fps_limit": fps_limit.get_selected_id()
+			},
+			"controls": {"sensitivity": sensitivity.value},
+			"appearance": {"skin": skin.selected}
+		})
 		dialog.hide()
+		if result == OK:
+			MineplusSettings.apply_runtime(MineplusSettings.load_config())
 		if result == OK:
 			_show_notice("Configurações salvas. Elas serão aplicadas ao iniciar uma partida.")
 		else:

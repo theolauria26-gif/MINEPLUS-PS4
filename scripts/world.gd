@@ -486,14 +486,16 @@ func _refresh_inventory() -> void:
 		inventory_grid.add_child(item)
 
 func _load_settings() -> void:
-	var config := ConfigFile.new()
-	if config.load("user://mineplus_settings.cfg") == OK:
-		look_sensitivity = clampf(float(config.get_value("controls", "sensitivity", 0.0025)), 0.0008, 0.008)
-		configured_fov = clampf(float(config.get_value("graphics", "fov", 78.0)), 60.0, 100.0)
-		graphics_quality = clampi(int(config.get_value("graphics", "quality", 1)), 0, 2)
-		hud_opacity = clampf(float(config.get_value("hud", "opacity", 1.0)), 0.45, 1.0)
-		selected_skin = clampi(int(config.get_value("appearance", "skin", 0)), 0, SKIN_COLORS.size() - 1)
-		world_slot = clampi(int(config.get_value("world", "slot", 1)), 1, 3)
+	var config := MineplusSettings.load_config()
+	MineplusSettings.apply_runtime(config)
+	if config == null:
+		return
+	look_sensitivity = clampf(float(config.get_value("controls", "sensitivity", 0.0025)), 0.0008, 0.008)
+	configured_fov = clampf(float(config.get_value("graphics", "fov", 78.0)), 60.0, 100.0)
+	graphics_quality = clampi(int(config.get_value("graphics", "quality", 1)), 0, 2)
+	hud_opacity = clampf(float(config.get_value("hud", "opacity", 1.0)), 0.45, 1.0)
+	selected_skin = clampi(int(config.get_value("appearance", "skin", 0)), 0, SKIN_COLORS.size() - 1)
+	world_slot = clampi(int(config.get_value("world", "slot", 1)), 1, 3)
 
 func _create_pause_menu(hud: Control) -> void:
 	var pause_button := Button.new()
