@@ -31,7 +31,7 @@ jobs:
         run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/crafting_test.gd
       - name: Test world lobby slot selection and save protection
         run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/world_lobby_test.gd
-      - name: Test deterministic 3D biome decorations
+      - name: Test touch input, first-person animation and 3D biome decorations
         run: |
           output=$(Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/world_visual_test.gd --quit-after 120 2>&1)
           echo "$output"
