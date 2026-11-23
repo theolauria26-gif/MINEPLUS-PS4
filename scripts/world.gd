@@ -36,6 +36,7 @@ var pickaxe_durability := 0
 var axe_durability := 0
 var axe_visual: Node3D
 var block_textures: Array[Texture2D] = []
+var first_person_arms: Array[MeshInstance3D] = []
 var walk_animation_time := 0.0
 var camera_base_height := 1.55
 var world_slot := 1
@@ -52,6 +53,7 @@ var sun_light: DirectionalLight3D
 var day_clock := 0.5
 const DAY_LENGTH_SECONDS := 900.0
 const SKIN_COLORS := [Color("#d9a47c"), Color("#8b5a3c"), Color("#e7c7a5"), Color("#c8b0e8")]
+const SKIN_SLEEVE_COLORS := [Color("#526f58"), Color("#744c45"), Color("#536d83"), Color("#66527e")]
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -201,9 +203,13 @@ func _create_player() -> void:
 	selected_block = clampi(saved_selected_block, 0, BLOCK_NAMES.size() - 1)
 
 func _create_first_person_arms() -> void:
+	first_person_arms.clear()
 	var arm_material := StandardMaterial3D.new()
 	arm_material.albedo_color = SKIN_COLORS[selected_skin]
 	arm_material.roughness = 0.85
+	var sleeve_material := StandardMaterial3D.new()
+	sleeve_material.albedo_color = SKIN_SLEEVE_COLORS[selected_skin]
+	sleeve_material.roughness = 0.9
 	for side in [-1.0, 1.0]:
 		var arm := MeshInstance3D.new()
 		var arm_mesh := BoxMesh.new()
@@ -212,7 +218,33 @@ func _create_first_person_arms() -> void:
 		arm.material_override = arm_material
 		arm.position = Vector3(side * 0.34, -0.43, -0.52)
 		arm.rotation_degrees.z = side * -12.0
+		arm.set_meta("side", side)
 		camera.add_child(arm)
+		var cuff := MeshInstance3D.new()
+		var cuff_mesh := BoxMesh.new()
+		cuff_mesh.size = Vector3(0.174, 0.085, 0.174)
+		cuff.mesh = cuff_mesh
+		cuff.material_override = sleeve_material
+		cuff.position = Vector3(0.0, -0.15, 0.0)
+		arm.add_child(cuff)
+		first_person_arms.append(arm)
+
+static func _walk_arm_offset(phase: float, side: float, movement_amount: float) -> Vector3:
+	var intensity := clampf(movement_amount, 0.0, 1.0)
+	var wave := phase + side * PI * 0.5
+	return Vector3(0.0, sin(wave) * 0.035 * intensity, cos(wave) * 0.025 * intensity)
+
+static func _walk_arm_rotation(phase: float, side: float, movement_amount: float) -> Vector3:
+	var intensity := clampf(movement_amount, 0.0, 1.0)
+	var wave := phase + side * PI * 0.5
+	return Vector3(sin(wave) * 3.5 * intensity, 0.0, cos(wave) * 4.0 * intensity)
+
+func _update_first_person_animation(movement_amount: float) -> void:
+	for arm in first_person_arms:
+		var side := float(arm.get_meta("side", 1.0))
+		arm.position = Vector3(side * 0.34, -0.43, -0.52) + _walk_arm_offset(walk_animation_time, side, movement_amount)
+		var swing := _walk_arm_rotation(walk_animation_time, side, movement_amount)
+		arm.rotation_degrees = Vector3(swing.x, 0.0, side * -12.0 + swing.z)
 
 func _create_pickaxe_visual() -> void:
 	pickaxe_visual = Node3D.new()
@@ -798,11 +830,15 @@ func _physics_process(delta: float) -> void:
 	if player.global_position.y < -20.0:
 		_respawn_player()
 		return
-	if player.is_on_floor() and Vector2(player.velocity.x, player.velocity.z).length() > 0.15:
-		walk_animation_time += delta * 10.0
+	var horizontal_speed := Vector2(player.velocity.x, player.velocity.z).length()
+	var moving_on_ground := player.is_on_floor() and horizontal_speed > 0.15
+	var movement_amount := clampf(horizontal_speed / 5.2, 0.0, 1.0) if moving_on_ground else 0.0
+	walk_animation_time += delta * (10.0 if moving_on_ground else 1.8)
+	if moving_on_ground:
 		camera.position.y = camera_base_height + sin(walk_animation_time) * 0.035
 	else:
 		camera.position.y = lerpf(camera.position.y, camera_base_height, minf(delta * 8.0, 1.0))
+	_update_first_person_animation(maxf(movement_amount, 0.10))
 
 func _respawn_player() -> void:
 	if player == null:
