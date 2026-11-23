@@ -38,6 +38,12 @@ static func effective_fps_limit(requested: int, mobile: bool) -> int:
 		return 60
 	return safe_limit
 
+static func chunk_load_radius(quality: int, mobile: bool) -> int:
+	var profile := clampi(quality, 0, 2)
+	if mobile:
+		return 2 if profile == 0 else 3
+	return 2 if profile == 0 else (3 if profile == 1 else 4)
+
 static func apply_runtime(config: ConfigFile) -> void:
 	var requested := 60
 	if config != null:

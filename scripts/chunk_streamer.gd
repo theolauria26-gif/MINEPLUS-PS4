@@ -4,10 +4,11 @@ class_name MineplusChunkStreamer
 ## Cada chunk usa uma malha e um collider, não um StaticBody por bloco.
 
 const CHUNK_SIZE := 16
-const LOAD_RADIUS := 3
-const UNLOAD_RADIUS := LOAD_RADIUS + 1
+const DEFAULT_LOAD_RADIUS := 3
 const BLOCK_SIZE := 1.0
 
+var load_radius := DEFAULT_load_radius
+var unload_radius := DEFAULT_load_radius + 1
 var generator := MineplusWorldGen.new()
 var player: Node3D
 var chunks: Dictionary = {}
@@ -18,6 +19,10 @@ var queued_chunks: Dictionary = {}
 var terrain_edits: Dictionary = {}
 var material: StandardMaterial3D
 var foliage_material: ShaderMaterial
+
+func configure_quality(quality: int, mobile: bool) -> void:
+	load_radius = MineplusSettings.chunk_load_radius(quality, mobile)
+	unload_radius = load_radius + 1
 
 func _ready() -> void:
 	material = StandardMaterial3D.new()
@@ -37,8 +42,8 @@ func _process(_delta: float) -> void:
 	var center := _chunk_of_world(player.global_position)
 	var wanted: Dictionary = {}
 	var candidates: Array[Vector2i] = []
-	for z in range(center.y - LOAD_RADIUS, center.y + LOAD_RADIUS + 1):
-		for x in range(center.x - LOAD_RADIUS, center.x + LOAD_RADIUS + 1):
+	for z in range(center.y - load_radius, center.y + load_radius + 1):
+		for x in range(center.x - load_radius, center.x + load_radius + 1):
 			var key := Vector2i(x, z)
 			wanted[key] = true
 			if not chunks.has(key) and not queued_chunks.has(key):
@@ -50,7 +55,7 @@ func _process(_delta: float) -> void:
 		pending_chunks.append(key)
 		queued_chunks[key] = true
 	for key in chunks.keys():
-		if not wanted.has(key) and maxi(abs(key.x - center.x), abs(key.y - center.y)) > UNLOAD_RADIUS:
+		if not wanted.has(key) and maxi(abs(key.x - center.x), abs(key.y - center.y)) > UNload_radius:
 			var node: Node3D = chunks[key]
 			chunks.erase(key)
 			_recycle_chunk(node)
@@ -63,7 +68,7 @@ func _process(_delta: float) -> void:
 	# Descarta trabalho obsoleto quando o jogador atravessa o mapa rapidamente.
 	var keep_queue: Array[Vector2i] = []
 	for pending in pending_chunks:
-		if maxi(abs(pending.x - center.x), abs(pending.y - center.y)) <= UNLOAD_RADIUS:
+		if maxi(abs(pending.x - center.x), abs(pending.y - center.y)) <= UNload_radius:
 			keep_queue.append(pending)
 		else:
 			queued_chunks.erase(pending)

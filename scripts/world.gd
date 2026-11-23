@@ -105,6 +105,7 @@ func _generate_world() -> void:
 	# A seed é salva por mundo e todas as amostras usam coordenadas globais.
 	chunk_streamer = MineplusChunkStreamer.new()
 	chunk_streamer.generator = MineplusWorldGen.new(MineplusWorldLobby.default_world_seed(world_slot))
+	chunk_streamer.configure_quality(graphics_quality, OS.has_feature("mobile"))
 	chunk_streamer.name = "ChunkStreamer"
 	add_child(chunk_streamer)
 
