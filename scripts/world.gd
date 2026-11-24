@@ -910,6 +910,15 @@ func _terrain_drop_index(terrain_type: int) -> int:
 		MineplusWorldGen.Block.BRICK: return 5
 	return -1
 
+static func _required_tool_for_inventory_item(item_index: int) -> String:
+	match item_index:
+		2, 5: return "pickaxe"
+		6, 7: return "axe"
+	return ""
+
+static func _required_tool_for_block(block_type: int) -> String:
+	return _required_tool_for_inventory_item(MineplusCrafting.inventory_index_for_block(block_type))
+
 func _interact(place: bool) -> void:
 	var origin := camera.global_position
 	var end := origin + (-camera.global_transform.basis.z * 6.0)
@@ -953,8 +962,9 @@ func _interact(place: bool) -> void:
 			if block_counts[drop_index] >= MAX_STACK_SIZE:
 				if status_label: status_label.text = "Pilha cheia: máximo de %d por material." % MAX_STACK_SIZE
 				return
-			var needs_pickaxe := drop_index == 2 or drop_index == 5
-			var needs_axe := drop_index == 6
+			var terrain_required_tool := _required_tool_for_inventory_item(drop_index)
+			var needs_pickaxe := terrain_required_tool == "pickaxe"
+			var needs_axe := terrain_required_tool == "axe"
 			if needs_pickaxe and pickaxe_durability <= 0:
 				if status_label: status_label.text = "Precisa de uma picareta para minerar este bloco."
 				return
@@ -989,7 +999,9 @@ func _interact(place: bool) -> void:
 				if status_label:
 					status_label.text = "Pilha cheia: máximo de %d por material." % MAX_STACK_SIZE
 				return
-			var used_pickaxe := block_type == 2 or block_type == 5
+			var placed_required_tool := _required_tool_for_block(block_type)
+			var used_pickaxe := placed_required_tool == "pickaxe"
+			var used_axe := placed_required_tool == "axe"
 			if used_pickaxe:
 				if pickaxe_durability <= 0:
 					if status_label:
@@ -999,12 +1011,23 @@ func _interact(place: bool) -> void:
 				_animate_pickaxe_swing()
 				if pickaxe_durability == 0 and pickaxe_visual:
 					pickaxe_visual.visible = false
+			elif used_axe:
+				if axe_durability <= 0:
+					if status_label:
+						status_label.text = "Precisa de um machado para desmontar este bloco."
+					return
+				axe_durability -= 1
+				_animate_axe_swing()
+				if axe_durability == 0 and axe_visual:
+					axe_visual.visible = false
 			block_counts[drop_index] += 1
 			_remove_block(cell)
 			_update_hotbar()
 			_refresh_inventory()
 			if used_pickaxe and pickaxe_durability == 0 and status_label:
 				status_label.text = "Sua picareta quebrou. Fabrique outra na bancada."
+			elif used_axe and axe_durability == 0 and status_label:
+				status_label.text = "Seu machado quebrou. Fabrique outro na bancada."
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED:
