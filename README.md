@@ -177,3 +177,15 @@ Durante a revisão do lobby, foi corrigido um detalhe: os cartões de slots vazi
 A validação final no [workflow Godot 4.3 headless 45255511940](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/45255511940), commit `dfc21233`, instalou Godot 4.3, importou/analisou o projeto e passou pelos testes de configurações, persistência/migração, crafting, lobby (incluindo seed por slot), touch, animação de braços e malhas de decoração 3D. A execução é automatizada em Linux headless; não substitui teste visual em PC/celular nem medição de desempenho em hardware real.
 
 Nenhum APK ou PKG foi produzido nesta etapa. O protótipo Godot continua separado do cliente nativo C++/PS4, e o ambiente local permanece sem Android SDK, templates de exportação, OpenOrbis e ferramentas PS4. A animação descrita existe apenas no protótipo Godot.
+
+## Ferramentas exigidas ao desmontar blocos de madeira (24/11/2026)
+
+A mineração de blocos construídos agora respeita a mesma regra de ferramenta usada para os recursos naturais: pedra e tijolos exigem picareta; madeira bruta e tábuas exigem machado. Antes desta correção, tábuas colocadas pelo jogador podiam ser removidas sem gastar durabilidade do machado, embora a madeira natural já exigisse essa ferramenta.
+
+- `scripts/world.gd`: centraliza a resolução da ferramenta necessária a partir do item obtido e aplica consumo, animação e quebra de durabilidade também às tábuas colocadas.
+- `scripts/tests/world_visual_test.gd`: cobre o mapeamento de pedra, tijolos, madeira, tábuas e blocos que não exigem ferramenta.
+- Não houve alteração no formato do save: durabilidade das ferramentas e blocos colocados já são persistidos na versão 8.
+
+A validação no [workflow Godot 4.3 headless 45468813439](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/45468813439), commit `31c99469`, instalou Godot 4.3, importou/analisou o projeto e aprovou os testes de configurações, migração/recuperação de saves, crafting, lobby, controles touch, animação e o novo mapeamento de ferramentas. É validação automatizada headless; não comprova interação em aparelho ou console físico.
+
+Nenhum APK ou PKG foi gerado nesta etapa. A alteração pertence ao protótipo Godot, ainda separado do cliente C++/PS4. A exportação Android e a integração do protótipo ao cliente PS4 permanecem pendentes.
