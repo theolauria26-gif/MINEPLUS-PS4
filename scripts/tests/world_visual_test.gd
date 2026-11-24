@@ -15,6 +15,13 @@ func _run() -> void:
 	var world_script := load("res://scripts/world.gd") as GDScript
 	_expect(world_script != null, "world input script loads for touch-zone tests")
 	if world_script != null:
+		_expect(world_script._required_tool_for_inventory_item(2) == "pickaxe", "stone material requires a pickaxe")
+		_expect(world_script._required_tool_for_inventory_item(5) == "pickaxe", "brick material requires a pickaxe")
+		_expect(world_script._required_tool_for_inventory_item(6) == "axe", "raw wood requires an axe")
+		_expect(world_script._required_tool_for_inventory_item(7) == "axe", "crafted planks require an axe")
+		_expect(world_script._required_tool_for_block(6) == "axe", "placed plank blocks resolve to the axe requirement")
+		_expect(world_script._required_tool_for_block(0) == "", "grass blocks remain breakable without a tool")
+		_expect(world_script._required_tool_for_block(2) == "pickaxe", "placed stone blocks resolve to the pickaxe requirement")
 		_expect(world_script._touch_starts_look(Vector2(900, 320), Vector2(1280, 720)), "right-side upper touch starts camera look")
 		_expect(not world_script._touch_starts_look(Vector2(600, 320), Vector2(1280, 720)), "left movement zone does not start camera look")
 		_expect(not world_script._touch_starts_look(Vector2(900, 620), Vector2(1280, 720)), "lower action-button zone does not start camera look")
