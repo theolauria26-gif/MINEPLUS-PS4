@@ -37,7 +37,7 @@ Mundos novos recebem seeds determinísticas distintas por slot (o slot 1 mantém
 
 O inventário do protótipo agora possui filtros **Todos**, **Blocos** e **Recursos**. A lista usa um catálogo central (`scripts/inventory_catalog.gd`) para manter estável a relação entre os oito itens, suas categorias e os tipos de bloco construíveis. Madeira bruta aparece apenas em Recursos, enquanto tábuas aparecem em Blocos; tocar/clicar em um bloco no inventário seleciona o tipo correspondente na hotbar. A madeira bruta não pode ser equipada como bloco e apresenta a orientação para transformá-la em tábuas na bancada. As durabilidades da picareta e do machado continuam visíveis no painel, separadas das pilhas.
 
-O teste `scripts/tests/inventory_test.gd` verifica a ordem das oito pilhas, os filtros, os mapeamentos entre item e bloco, a rejeição de IDs inválidos e a seleção pela interface. O workflow Godot executa esse teste com Godot 4.3 headless junto aos testes de save, crafting e lobby. A validação automatizada não substitui a avaliação visual em telas touch reais.
+O teste `scripts/tests/inventory_test.gd` verifica a ordem das oito pilhas, os filtros, os mapeamentos entre item e bloco, a rejeição de IDs inválidos e a seleção pela interface. O workflow Godot executa esse teste com Godot 4.3 headless junto aos testes de save, crafting e lobby. A validação automatizada não substitui a avaliação visual em telas touch reais. A primeira execução completa desse conjunto passou em [Godot 4.3 headless — workflow 45685280839](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/45685280839), incluindo importação do projeto, filtros e quick-equip, saves, receitas, lobby, controles touch e testes visuais.
 
 ### Fabricação transacional (Godot)
 
