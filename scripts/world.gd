@@ -28,6 +28,8 @@ var inventory_grid: GridContainer
 var inventory_panel_width := 460.0
 var pause_layer: CanvasLayer
 var inventory_tool_label: Label
+var inventory_filter := MineplusInventory.CATEGORY_ALL
+var inventory_filter_buttons: Array[Button] = []
 var look_sensitivity := 0.0025
 var configured_fov := 78.0
 var hud_opacity := 1.0
@@ -466,6 +468,18 @@ func _create_inventory_panel(hud: Control) -> void:
 	inventory_tool_label.text = "PICARETA %d/40  •  MACHADO %d/40" % [pickaxe_durability, axe_durability]
 	inventory_tool_label.add_theme_color_override("font_color", Color("#e9d28b"))
 	stack.add_child(inventory_tool_label)
+	var filter_row := HBoxContainer.new()
+	filter_row.add_theme_constant_override("separation", 6)
+	for category in [MineplusInventory.CATEGORY_ALL, MineplusInventory.CATEGORY_BLOCKS, MineplusInventory.CATEGORY_MATERIALS]:
+		var filter_button := Button.new()
+		filter_button.text = MineplusInventory.category_title(category)
+		filter_button.custom_minimum_size = Vector2(0, 34)
+		filter_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		filter_button.add_theme_font_size_override("font_size", 10)
+		filter_button.pressed.connect(_set_inventory_filter.bind(category))
+		filter_row.add_child(filter_button)
+		inventory_filter_buttons.append(filter_button)
+	stack.add_child(filter_row)
 	var inventory_scroll := ScrollContainer.new()
 	inventory_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inventory_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -497,26 +511,46 @@ func _toggle_inventory() -> void:
 	elif not OS.has_feature("mobile"):
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
+func _set_inventory_filter(category: String) -> void:
+	if category not in [MineplusInventory.CATEGORY_ALL, MineplusInventory.CATEGORY_BLOCKS, MineplusInventory.CATEGORY_MATERIALS]:
+		return
+	inventory_filter = category
+	_refresh_inventory()
+
+func _equip_inventory_item(item_index: int) -> void:
+	var block_type := MineplusInventory.block_type_for_item(item_index)
+	if block_type < 0:
+		if status_label:
+			status_label.text = "Madeira é matéria-prima. Fabrique tábuas para construir."
+		return
+	_select_block(block_type)
+	if status_label:
+		status_label.text = "Bloco equipado: %s." % BLOCK_NAMES[block_type]
+
 func _refresh_inventory() -> void:
 	if inventory_grid == null:
 		return
 	if inventory_tool_label:
 		inventory_tool_label.text = "PICARETA %d/40  •  MACHADO %d/40" % [pickaxe_durability, axe_durability]
+	for button_index in range(inventory_filter_buttons.size()):
+		var filter_button := inventory_filter_buttons[button_index]
+		var categories := [MineplusInventory.CATEGORY_ALL, MineplusInventory.CATEGORY_BLOCKS, MineplusInventory.CATEGORY_MATERIALS]
+		filter_button.modulate = Color("#8ee3b1") if categories[button_index] == inventory_filter else Color.WHITE
 	for child in inventory_grid.get_children():
 		child.queue_free()
-	for i in range(INVENTORY_NAMES.size()):
-		var item := PanelContainer.new()
-		var item_style := StyleBoxFlat.new()
-		item_style.bg_color = Color(1, 1, 1, 0.055)
-		item_style.set_corner_radius_all(9)
-		item.add_theme_stylebox_override("panel", item_style)
-		var label := Label.new()
-		label.text = "  %s\n  Quantidade: %d" % [INVENTORY_NAMES[i], block_counts[i]]
+	for item_index in MineplusInventory.visible_item_indices(inventory_filter):
+		var block_type := MineplusInventory.block_type_for_item(item_index)
+		var action_text := "TOQUE PARA EQUIPAR" if block_type >= 0 else "MATÉRIA-PRIMA"
+		var item_button := Button.new()
+		item_button.text = "%s\n%d / %d\n%s" % [INVENTORY_NAMES[item_index].to_upper(), block_counts[item_index], MAX_STACK_SIZE, action_text]
 		var item_width := (inventory_panel_width - 55.0) / float(inventory_grid.columns)
-		label.custom_minimum_size = Vector2(item_width, 48)
-		label.add_theme_color_override("font_color", INVENTORY_COLORS[i])
-		item.add_child(label)
-		inventory_grid.add_child(item)
+		item_button.custom_minimum_size = Vector2(item_width, 66)
+		item_button.add_theme_font_size_override("font_size", 11)
+		item_button.add_theme_color_override("font_color", INVENTORY_COLORS[item_index])
+		item_button.add_theme_color_override("font_hover_color", Color.WHITE)
+		item_button.tooltip_text = "Equipar %s na hotbar" % INVENTORY_NAMES[item_index] if block_type >= 0 else "Madeira é usada na fabricação de tábuas."
+		item_button.pressed.connect(_equip_inventory_item.bind(item_index))
+		inventory_grid.add_child(item_button)
 
 func _load_settings() -> void:
 	var config := MineplusSettings.load_config()
