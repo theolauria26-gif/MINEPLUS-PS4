@@ -33,6 +33,12 @@ O botão **JOGAR** agora abre um lobby próprio antes de carregar a partida. Ele
 
 Mundos novos recebem seeds determinísticas distintas por slot (o slot 1 mantém a seed-base 4839201). A escolha do slot é gravada nas configurações antes da troca de cena; a tela de configurações não duplica essa escolha, que fica centralizada no lobby. Se um arquivo e seu backup existirem, mas nenhum puder ser validado, o botão de entrada fica bloqueado: o lobby não trata o arquivo corrompido como slot vazio e não oferece sobrescrevê-lo. Quando há backup válido, o codec existente tenta recuperá-lo antes de apresentar o slot.
 
+### Inventário interativo e filtros (Godot)
+
+O inventário do protótipo agora possui filtros **Todos**, **Blocos** e **Recursos**. A lista usa um catálogo central (`scripts/inventory_catalog.gd`) para manter estável a relação entre os oito itens, suas categorias e os tipos de bloco construíveis. Madeira bruta aparece apenas em Recursos, enquanto tábuas aparecem em Blocos; tocar/clicar em um bloco no inventário seleciona o tipo correspondente na hotbar. A madeira bruta não pode ser equipada como bloco e apresenta a orientação para transformá-la em tábuas na bancada. As durabilidades da picareta e do machado continuam visíveis no painel, separadas das pilhas.
+
+O teste `scripts/tests/inventory_test.gd` verifica a ordem das oito pilhas, os filtros, os mapeamentos entre item e bloco, a rejeição de IDs inválidos e a seleção pela interface. O workflow Godot executa esse teste com Godot 4.3 headless junto aos testes de save, crafting e lobby. A validação automatizada não substitui a avaliação visual em telas touch reais.
+
 ### Fabricação transacional (Godot)
 
 As quatro receitas do protótipo foram centralizadas em `scripts/crafting.gd`, separando as regras de fabricação da interface. Além de tijolos, picareta e machado, a receita de tábuas converte 1 Madeira em 4 Tábuas. A bancada apresenta os requisitos e desativa receitas sem materiais suficientes. Cada tentativa valida o inventário completo (oito pilhas limitadas a 999), a disponibilidade da ferramenta e o espaço da pilha de saída antes de consumir qualquer ingrediente. Tijolos, tábuas, picareta e machado usam a mesma transação: em caso de falha, nenhuma pilha ou durabilidade muda; em caso de sucesso, o novo inventário e a durabilidade da ferramenta são aplicados juntos e salvos. A fabricação retorna uma cópia do inventário, sem alterar a lista de entrada, o que também permite testar as regras sem instanciar a cena 3D.
