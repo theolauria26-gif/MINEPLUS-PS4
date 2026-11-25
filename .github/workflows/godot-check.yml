@@ -27,6 +27,8 @@ jobs:
         run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/settings_test.gd
       - name: Test versioned world-save recovery
         run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/world_save_test.gd
+      - name: Test inventory categories and quick equip
+        run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/inventory_test.gd
       - name: Test transactional crafting recipes
         run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/crafting_test.gd
       - name: Test world lobby slot selection and save protection
