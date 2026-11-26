@@ -2,7 +2,7 @@ extends RefCounted
 class_name MineplusWorldSave
 ## Versioned, bounded and recoverable world persistence for the Godot prototype.
 
-const CURRENT_VERSION := 8
+const CURRENT_VERSION := 9
 const MAX_SAVE_BYTES := 32 * 1024 * 1024
 const MAX_WORLD_BLOCKS := 100000
 const MAX_TERRAIN_EDITS := 250000
@@ -99,14 +99,18 @@ static func normalize_payload(raw: Variant) -> Dictionary:
 	var pitch_value: Variant = source.get("camera_pitch", 0.0)
 	var day_clock_value: Variant = source.get("day_clock", 0.5)
 	var seed_value: Variant = source.get("world_seed", 4839201)
+	var pickaxe_durability := _bounded_int(source.get("pickaxe_durability", 0), 0, MineplusEquipment.MAX_DURABILITY, 0)
+	var axe_durability := _bounded_int(source.get("axe_durability", 0), 0, MineplusEquipment.MAX_DURABILITY, 0)
+	var selected_tool := MineplusEquipment.normalize_selected_tool(source.get("selected_tool", MineplusEquipment.TOOL_NONE), pickaxe_durability, axe_durability)
 	return {
 		"version": CURRENT_VERSION,
 		"world_seed": _bounded_int(seed_value, -2147483648, 2147483647, 4839201),
 		"terrain_edits": terrain_edits,
 		"blocks": blocks,
 		"inventory": inventory,
-		"pickaxe_durability": _bounded_int(source.get("pickaxe_durability", 0), 0, 40, 0),
-		"axe_durability": _bounded_int(source.get("axe_durability", 0), 0, 40, 0),
+		"pickaxe_durability": pickaxe_durability,
+		"axe_durability": axe_durability,
+		"selected_tool": selected_tool,
 		"player_position": player_position,
 		"player_rotation_y": float(rotation_value) if _is_number(rotation_value) else 0.0,
 		"camera_pitch": clampf(float(pitch_value), -1.45, 1.45) if _is_number(pitch_value) else 0.0,
