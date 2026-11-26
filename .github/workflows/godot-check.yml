@@ -23,6 +23,8 @@ jobs:
           output=$(Godot_v4.3-stable_linux.x86_64 --headless --path . --editor --quit 2>&1)
           echo "$output"
           if echo "$output" | grep -E "SCRIPT ERROR|Failed to load script"; then exit 1; fi
+      - name: Instantiate and inspect the playable world scene
+        run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/world_scene_smoke_test.gd --quit-after 120
       - name: Test persistent settings and mobile frame caps
         run: Godot_v4.3-stable_linux.x86_64 --headless --path . --script res://scripts/tests/settings_test.gd
       - name: Test versioned world-save recovery
