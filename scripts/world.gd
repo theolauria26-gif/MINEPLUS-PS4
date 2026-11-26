@@ -471,19 +471,28 @@ func _create_inventory_panel(hud: Control) -> void:
 	inventory_tool_label = Label.new()
 	inventory_tool_label.text = "PICARETA %d/40  •  MACHADO %d/40" % [pickaxe_durability, axe_durability]
 	inventory_tool_label.add_theme_color_override("font_color", Color("#e9d28b"))
+	inventory_tool_label.add_theme_font_size_override("font_size", 10)
+	inventory_tool_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	inventory_tool_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(inventory_tool_label)
 	var tool_row := HBoxContainer.new()
 	tool_row.add_theme_constant_override("separation", 5)
 	inventory_hand_button = Button.new()
 	inventory_hand_button.text = "MÃO LIVRE"
+	inventory_hand_button.add_theme_font_size_override("font_size", 10)
+	inventory_hand_button.custom_minimum_size.y = 32
 	inventory_hand_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inventory_hand_button.pressed.connect(_set_selected_tool.bind(MineplusEquipment.TOOL_NONE))
 	tool_row.add_child(inventory_hand_button)
 	inventory_pickaxe_button = Button.new()
+	inventory_pickaxe_button.add_theme_font_size_override("font_size", 10)
+	inventory_pickaxe_button.custom_minimum_size.y = 32
 	inventory_pickaxe_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inventory_pickaxe_button.pressed.connect(_set_selected_tool.bind(MineplusEquipment.TOOL_PICKAXE))
 	tool_row.add_child(inventory_pickaxe_button)
 	inventory_axe_button = Button.new()
+	inventory_axe_button.add_theme_font_size_override("font_size", 10)
+	inventory_axe_button.custom_minimum_size.y = 32
 	inventory_axe_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inventory_axe_button.pressed.connect(_set_selected_tool.bind(MineplusEquipment.TOOL_AXE))
 	tool_row.add_child(inventory_axe_button)
