@@ -28,6 +28,9 @@ var inventory_grid: GridContainer
 var inventory_panel_width := 460.0
 var pause_layer: CanvasLayer
 var inventory_tool_label: Label
+var inventory_hand_button: Button
+var inventory_pickaxe_button: Button
+var inventory_axe_button: Button
 var inventory_filter := MineplusInventory.CATEGORY_ALL
 var inventory_filter_buttons: Array[Button] = []
 var look_sensitivity := 0.0025
@@ -36,6 +39,7 @@ var hud_opacity := 1.0
 var graphics_quality := 1
 var pickaxe_durability := 0
 var axe_durability := 0
+var selected_tool := MineplusEquipment.TOOL_NONE
 var axe_visual: Node3D
 var block_textures: Array[Texture2D] = []
 var first_person_arms: Array[MeshInstance3D] = []
@@ -252,7 +256,7 @@ func _create_pickaxe_visual() -> void:
 	pickaxe_visual = Node3D.new()
 	pickaxe_visual.position = Vector3(0.38, -0.36, -0.62)
 	pickaxe_visual.rotation_degrees = Vector3(-18, -24, -18)
-	pickaxe_visual.visible = pickaxe_durability > 0
+	pickaxe_visual.visible = selected_tool == MineplusEquipment.TOOL_PICKAXE and pickaxe_durability > 0
 	camera.add_child(pickaxe_visual)
 	var handle := MeshInstance3D.new()
 	var handle_mesh := BoxMesh.new()
@@ -286,7 +290,7 @@ func _create_axe_visual() -> void:
 	axe_visual = Node3D.new()
 	axe_visual.position = Vector3(0.34, -0.37, -0.60)
 	axe_visual.rotation_degrees = Vector3(-18, -18, -28)
-	axe_visual.visible = axe_durability > 0
+	axe_visual.visible = selected_tool == MineplusEquipment.TOOL_AXE and axe_durability > 0
 	camera.add_child(axe_visual)
 	var handle := MeshInstance3D.new()
 	var handle_mesh := BoxMesh.new()
@@ -468,6 +472,22 @@ func _create_inventory_panel(hud: Control) -> void:
 	inventory_tool_label.text = "PICARETA %d/40  •  MACHADO %d/40" % [pickaxe_durability, axe_durability]
 	inventory_tool_label.add_theme_color_override("font_color", Color("#e9d28b"))
 	stack.add_child(inventory_tool_label)
+	var tool_row := HBoxContainer.new()
+	tool_row.add_theme_constant_override("separation", 5)
+	inventory_hand_button = Button.new()
+	inventory_hand_button.text = "MÃO LIVRE"
+	inventory_hand_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inventory_hand_button.pressed.connect(_set_selected_tool.bind(MineplusEquipment.TOOL_NONE))
+	tool_row.add_child(inventory_hand_button)
+	inventory_pickaxe_button = Button.new()
+	inventory_pickaxe_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inventory_pickaxe_button.pressed.connect(_set_selected_tool.bind(MineplusEquipment.TOOL_PICKAXE))
+	tool_row.add_child(inventory_pickaxe_button)
+	inventory_axe_button = Button.new()
+	inventory_axe_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inventory_axe_button.pressed.connect(_set_selected_tool.bind(MineplusEquipment.TOOL_AXE))
+	tool_row.add_child(inventory_axe_button)
+	stack.add_child(tool_row)
 	var filter_row := HBoxContainer.new()
 	filter_row.add_theme_constant_override("separation", 6)
 	for category in [MineplusInventory.CATEGORY_ALL, MineplusInventory.CATEGORY_BLOCKS, MineplusInventory.CATEGORY_MATERIALS]:
@@ -517,6 +537,31 @@ func _set_inventory_filter(category: String) -> void:
 	inventory_filter = category
 	_refresh_inventory()
 
+func _set_selected_tool(tool: String, announce: bool = true) -> void:
+	if tool == MineplusEquipment.TOOL_PICKAXE and pickaxe_durability <= 0:
+		if status_label:
+			status_label.text = "Você não tem uma picareta utilizável. Fabrique uma na bancada."
+		return
+	if tool == MineplusEquipment.TOOL_AXE and axe_durability <= 0:
+		if status_label:
+			status_label.text = "Você não tem um machado utilizável. Fabrique um na bancada."
+		return
+	if tool not in [MineplusEquipment.TOOL_NONE, MineplusEquipment.TOOL_PICKAXE, MineplusEquipment.TOOL_AXE]:
+		return
+	selected_tool = tool
+	_update_tool_visuals()
+	_refresh_inventory()
+	if announce and status_label:
+		var label := "mão livre" if tool.is_empty() else ("picareta" if tool == MineplusEquipment.TOOL_PICKAXE else "machado")
+		status_label.text = "Equipamento selecionado: %s." % label
+	_save_world(true)
+
+func _update_tool_visuals() -> void:
+	if pickaxe_visual:
+		pickaxe_visual.visible = selected_tool == MineplusEquipment.TOOL_PICKAXE and pickaxe_durability > 0
+	if axe_visual:
+		axe_visual.visible = selected_tool == MineplusEquipment.TOOL_AXE and axe_durability > 0
+
 func _equip_inventory_item(item_index: int) -> void:
 	var block_type := MineplusInventory.block_type_for_item(item_index)
 	if block_type < 0:
@@ -531,7 +576,18 @@ func _refresh_inventory() -> void:
 	if inventory_grid == null:
 		return
 	if inventory_tool_label:
-		inventory_tool_label.text = "PICARETA %d/40  •  MACHADO %d/40" % [pickaxe_durability, axe_durability]
+		var equipped_name := "MÃO LIVRE" if selected_tool.is_empty() else ("PICARETA" if selected_tool == MineplusEquipment.TOOL_PICKAXE else "MACHADO")
+		inventory_tool_label.text = "EQUIPADO: %s  •  PICARETA %d/40  •  MACHADO %d/40" % [equipped_name, pickaxe_durability, axe_durability]
+	if inventory_hand_button:
+		inventory_hand_button.modulate = Color("#8ee3b1") if selected_tool.is_empty() else Color.WHITE
+	if inventory_pickaxe_button:
+		inventory_pickaxe_button.text = "PICARETA %d/40" % pickaxe_durability
+		inventory_pickaxe_button.disabled = pickaxe_durability <= 0
+		inventory_pickaxe_button.modulate = Color("#8ee3b1") if selected_tool == MineplusEquipment.TOOL_PICKAXE else Color.WHITE
+	if inventory_axe_button:
+		inventory_axe_button.text = "MACHADO %d/40" % axe_durability
+		inventory_axe_button.disabled = axe_durability <= 0
+		inventory_axe_button.modulate = Color("#8ee3b1") if selected_tool == MineplusEquipment.TOOL_AXE else Color.WHITE
 	for button_index in range(inventory_filter_buttons.size()):
 		var filter_button := inventory_filter_buttons[button_index]
 		var categories := [MineplusInventory.CATEGORY_ALL, MineplusInventory.CATEGORY_BLOCKS, MineplusInventory.CATEGORY_MATERIALS]
@@ -733,10 +789,11 @@ func _craft_recipe(recipe_id: String, dialog: Window) -> void:
 		block_counts[index] = int(crafted_inventory[index])
 	pickaxe_durability = int(result["pickaxe_durability"])
 	axe_durability = int(result["axe_durability"])
-	if pickaxe_visual:
-		pickaxe_visual.visible = pickaxe_durability > 0
-	if axe_visual:
-		axe_visual.visible = axe_durability > 0
+	if recipe_id == "pickaxe":
+		selected_tool = MineplusEquipment.TOOL_PICKAXE
+	elif recipe_id == "axe":
+		selected_tool = MineplusEquipment.TOOL_AXE
+	_update_tool_visuals()
 	if dialog:
 		dialog.queue_free()
 	_update_hotbar()
@@ -791,7 +848,7 @@ func _save_world(silent: bool = false) -> void:
 		player_position = [player.position.x, player.position.y, player.position.z]
 		player_rotation_y = player.rotation.y
 		camera_pitch = camera.rotation.x
-	var payload := {"version": MineplusWorldSave.CURRENT_VERSION, "world_seed": chunk_streamer.generator.world_seed if chunk_streamer else 4839201, "terrain_edits": chunk_streamer.export_edits() if chunk_streamer else [], "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "axe_durability": axe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "day_clock": day_clock, "selected_block": selected_block}
+	var payload := {"version": MineplusWorldSave.CURRENT_VERSION, "selected_tool": selected_tool, "world_seed": chunk_streamer.generator.world_seed if chunk_streamer else 4839201, "terrain_edits": chunk_streamer.export_edits() if chunk_streamer else [], "blocks": saved_blocks, "inventory": block_counts, "pickaxe_durability": pickaxe_durability, "axe_durability": axe_durability, "player_position": player_position, "player_rotation_y": player_rotation_y, "camera_pitch": camera_pitch, "day_clock": day_clock, "selected_block": selected_block}
 	var saved := MineplusWorldSave.save_world(_world_save_path(), payload)
 	if saved:
 		if not silent and status_label:
@@ -811,6 +868,7 @@ func _load_world() -> void:
 		chunk_streamer.import_edits(parsed["terrain_edits"])
 	pickaxe_durability = int(parsed["pickaxe_durability"])
 	axe_durability = int(parsed["axe_durability"])
+	selected_tool = MineplusEquipment.normalize_selected_tool(parsed.get("selected_tool", MineplusEquipment.TOOL_NONE), pickaxe_durability, axe_durability)
 	var saved_position: Array = parsed["player_position"]
 	saved_player_position = Vector3(float(saved_position[0]), float(saved_position[1]), float(saved_position[2]))
 	saved_player_rotation_y = float(parsed["player_rotation_y"])
@@ -909,6 +967,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_inventory()
 		elif event.keycode >= KEY_1 and event.keycode <= KEY_7:
 			_select_block(event.keycode - KEY_1)
+		elif event.keycode == KEY_8:
+			_set_selected_tool(MineplusEquipment.TOOL_PICKAXE)
+		elif event.keycode == KEY_9:
+			_set_selected_tool(MineplusEquipment.TOOL_AXE)
+		elif event.keycode == KEY_0:
+			_set_selected_tool(MineplusEquipment.TOOL_NONE)
 		elif event.keycode == KEY_SPACE:
 			Input.action_press("jump")
 	elif event is InputEventScreenTouch:
@@ -997,25 +1061,25 @@ func _interact(place: bool) -> void:
 				if status_label: status_label.text = "Pilha cheia: máximo de %d por material." % MAX_STACK_SIZE
 				return
 			var terrain_required_tool := _required_tool_for_inventory_item(drop_index)
-			var needs_pickaxe := terrain_required_tool == "pickaxe"
-			var needs_axe := terrain_required_tool == "axe"
-			if needs_pickaxe and pickaxe_durability <= 0:
-				if status_label: status_label.text = "Precisa de uma picareta para minerar este bloco."
+			var tool_check := MineplusEquipment.can_use(terrain_required_tool, selected_tool, pickaxe_durability, axe_durability)
+			if not bool(tool_check.get("ok", false)):
+				if status_label:
+					status_label.text = str(tool_check.get("reason", "Ferramenta indisponível."))
 				return
-			if needs_axe and axe_durability <= 0:
-				if status_label: status_label.text = "Precisa de um machado para cortar madeira. Fabrique um na bancada."
-				return
+			var needs_pickaxe := terrain_required_tool == MineplusEquipment.TOOL_PICKAXE
+			var needs_axe := terrain_required_tool == MineplusEquipment.TOOL_AXE
 			chunk_streamer.mine_surface(cell)
 			if needs_pickaxe:
 				pickaxe_durability -= 1
 				_animate_pickaxe_swing()
-				if pickaxe_durability == 0 and pickaxe_visual:
-					pickaxe_visual.visible = false
+				if pickaxe_durability == 0:
+					selected_tool = MineplusEquipment.TOOL_NONE
 			elif needs_axe:
 				axe_durability -= 1
 				_animate_axe_swing()
-				if axe_durability == 0 and axe_visual:
-					axe_visual.visible = false
+				if axe_durability == 0:
+					selected_tool = MineplusEquipment.TOOL_NONE
+			_update_tool_visuals()
 			block_counts[drop_index] += 1
 			_update_hotbar()
 			if needs_axe and axe_durability == 0 and status_label:
@@ -1034,30 +1098,29 @@ func _interact(place: bool) -> void:
 					status_label.text = "Pilha cheia: máximo de %d por material." % MAX_STACK_SIZE
 				return
 			var placed_required_tool := _required_tool_for_block(block_type)
-			var used_pickaxe := placed_required_tool == "pickaxe"
-			var used_axe := placed_required_tool == "axe"
+			var placed_tool_check := MineplusEquipment.can_use(placed_required_tool, selected_tool, pickaxe_durability, axe_durability)
+			if not bool(placed_tool_check.get("ok", false)):
+				if status_label:
+					status_label.text = str(placed_tool_check.get("reason", "Ferramenta indisponível."))
+				return
+			var used_pickaxe := placed_required_tool == MineplusEquipment.TOOL_PICKAXE
+			var used_axe := placed_required_tool == MineplusEquipment.TOOL_AXE
 			if used_pickaxe:
-				if pickaxe_durability <= 0:
-					if status_label:
-						status_label.text = "Precisa de uma picareta para minerar este bloco."
-					return
 				pickaxe_durability -= 1
 				_animate_pickaxe_swing()
-				if pickaxe_durability == 0 and pickaxe_visual:
-					pickaxe_visual.visible = false
+				if pickaxe_durability == 0:
+					selected_tool = MineplusEquipment.TOOL_NONE
 			elif used_axe:
-				if axe_durability <= 0:
-					if status_label:
-						status_label.text = "Precisa de um machado para desmontar este bloco."
-					return
 				axe_durability -= 1
 				_animate_axe_swing()
-				if axe_durability == 0 and axe_visual:
-					axe_visual.visible = false
+				if axe_durability == 0:
+					selected_tool = MineplusEquipment.TOOL_NONE
+			_update_tool_visuals()
 			block_counts[drop_index] += 1
 			_remove_block(cell)
 			_update_hotbar()
 			_refresh_inventory()
+			_save_world(true)
 			if used_pickaxe and pickaxe_durability == 0 and status_label:
 				status_label.text = "Sua picareta quebrou. Fabrique outra na bancada."
 			elif used_axe and axe_durability == 0 and status_label:
