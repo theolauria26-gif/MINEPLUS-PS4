@@ -18,7 +18,7 @@ Não considere streaming infinito, prefabs 3D completos, animações esquelétic
 
 ## Protótipo Godot e persistência de mundos
 
-O projeto Godot é um protótipo separado do cliente C++ que gera o PKG de PS4. A persistência do protótipo agora usa `scripts/world_save.gd`, com formato versão 8 e leitura/migração dos saves anteriores (até a versão 7). O inventário do protótipo separa sete blocos construíveis de oito pilhas coletáveis, mantendo madeira bruta e tábuas como itens distintos; saves antigos são migrados preservando as pilhas existentes e preenchendo os novos espaços com zero. Picareta e machado de pedra têm durabilidade própria, persistida no save; o machado é fabricado com 2 Pedras + 2 Terras e permite colher troncos, enquanto a picareta continua necessária para pedra e tijolo. A fase do ciclo dia/noite também é persistida, então cada mundo retoma o horário salvo; saves legados sem esse campo começam na fase padrão. O codec valida e limita quantidades, coordenadas, inventário, durabilidade e fase do relógio; grava primeiro em arquivo temporário e mantém uma cópia `.bak` para recuperação se a gravação for interrompida ou o JSON principal ficar inválido.
+O projeto Godot é um protótipo separado do cliente C++ que gera o PKG de PS4. A persistência do protótipo agora usa `scripts/world_save.gd`, com formato versão 9 e leitura/migração dos saves anteriores (até a versão 8). O inventário do protótipo separa sete blocos construíveis de oito pilhas coletáveis, mantendo madeira bruta e tábuas como itens distintos; saves antigos são migrados preservando as pilhas existentes e preenchendo os novos espaços com zero. Picareta e machado de pedra têm durabilidade própria, persistida no save; o machado é fabricado com 2 Pedras + 2 Terras e permite colher troncos, enquanto a picareta continua necessária para pedra e tijolo. A fase do ciclo dia/noite também é persistida, então cada mundo retoma o horário salvo; saves legados sem esse campo começam na fase padrão. O codec valida e limita quantidades, coordenadas, inventário, durabilidade e fase do relógio; grava primeiro em arquivo temporário e mantém uma cópia `.bak` para recuperação se a gravação for interrompida ou o JSON principal ficar inválido.
 
 O workflow Godot executa o projeto em modo headless, instancia o mundo streamed e roda testes de round-trip, saneamento de dados, rejeição de versões futuras e recuperação do backup. Esses testes cobrem o protótipo Godot, incluindo migração do inventário legado, persistência das oito pilhas, durabilidade do machado e do novo bloco de tábuas; não alteram nem substituem o codec de save do cliente nativo PS4.
 
@@ -195,3 +195,17 @@ A mineração de blocos construídos agora respeita a mesma regra de ferramenta 
 A validação no [workflow Godot 4.3 headless 45468813439](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/45468813439), commit `31c99469`, instalou Godot 4.3, importou/analisou o projeto e aprovou os testes de configurações, migração/recuperação de saves, crafting, lobby, controles touch, animação e o novo mapeamento de ferramentas. É validação automatizada headless; não comprova interação em aparelho ou console físico.
 
 Nenhum APK ou PKG foi gerado nesta etapa. A alteração pertence ao protótipo Godot, ainda separado do cliente C++/PS4. A exportação Android e a integração do protótipo ao cliente PS4 permanecem pendentes.
+
+
+## Ferramentas equipáveis e persistência de equipamento (26/11/2026)
+
+Picareta e machado agora são ferramentas selecionáveis, não ficam mais visíveis simultaneamente nem são usados automaticamente apenas por existirem no inventário. A mochila oferece três ações: **Mão livre**, **Picareta** e **Machado**; no teclado, as teclas **8**, **9** e **0** selecionam respectivamente picareta, machado e mão livre. No mobile, os mesmos controles ficam acessíveis pela interface do inventário.
+
+Mineração de pedra/tijolo exige que a picareta esteja selecionada e tenha durabilidade. Madeira natural e tábuas colocadas exigem o machado selecionado. O sistema impede o golpe se a ferramenta correta não estiver equipada, informa o motivo e não consome durabilidade. Ao fabricar uma ferramenta, ela é selecionada automaticamente; quando quebra, a mão livre volta a ficar ativa e o modelo da ferramenta some da câmera. O inventário mostra a durabilidade e destaca o equipamento ativo.
+
+- `scripts/equipment.gd`: regras puras para seleção, normalização, durabilidade e validação da ferramenta exigida.
+- `scripts/world.gd`: botões de equipamento na mochila, atalhos 8/9/0, modelos de primeira pessoa exclusivos e validação antes de minerar blocos naturais ou construídos.
+- `scripts/world_save.gd`: formato versão 9 salva a ferramenta selecionada. Saves até a versão 8 migram com mão livre; seleções inválidas ou ferramentas sem durabilidade são descartadas para não carregar um estado impossível.
+- `scripts/tests/equipment_test.gd` e `scripts/tests/world_save_test.gd`: verificam ferramenta correta, ferramenta errada, ferramenta quebrada, saneamento e migração do save.
+
+A validação Godot 4.3 headless desta alteração está sendo executada pelo workflow do GitHub Actions. A execução automatizada não substitui teste visual de teclado, touch e mineração em dispositivo físico.
