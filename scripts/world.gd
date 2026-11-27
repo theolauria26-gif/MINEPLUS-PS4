@@ -48,6 +48,8 @@ var camera_base_height := 1.55
 var world_slot := 1
 var autosave_elapsed := 0.0
 const AUTOSAVE_INTERVAL := 45.0
+const ACTION_SWING_DURATION := 0.22
+var action_swing_remaining := 0.0
 var selected_skin := 0
 var saved_player_position := Vector3(0, 13.0, 5)
 var saved_player_rotation_y := 0.0
@@ -246,11 +248,19 @@ static func _walk_arm_rotation(phase: float, side: float, movement_amount: float
 	return Vector3(sin(wave) * 3.5 * intensity, 0.0, cos(wave) * 4.0 * intensity)
 
 func _update_first_person_animation(movement_amount: float) -> void:
+	var action_progress := 1.0
+	if action_swing_remaining > 0.0:
+		action_progress = 1.0 - action_swing_remaining / ACTION_SWING_DURATION
 	for arm in first_person_arms:
 		var side := float(arm.get_meta("side", 1.0))
-		arm.position = Vector3(side * 0.34, -0.43, -0.52) + _walk_arm_offset(walk_animation_time, side, movement_amount)
-		var swing := _walk_arm_rotation(walk_animation_time, side, movement_amount)
-		arm.rotation_degrees = Vector3(swing.x, 0.0, side * -12.0 + swing.z)
+		var action_offset := MineplusActionAnimation.arm_offset(action_progress, side)
+		arm.position = Vector3(side * 0.34, -0.43, -0.52) + _walk_arm_offset(walk_animation_time, side, movement_amount) + action_offset
+		var walk_rotation := _walk_arm_rotation(walk_animation_time, side, movement_amount)
+		var action_rotation := MineplusActionAnimation.arm_rotation(action_progress, side)
+		arm.rotation_degrees = Vector3(walk_rotation.x, 0.0, side * -12.0 + walk_rotation.z) + action_rotation
+
+func _trigger_action_swing() -> void:
+	action_swing_remaining = ACTION_SWING_DURATION
 
 func _create_pickaxe_visual() -> void:
 	pickaxe_visual = Node3D.new()
@@ -928,6 +938,7 @@ func _physics_process(delta: float) -> void:
 	elif Input.is_action_just_pressed("jump") or Input.is_key_pressed(KEY_SPACE):
 		player.velocity.y = 7.0
 	player.move_and_slide()
+	action_swing_remaining = maxf(0.0, action_swing_remaining - delta)
 	if player.global_position.y < -20.0:
 		_respawn_player()
 		return
@@ -1058,6 +1069,7 @@ func _interact(place: bool) -> void:
 				status_label.text = "Não é possível colocar um bloco dentro do jogador."
 			return
 		_add_block(target, selected_block)
+		_trigger_action_swing()
 		block_counts[place_inventory_index] -= 1
 		_update_hotbar()
 	else:
@@ -1078,6 +1090,7 @@ func _interact(place: bool) -> void:
 			var needs_pickaxe := terrain_required_tool == MineplusEquipment.TOOL_PICKAXE
 			var needs_axe := terrain_required_tool == MineplusEquipment.TOOL_AXE
 			chunk_streamer.mine_surface(cell)
+			_trigger_action_swing()
 			if needs_pickaxe:
 				pickaxe_durability -= 1
 				_animate_pickaxe_swing()
@@ -1127,6 +1140,7 @@ func _interact(place: bool) -> void:
 			_update_tool_visuals()
 			block_counts[drop_index] += 1
 			_remove_block(cell)
+			_trigger_action_swing()
 			_update_hotbar()
 			_refresh_inventory()
 			_save_world(true)
