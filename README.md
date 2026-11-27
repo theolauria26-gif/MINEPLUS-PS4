@@ -211,3 +211,14 @@ Mineração de pedra/tijolo exige que a picareta esteja selecionada e tenha dura
 A validação final instalou Godot 4.3 headless no runner e passou pela importação/parsing, instanciação real de `scenes/world.tscn`, verificação dos controles e modelos de equipamento na cena, migração/recuperação do save v9, regras de seleção/durabilidade, inventário, crafting, lobby, touch, animação e decorações. Workflow [45887180834](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/45887180834), commit de código `b420075a`. A execução é headless e automatizada: não substitui teste visual de teclado/touch nem medição de desempenho em aparelho físico.
 
 As alterações de equipamento e a nova verificação de inicialização da cena `world.tscn` são exclusivas do protótipo Godot e não alteram o conteúdo do PKG nativo existente. Nenhum APK ou PKG final foi produzido nesta etapa, para evitar publicar um artefato que não contenha os recursos recém-implementados.
+
+## Animação de ações em primeira pessoa (27/11/2026)
+
+A mineração e a construção no protótipo Godot agora compartilham uma pequena animação procedural de ação. Ao concluir uma colocação, quebrar um bloco do terreno ou desmontar um bloco construído, os braços fazem um movimento curto de avanço e retorno, sobreposto à animação de caminhada. O braço dominante executa o golpe principal e o braço de apoio faz um contramovimento menor. Isso também dá feedback visual ao usar a mão livre em materiais que não exigem ferramenta; picareta e machado mantêm seus próprios movimentos de ferramenta.
+
+- `scripts/action_animation.gd`: funções puras e determinísticas para o envelope temporal e as poses dos braços, sem alocações por frame.
+- `scripts/world.gd`: aciona a animação somente depois de uma interação válida; ações recusadas por falta de bloco, ferramenta, durabilidade ou espaço não iniciam o golpe.
+- `scripts/tests/action_animation_test.gd`: verifica pose neutra no início/fim, pico no meio, limites do progresso e diferença entre braço dominante e braço de apoio.
+- `.github/workflows/godot-check.yml`: executa o novo teste com Godot 4.3 headless.
+
+A animação é uma camada procedural de primeira pessoa; não é rig esquelético, animação de corpo inteiro ou animação em terceira pessoa. Não altera o formato do save (continua versão 9) e ainda precisa de avaliação visual em PC e celular. Esta melhoria pertence ao protótipo Godot e não foi portada para o cliente C++/SDL2 que gera o PKG de PS4.
