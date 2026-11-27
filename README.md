@@ -222,3 +222,6 @@ A mineração e a construção no protótipo Godot agora compartilham uma pequen
 - `.github/workflows/godot-check.yml`: executa o novo teste com Godot 4.3 headless.
 
 A animação é uma camada procedural de primeira pessoa; não é rig esquelético, animação de corpo inteiro ou animação em terceira pessoa. Não altera o formato do save (continua versão 9) e ainda precisa de avaliação visual em PC e celular. Esta melhoria pertence ao protótipo Godot e não foi portada para o cliente C++/SDL2 que gera o PKG de PS4.
+
+
+A validação desta animação foi concluída em [Godot 4.3 headless — workflow 46057927366](https://github.com/theolauria26-gif/MINEPLUS-PS4/actions/runs/46057927366), no commit `e93cd84d`. O runner instalou Godot 4.3 e aprovou importação/análise, instanciação da cena jogável, configurações, migração e recuperação de saves, equipamentos, o novo teste de envelope/pose da animação, inventário, fabricação, lobby e controles touch/animações existentes. A execução anterior `46057871401` encontrou uma diferença de ponto flutuante no teste do ângulo neutro no fim do golpe (`sin(PI)` não é exatamente zero); o helper foi ajustado para retornar zero exato nas extremidades e a execução seguinte passou integralmente. Isso é validação automatizada headless, não avaliação visual em hardware.
